@@ -1,0 +1,16 @@
+.right-fixed-box {
+  position: fixed; /* 화면에 고정 */
+  top: 30%; /* 고정 헤더 아래에 위치 (헤더 높이 + 여유 공간) */
+  right: 20px; /* 우측에서 20px 떨어지게 */
+  width: 150px; /* 박스 너비 */
+  background-color: rgba(255, 255, 255, 0.95); /* 투명도 있는 흰색 배경 */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* 그림자 */
+  z-index: 90; /* 고정 헤더보다 낮은 z-index */
+  display: flex;
+  flex-direction: column; /* 버튼들을 세로로 나열 */
+  gap: 10px; /* 버튼 사이 간격 */
+  align-items: stretch; /* 버튼이 박스 너비를 채우도록 */
+}

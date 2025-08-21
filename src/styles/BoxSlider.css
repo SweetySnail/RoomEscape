@@ -1,0 +1,81 @@
+.carousel-container {
+  width: calc(150px * 5 + 10px * 5 * 2);
+  max-width: 850px;
+  overflow: hidden;
+  margin: 30px auto;
+  position: relative;
+  background-color: lightcoral;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.8s ease-in-out;
+  width: fit-content;
+}
+
+.carousel-track .empty-box {
+  flex-shrink: 0;
+  width: 150px;
+  height: 150px;
+  margin: 10px;
+}
+
+.carousel-track .page-button {
+    width: auto;
+}
+
+.carousel-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  z-index: 10; /* 박스 위에 표시 */
+  font-size: 24px;
+  border-radius: 50%; /* 원형 버튼 */
+  transition: background-color 0.3s ease;
+}
+
+.carousel-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.carousel-button.prev {
+  left: 10px;
+}
+
+.carousel-button.next {
+  right: 10px;
+}
+
+.empty-box {
+  width: 150px;
+  height: 100px;
+  border: 2px solid #ccc;
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: #666;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 0.9em;
+}
+
+.empty-box.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.empty-box.clickable:hover {
+  transform: scale(1.03);
+}
