@@ -12,22 +12,64 @@ body, html, #root {
 .page-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
   min-height: 100vh;
-  background-color: #f0f2f5;
-  color: #333;
   padding: 0;
   margin-top: 0;
+  width: 100%;
 
   /* 추후 삭제(확인용) */
+  background-color: #f0f2f5;
+  color: #333;
   border: 5px solid red;
 }
+/* ===== 상단 고정 헤더 (BoxTop.jsx) ===== */
+.fixed-header-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  border-bottom: 1px solid #eee;
+}
 
+.header-content-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+}
+
+/* ===== 우측 고정바 (BoxRight.jsx) ===== */
+.right-fixed-box {
+  position: fixed;
+  top: 30%;
+  right: 20px;
+  width: 150px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+/* ===== 페이지 메인 콘텐츠 래퍼 (MainContentWrapper.jsx) ===== */
 .main-page-wrapper {
   margin-top: 100px; 
   margin-bottom: 40px;
-  width: 100%;
-  max-width: 1430px;
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 40px;
@@ -53,7 +95,6 @@ body, html, #root {
 }
 
 /* ListPage - 별점기능 */
-/* From Uiverse.io by PriyanshuGupta28 */ 
 .rating {
   display: inline-block;
 }
@@ -79,4 +120,29 @@ body, html, #root {
 .rating label:hover ~ label {
   color: #6f00ff;
   transition: color 0.3s;
+}
+
+@media (max-width: 900px) {
+  .header-content-wrapper { padding: 10px 20px; }
+  .right-fixed-box {
+    position: static;
+    width: 100%;
+    right: auto;
+    top: auto;
+    margin-bottom: 20px;
+    flex-direction: row;
+    justify-content: center;
+  }
+  .main-page-wrapper {
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    margin-top: 50px;
+    max-width: 100%;
+    padding: 0 20px;
+  }
+  .carousel-container {
+    width: 100%;
+    max-width: unset;
+  }
 }

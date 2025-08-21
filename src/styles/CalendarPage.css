@@ -3,27 +3,39 @@
   justify-content: center;
   align-items: flex-start; 
   width: 100%;
-  max-width: calc(1200px + 190px);
+  gap: 60px;
+  /* max-width: calc(1200px + 190px);
   margin: 100px auto 40px;
-  padding: 0 190px 0 40px; 
-  gap: 40px;
+  padding: 0   190px 0 40px; */
+  box-sizing: border-box;
+
+  /* 추후 삭제(확인용) */
+  border: 3px dashed blueviolet;
+  background-color: rgba(138, 43, 226, 0.1);
 }
 
 /* 캘린더 섹션 전체 래퍼 (콘텐츠를 중앙에 배치하거나 너비 제한) */
 .calendar-section-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center; /* 자식 요소들을 가로축 중앙에 정렬 */
-  padding: 40px 20px;
-  background-color: #ffffff; /* 흰색 배경으로 깔끔하게 */
+  align-items: center;
+  padding: 40px;
+  background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  margin-top: 100px; /* 상단 고정 헤더와 겹치지 않게 여백 추가 */
-  margin-bottom: 40px;
-  width: 90%; /* 최대 너비 설정 */
-  max-width: 1000px; /* 캘린더가 너무 커지지 않도록 */
-  box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+  /* width: 60%; */
+  /* margin-right: 40px; */
+  max-width: 900px;
+  box-sizing: border-box;
   text-align: center;
+
+  margin-bottom: 40px;
+  flex-basis: calc(60% - 60px);
+  flex-grow: 1;
+  flex-shrink: 0;
+
+  /* 추후 삭제(확인용) */
+  border: 3px solid hotpink;
 }
 
 .calendar-section-wrapper h2 {
@@ -32,15 +44,13 @@
   font-size: 2em;
 }
 
-/* 캘린더 컴포넌트가 들어갈 실제 컨테이너 영역 */
 .calendar-container-area {
   width: 100%;
-  /* 나중에 캘린더 라이브러리 스타일에 따라 조절 */
 }
-/* react-calendar 기본 스타일 재정의 (필요시) */
+
 .react-calendar {
-  width: 100%; /* 부모 너비에 꽉 차게 */
-  max-width: 900px; /* 캘린더 최대 너비 설정 */
+  width: 100%;
+  max-width: 900px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -66,31 +76,29 @@
 }
 
 .react-calendar__month-view__days__day {
-  /* 일요일은 빨간색, 토요일은 파란색 등 추가 스타일링 */
   color: #333;
 }
 .react-calendar__month-view__weekdays__weekday {
     padding: 0.5em;
 }
-.react-calendar__month-view__weekdays__weekday abbr { /* 요일 abbr 제거 */
+.react-calendar__month-view__weekdays__weekday abbr {
   text-decoration: none;
   font-weight: bold;
 }
-.react-calendar__month-view__days__day--weekend { /* 주말 스타일 */
-    color: #c90202; /* 토/일 빨간색 */
+.react-calendar__month-view__days__day--weekend {
+    color: #c90202;
 }
-.react-calendar__month-view__days__day--weekend:nth-child(6) { /* 토요일 파란색 */
+.react-calendar__month-view__days__day--weekend:nth-child(6) {
     color: #0d01d1;
 }
 
-/* 캘린더 각 타일 내부의 간단 요약 스타일 */
 .event-summary {
-  font-size: 0.75em; /* 작은 글씨 */
+  font-size: 0.75em;
   line-height: 1.2;
   color: #666;
   text-align: center;
-  position: absolute; /* ⭐ 중요: 내용을 타일 안에 자유롭게 배치 */
-  bottom: 0px; /* 날짜 아래에 위치 */
+  position: absolute;
+  bottom: 0px;
   left: 0;
   right: 0;
   padding: 2px 0;
@@ -98,37 +106,38 @@
 
 .event-summary .event-count {
   font-weight: bold;
-  color: #6f00ff; /* 점 색깔과 동일하게 */
-  display: block; /* 한 줄 차지 */
+  color: #6f00ff;
+  display: block;
 }
 
-/* 이벤트가 있는 날짜 타일에 추가될 클래스 */
 .has-event {
-  background-color: #e6e6ff !important; /* 연한 보라색 배경 */
+  background-color: #e6e6ff !important;
   border-radius: 5px;
 }
 
-/* 선택된 날짜 타일에 추가될 클래스 */
 .selected-date {
-  background-color: #b366ff !important; /* 좀 더 진한 보라색 */
-  color: white !important; /* 글씨 색도 하얗게 */
+  background-color: #b366ff !important;
+  color: white !important;
   border-radius: 5px;
 }
-.selected-date .event-summary, .selected-date .event-summary .event-count { /* 선택된 날짜 안의 글자도 하얗게 */
+
+.selected-date .event-summary, .selected-date .event-summary .event-count {
     color: white !important;
 }
 
-
-/* ⭐ 우측 세부 일정 사이드바 스타일 (새로 추가) */
 .daily-schedule-sidebar {
-  width: 40%; /* 전체 공간의 40% 사용 */
+  width: 40%;
   padding: 40px;
   background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   box-sizing: border-box;
-  overflow-y: auto; /* 내용이 많아지면 스크롤 */
-  max-height: 700px; /* 일정표가 너무 길어지지 않게 최대 높이 설정 */
+  overflow-y: auto;
+  margin-left: 0px;
+  max-height: 700px;
+
+  /* 추후 삭제(검증용) */
+  border: 3px solid olive;
 }
 
 .daily-schedule-sidebar h3 {
@@ -141,7 +150,7 @@
 .schedule-list {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* 각 일정 항목 사이의 간격 */
+  gap: 15px;
 }
 
 .schedule-item {
@@ -174,32 +183,12 @@
 /* ⭐ 미디어 쿼리 (화면이 작아질 때) */
 @media (max-width: 900px) {
   .calendar-main-content {
-    flex-direction: column; /* 세로로 쌓이게 변경 */
+    flex-direction: column;
     align-items: center;
-    gap: 30px; /* 세로 간격 */
-    margin-top: 50px; /* 모바일에서 상단 여백 조절 */
-    padding-left: 20px;
-    padding-right: 20px; /* 모바일에서는 다시 0으로 */
-    max-width: 100%;
+    gap: 30px;
   }
-
-  .calendar-section-wrapper,
-  .daily-schedule-sidebar {
-    width: 100%; /* 모바일에서 너비를 넓게 */
-    padding: 20px;
-  }
-
-  .daily-schedule-sidebar {
-      max-height: 400px; /* 모바일에서 최대 높이 조절 */
-  }
-
-  /* ⭐ BoxRight 자체도 모바일에서는 스타일을 조정해줘야 할 거야! */
-  .right-fixed-box {
-      position: static; /* 또는 absolute로 바꾸고 문서 흐름에 따라 배치 */
-      width: 100%; /* 너비를 꽉 채우거나 */
-      right: auto; /* 고정 위치 제거 */
-      top: auto; /* 고정 위치 제거 */
-      margin-bottom: 20px; /* 다른 요소와의 간격 */
-      /* 필요하다면 justify-content: center 등으로 버튼 중앙 정렬 */
+  .calendar-section-wrapper {
+    margin-right: 0;
+    margin-bottom: 20px;
   }
 }
