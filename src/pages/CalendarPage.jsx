@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
-import Calendar from 'react-calendar';
+import CustomCalendar from '../components/Calendar';
 
 import 'react-calendar/dist/Calendar.css';
 import '../styles/Global.css';
@@ -15,26 +15,22 @@ import BoxMain from '../components/BoxMain';
 
 function CalendarPage() {
   const navigate = useNavigate();
-  const [purchasedRecords, setPurchasedRecords] = useState(purchasedRecordsData); // ✨ 이렇게!
-  // ⭐ 새로 추가된 상태: 사용자가 선택한 날짜 (초기값은 오늘 날짜 또는 null)
+  const [purchasedRecords, setPurchasedRecords] = useState(purchasedRecordsData);
   const [selectedDate, setSelectedDate] = useState(new Date()); 
-  // ⭐ 선택된 날짜에 해당하는 기록들을 저장할 상태
   const [recordsOnSelectedDate, setRecordsOnSelectedDate] = useState([]);
 
-    // ⭐ 컴포넌트 마운트 시 또는 selectedDate가 변경될 때마다 세부 기록 업데이트
   useEffect(() => {
     if (selectedDate) {
       const dateString = selectedDate.toISOString().slice(0, 10);
       const filteredRecords = purchasedRecords.filter(record => record.date === dateString);
       setRecordsOnSelectedDate(filteredRecords);
     } else {
-      setRecordsOnSelectedDate([]); // 날짜가 선택되지 않았으면 비움
+      setRecordsOnSelectedDate([]);
     }
-  }, [selectedDate, purchasedRecords]); // selectedDate나 purchasedRecords가 바뀔 때 실행
+  }, [selectedDate, purchasedRecords]);
 
-  // 캘린더에서 날짜를 선택했을 때 실행될 함수
   const handleDateChange = (date) => {
-    setSelectedDate(date); // 선택된 날짜 업데이트!
+    setSelectedDate(date);
   };
 
   return (
@@ -45,46 +41,11 @@ function CalendarPage() {
         <div className="calendar-main-content">
           <div className="calendar-section-wrapper">
             <h2>나의 예약 / 기록 캘린더</h2>
-            <div className="calendar-container-area">
-              <Calendar
-                onChange={handleDateChange}
-                value={selectedDate}
-                
-                tileContent={({ date, view }) => {
-                  if (view === 'month') {
-                    const dateString = date.toISOString().slice(0, 10);
-                    const eventsOnDate = purchasedRecords.filter(record => record.date === dateString);
-
-                    if (eventsOnDate.length > 0) {
-                      return (
-                        <div className="event-summary">
-                          <span className="event-count">{eventsOnDate.length}건</span>
-                        </div>
-                      );
-                    }
-                  }
-                  return null;
-                }}
-
-                tileClassName={({ date, view }) => {
-                  if (view === 'month') {
-                    const dateString = date.toISOString().slice(0, 10);
-                    const todayString = new Date().toISOString().slice(0, 10);
-                    const isToday = dateString === todayString;
-                    const hasRecords = purchasedRecords.some(record => record.date === dateString);
-                    const isSelected = selectedDate && dateString === selectedDate.toISOString().slice(0, 10);
-
-                    let classes = [];
-                    if (isToday) classes.push('react-calendar__tile--today');
-                    if (hasRecords) classes.push('has-event');
-                    if (isSelected) classes.push('selected-date');
-
-                    return classes.join(' ');
-                  }
-                  return null;
-                }}
-              />
-            </div>
+            <CustomCalendar
+              purchasedRecords={purchasedRecords} // 기록 데이터 전달
+              selectedDate={selectedDate}         // 현재 선택 날짜 전달
+              onDateChange={handleDateChange}     // 날짜 변경 시 호출될 함수 전달
+            />
           </div>
 
           <div className="daily-schedule-sidebar">
