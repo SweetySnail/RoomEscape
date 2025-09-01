@@ -16,13 +16,27 @@ import BoxMain from '../components/BoxMain';
 function CalendarPage() {
   const navigate = useNavigate();
   const [purchasedRecords, setPurchasedRecords] = useState(purchasedRecordsData);
-  const [selectedDate, setSelectedDate] = useState(new Date()); 
+  const initialSelectedDate = new Date();
+  initialSelectedDate.setHours(0, 0, 0, 0);
+  const [selectedDate, setSelectedDate] = useState(initialSelectedDate); 
   const [recordsOnSelectedDate, setRecordsOnSelectedDate] = useState([]);
 
+  const areDatesEqual = (date1, date2) => {
+    if (!date1 || !date2 || isNaN(date1.getTime()) || isNaN(date2.getTime())) {
+      return false;
+    }
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  };
+  
   useEffect(() => {
     if (selectedDate) {
-      const dateString = selectedDate.toISOString().slice(0, 10);
-      const filteredRecords = purchasedRecords.filter(record => record.date === dateString);
+      const filteredRecords = purchasedRecords.filter(record => {
+        const recordDate = new Date(record.date.replace(/-/g, '/')); 
+        recordDate.setHours(0, 0, 0, 0);
+        return areDatesEqual(selectedDate, recordDate);
+      });
       setRecordsOnSelectedDate(filteredRecords);
     } else {
       setRecordsOnSelectedDate([]);
@@ -30,7 +44,9 @@ function CalendarPage() {
   }, [selectedDate, purchasedRecords]);
 
   const handleDateChange = (date) => {
-    setSelectedDate(date);
+    const newDate = new Date(date);
+    newDate.setHours(0, 0, 0, 0);
+    setSelectedDate(newDate);
   };
 
   return (
