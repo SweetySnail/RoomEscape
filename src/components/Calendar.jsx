@@ -25,8 +25,6 @@ function CustomCalendar({ purchasedRecords, selectedDate, onDateChange }) {
 
         tileContent={({ date, view }) => {
           if (view === 'month') {
-            // const dateString = date.toISOString().slice(0, 10);
-            // const eventsOnDate = purchasedRecords.filter(record => record.date === dateString);
             const tileDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
             const eventsOnDate = purchasedRecords.filter(record => {
               const recordDate = new Date(record.date.replace(/-/g, '/')); 

@@ -11,7 +11,7 @@ function BoxRight() {
 
   return (
     <div className="right-fixed-box">
-      <button className="page-button" onClick={() => handleNavigate('/list')}>
+      <button className="page-button" onClick={() => handleNavigate('/reserve')}>
         예약
       </button>
       <button className="page-button" onClick={() => handleNavigate('/calendar')}>

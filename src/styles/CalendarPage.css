@@ -3,6 +3,7 @@
   justify-content: center;
   align-items: flex-start; 
   width: 100%;
+  max-width: 1260px;
   gap: 60px;
   box-sizing: border-box;
 
@@ -11,38 +12,51 @@
   background-color: rgba(138, 43, 226, 0.1);
 }
 
-/* 캘린더 섹션 전체 래퍼 (콘텐츠를 중앙에 배치하거나 너비 제한) */
-.calendar-section-wrapper {
+/* 캘린더(좌 60) */
+.calendar-left {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 40px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  flex-basis: calc(60% - 60px);
+  flex-grow: 1;
+  flex-shrink: 0;
   max-width: 900px;
   box-sizing: border-box;
   text-align: center;
 
-  margin-bottom: 40px;
-  flex-basis: calc(60% - 60px);
-  flex-grow: 1;
-  flex-shrink: 0;
-
   /* 추후 삭제(확인용) */
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   border: 3px solid hotpink;
 }
 
-.calendar-section-wrapper h2 {
-  color: #333;
-  margin-bottom: 30px;
-  font-size: 2em;
+/* 캘린더(우 40) */
+.calendar-right {
+  padding: 40px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  max-height: 700px;
+  flex-basis: calc(40% - 60px); 
+  flex-grow: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+
+  /* 추후 삭제(검증용) */
+  border: 3px solid olive;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.calendar-container-area {
-  width: 100%;
+.no-schedule-message {
+  text-align: center;
+  color: #888;
+  margin-top: 30px;
 }
 
+/* 사용 불분명 */
 .react-calendar {
   width: 100%;
   max-width: 900px;
@@ -118,6 +132,16 @@
   color: white !important;
 }
 
+.calendar-section-wrapper h2 {
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 2em;
+}
+
+.calendar-container-area {
+  width: 100%;
+}
+
 .event-summary {
   font-size: 0.75em;
   line-height: 1.2;
@@ -151,20 +175,6 @@
     color: white !important;
 }
 
-.daily-schedule-sidebar {
-  width: 40%;
-  padding: 40px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  box-sizing: border-box;
-  overflow-y: auto;
-  margin-left: 0px;
-  max-height: 700px;
-
-  /* 추후 삭제(검증용) */
-  border: 3px solid olive;
-}
 
 .daily-schedule-sidebar h3 {
   color: #333;
@@ -198,13 +208,7 @@
   margin: 0;
   color: #555;
   font-size: 0.9em;
-}
-
-.no-schedule-message {
-  text-align: center;
-  color: #888;
-  margin-top: 30px;
-}
+} 
 
 /* ⭐ 미디어 쿼리 (화면이 작아질 때) */
 @media (max-width: 900px) {

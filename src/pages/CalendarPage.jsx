@@ -55,7 +55,7 @@ function CalendarPage() {
       <BoxRight />
       <BoxMain>
         <div className="calendar-main-content">
-          <div className="calendar-section-wrapper">
+          <div className="calendar-left">
             <h2>나의 예약 / 기록 캘린더</h2>
             <CustomCalendar
               purchasedRecords={purchasedRecords} // 기록 데이터 전달
@@ -64,7 +64,7 @@ function CalendarPage() {
             />
           </div>
 
-          <div className="daily-schedule-sidebar">
+          <div className="calendar-right">
             <h3>
               {selectedDate 
                 ? `${selectedDate.toLocaleDateString()} (${selectedDate.toLocaleDateString('ko-KR', { weekday: 'long' })})`

@@ -4,14 +4,16 @@
   top: 0;
   left: 0;
   width: 100%;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  border-bottom: 1px solid #eee;
+
+  /* 추후 삭제(확인용) */
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  z-index: 100;
-  display: flex; /* flex 컨테이너 역할은 유지 (내부 래퍼를 가운데 정렬하기 위함) */
-  justify-content: center; /* ⭐ 변경: 내부 래퍼를 가운데 정렬 */
-  align-items: center;
-  padding: 0; /* ⭐ 변경: padding을 0으로 되돌립니다. */
-  border-bottom: 1px solid #eee;
 }
 
 .header-content-wrapper {
