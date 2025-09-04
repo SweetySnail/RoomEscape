@@ -1,65 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/Global.css'; // 공통 스타일
-import '../styles/ReservationPage.css'; // 예약 페이지 전용 스타일
+import { useNavigate } from 'react-router-dom';
+import '../styles/Global.css';
+import '../styles/ReservationPage.css';
 
-// 분리해둔 공통 컴포넌트들을 불러오자!
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
 
-// 방탈출 데이터를 임포트 (HomePage에서 사용하던 productsData 재활용)
-import productsData from '../data/products'; 
+// 추후 삭제(임시데이터)
+import productsData, { districtsMap } from '../data/products.js';
 
 function ReservationPage() {
-  // ⭐ 검색 관련 상태들!
-  const [searchTerm, setSearchTerm] = useState(''); // 사용자가 입력하는 검색어
-  const [recentSearches, setRecentSearches] = useState([]); // 최근 검색어 목록
-  const [searchResults, setSearchResults] = useState([]); // 검색 결과 목록
+  const navigate = useNavigate();
+  const [selectedCity, setSelectedCity] = useState('선택 안함');
+  const [selectedDistrict, setSelectedDistrict] = useState('선택 안함');
+  const [selectedTheme, setSelectedTheme] = useState('선택 안함');
+  const [selectedTime, setSelectedTime] = useState('선택 안함');
+  const [searchResults, setSearchResults] = useState([]);
 
-  // ⭐ 컴포넌트 로드 시 로컬 스토리지에서 최근 검색어 불러오기
+  // 시/도
+  const rawCities = [...new Set(productsData.map(p => p.location.city).filter(Boolean))];
+  const sortedCities = rawCities.sort((a, b) => {
+    const priority = (city) => {
+      if (city === '선택 안함') return 0;
+      if (city === '서울') return 1;
+      if (city === '경기') return 2;
+      return 3;
+    };
+    return priority(a) - priority(b) || a.localeCompare(b);
+  });
+  const availableCities = ['선택 안함', ...sortedCities.filter(city => city !== '선택 안함')];
+
+  // 구/군/구
+  const rawDistricts = selectedCity && districtsMap[selectedCity] 
+                       ? [...districtsMap[selectedCity]].sort()
+                       : [];
+  const availableDistricts = ['선택 안함', ...rawDistricts.filter(district => district !== '선택 안함')];
+
+  // 테마
+  const allThemes = [...new Set(productsData.map(p => p.theme).filter(Boolean))].sort();
+  const availableThemes = ['선택 안함', ...allThemes];
+  
+  // 시간
+  const availableTimesHourly = ['선택 안함'];
+  for (let h = 8; h <= 22; h++) {
+    availableTimesHourly.push(`${h.toString().padStart(2, '0')}:00`);
+  }
+
   useEffect(() => {
-    const storedSearches = localStorage.getItem('recentSearches');
-    if (storedSearches) {
-      setRecentSearches(JSON.parse(storedSearches));
+    let currentFilteredResults = productsData; 
+    
+    // 필터링
+    if (selectedCity !== '선택 안함') {
+      currentFilteredResults = currentFilteredResults.filter(product => product.location.city === selectedCity);
     }
-  }, []);
-
-  // ⭐ 검색어 입력 핸들러
-  const handleSearchInputChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  // ⭐ 검색 버튼 클릭 또는 Enter 키 입력 핸들러
-  const handleSearchSubmit = (e) => {
-    e.preventDefault(); // 폼 제출 시 페이지 새로고침 방지
-
-    if (searchTerm.trim() === '') { // 검색어가 비어있으면 아무것도 안 함
-      setSearchResults([]); // 검색 결과 초기화
-      return;
+    if (selectedDistrict !== '선택 안함' && selectedCity !== '선택 안함') {
+      currentFilteredResults = currentFilteredResults.filter(product => product.location.district === selectedDistrict);
     }
+    if (selectedTheme !== '선택 안함') {
+      currentFilteredResults = currentFilteredResults.filter(product => product.theme === selectedTheme);
+    }
+    if (selectedTime !== '선택 안함') {
+      currentFilteredResults = currentFilteredResults.filter(product =>
+        product.availableTimes && product.availableTimes.includes(selectedTime)
+      );
+    }
+    setSearchResults(currentFilteredResults);
+  }, [selectedCity, selectedDistrict, selectedTheme, selectedTime]);
 
-    // 1. 최근 검색 기록 업데이트
-    const updatedRecentSearches = [searchTerm, ...recentSearches.filter(s => s !== searchTerm)].slice(0, 5); // 최대 5개 유지
-    setRecentSearches(updatedRecentSearches);
-    localStorage.setItem('recentSearches', JSON.stringify(updatedRecentSearches)); // 로컬 스토리지에 저장
-
-    // 2. 검색 결과 필터링
-    const filteredProducts = productsData.filter(product =>
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()) || // 제목에 검색어 포함
-      (product.theme && product.theme.toLowerCase().includes(searchTerm.toLowerCase())) // 테마에 검색어 포함 (productsData에 theme 추가 필요!)
-      // 여기에 필요한 다른 검색 조건 추가 가능 (예: 지역, 평점 등)
-    );
-    setSearchResults(filteredProducts);
-
-    setSearchTerm(''); // 검색 후 검색창 비우기 (선택 사항)
+  const handleCityChange = (e) => {
+    setSelectedCity(e.target.value);
+    setSelectedDistrict('선택 안함');
   };
+  const handleDistrictChange = (e) => setSelectedDistrict(e.target.value);
+  const handleThemeChange = (e) => setSelectedTheme(e.target.value);
+  const handleTimeChange = (e) => setSelectedTime(e.target.value);
 
-  // ⭐ 최근 검색어 클릭 핸들러
-  const handleRecentSearchClick = (search) => {
-    setSearchTerm(search); // 클릭한 검색어로 검색창 채우기
-    // 바로 검색 결과 보여주고 싶으면 handleSearchSubmit 호출
-    // 임시 검색 이벤트를 만들어 handleSearchSubmit에 전달
-    handleSearchSubmit({ preventDefault: () => {} }); 
+  const handleProductClick = (product) => {
+    console.log(`${product.title} 클릭! 상세 페이지로 이동할 예정입니다.`);
+    // navigate(`/product/${product.id}`); // 나중에 상세 페이지 라우트 연결
   };
   
   return (
@@ -67,63 +86,74 @@ function ReservationPage() {
       <BoxTop />
       <BoxRight />
 
-      <BoxMain> {/* 모든 메인 콘텐츠는 이 래퍼 안에! */}
-        <div className="reservation-page-content"> {/* 예약 페이지 전용 콘텐츠 래퍼 */}
-          {/* ⭐ 1. 검색창 */}
-          <section className="search-section">
-            <h2 className="section-title">방탈출 검색</h2>
-            <form onSubmit={handleSearchSubmit} className="search-form">
-              <input
-                type="text"
-                placeholder="방탈출 제목 또는 테마를 검색해보세요!"
-                value={searchTerm}
-                onChange={handleSearchInputChange}
-                className="search-input"
-              />
-              <button type="submit" className="search-button">검색</button>
-            </form>
-          </section>
-
-          {/* ⭐ 2. 최근 검색 기록 */}
-          <section className="recent-searches-section">
-            <h3 className="section-subtitle">최근 검색어</h3>
-            {recentSearches.length > 0 ? (
-              <div className="recent-searches-tags">
-                {recentSearches.map((search, index) => (
-                  <span
-                    key={index}
-                    className="recent-search-tag clickable"
-                    onClick={() => handleRecentSearchClick(search)}
-                  >
-                    {search}
-                  </span>
-                ))}
+      <BoxMain>
+       <div className="reservation-page-content"> 
+          <section className="filter-selection-section">
+            <h2 className="section-title">방탈출 검색</h2> 
+            <div className="filter-options">
+              <div className="filter-group">
+                <label htmlFor="city-select" className="filter-label">시/도:</label>
+                <select id="city-select" className="filter-select" value={selectedCity} onChange={handleCityChange}>
+                  {availableCities.map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              <p className="no-recent-searches">최근 검색 기록이 없어요.</p>
-            )}
+
+              <div className="filter-group">
+                <label htmlFor="district-select" className="filter-label">구/군/구:</label>
+                <select 
+                  id="district-select" 
+                  className="filter-select" 
+                  value={selectedDistrict} 
+                  onChange={handleDistrictChange}
+                  disabled={selectedCity === '선택 안함'}
+                >
+                  {availableDistricts.map(district => (
+                    <option key={district} value={district}>{district}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="theme-select" className="filter-label">테마:</label>
+                <select id="theme-select" className="filter-select" value={selectedTheme} onChange={handleThemeChange}>
+                  {availableThemes.map(theme => (
+                    <option key={theme} value={theme}>{theme}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-group">
+                <label htmlFor="time-select" className="filter-label">시간:</label>
+                <select id="time-select" className="filter-select" value={selectedTime} onChange={handleTimeChange}>
+                  {availableTimesHourly.map(time => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </section>
 
-          {/* ⭐ 3. 검색 결과 */}
           <section className="search-results-section">
-            <h3 className="section-subtitle">검색 결과</h3>
+            <h3 className="section-subtitle">테마 목록 ({searchResults.length}개)</h3>
             {searchResults.length > 0 ? (
               <div className="search-results-grid">
                 {searchResults.map(product => (
-                  <div key={product.id} className="search-result-item empty-box clickable">
-                    {/* empty-box 스타일 재활용! */}
+                  <div key={product.id} className="search-result-item empty-box clickable" onClick={() => handleProductClick(product)}>
+                    {product.imageUrl && <img src={product.imageUrl} alt={product.title} className="product-image" />}
                     <strong>{product.title}</strong><br/>
                     <span>⭐ {product.rating} ({product.reviewCount} 리뷰)</span><br/>
-                    <span>테마: {product.theme}</span>
-                    {/* ⭐ 예약 버튼 같은 액션 추가 가능 */}
+                    <span>테마: {product.theme}</span><br/>
+                    <span>위치: {product.location.city} {product.location.district}</span><br/> 
+                    <span>2인 가격: {product.priceTable['2인'].toLocaleString()}원</span><br/>
+                    
                     <button className="reserve-button">예약하기</button>
                   </div>
                 ))}
               </div>
-            ) : searchTerm.trim() !== '' ? (
-              <p className="no-results-message">'{searchTerm}'에 대한 검색 결과가 없어요.</p>
             ) : (
-              <p className="initial-search-message">검색어를 입력하고 방탈출을 찾아보세요!</p>
+              <p className="no-results-message">선택하신 조건에 맞는 방탈출이 없어요. 다른 필터를 선택해보세요!</p>
             )}
           </section>
         </div>

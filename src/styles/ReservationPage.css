@@ -1,167 +1,172 @@
-/* src/styles/ReservationPage.css */
+/* src/styles/ReservationPage.css - 최종본 (BoxMain 크기 유지) */
 
+/* ⭐⭐ 예약 페이지의 BoxMain(contents wrapper) ⭐⭐ */
 .reservation-page-content {
   display: flex;
   flex-direction: column;
   gap: 40px; /* 각 섹션 간의 간격 */
   width: 100%; /* 부모 MainContentWrapper 안에서 너비 꽉 채움 */
-  max-width: 1200px; /* 콘텐츠 영역 최대 너비 */
-  padding: 20px; /* 섹션 내부 여백 */
-  box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
-  background-color: #ffffff; /* 페이지 콘텐츠 배경색 */
+  max-width: 1200px; /* ⭐⭐ 핵심! BoxMain 크기 유지 (HomePage/CalendarPage와 동일한 수준!) ⭐⭐ */
+                     /*  이 값이 ReservationPage의 BoxMain 실제 크기를 결정! */
+  padding: 40px; /* 페이지 콘텐츠의 내부 여백 */
+  box-sizing: border-box;
+  background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  align-items: center; /* 내부 섹션들을 중앙 정렬 */
 }
 
-.search-section, .recent-searches-section, .search-results-section {
+/* 모든 섹션의 타이틀 */
+.section-title, .section-subtitle {
+  color: #333;
+  text-align: center;
   width: 100%;
+  margin-bottom: 25px;
+}
+.section-title { font-size: 2.2em; }
+.section-subtitle { font-size: 1.6em; }
+
+
+/* 필터 선택 섹션 스타일 */
+.filter-selection-section {
+  width: 100%;
+  max-width: 900px; /* 필터 섹션 자체는 너무 넓지 않게 */
   padding-bottom: 20px;
   border-bottom: 1px solid #eee;
-}
-.search-results-section {
-  border-bottom: none; /* 마지막 섹션은 보더 없음 */
-  padding-bottom: 0;
-}
-
-
-.section-title {
-  font-size: 2.2em;
-  color: #333;
-  margin-bottom: 25px;
-  text-align: center;
-}
-.section-subtitle {
-  font-size: 1.6em;
-  color: #555;
-  margin-bottom: 20px;
-}
-
-/* 검색 폼 스타일 */
-.search-form {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-.search-input {
-  flex-grow: 1; /* 남은 공간 채우기 */
-  max-width: 500px; /* 검색창 최대 너비 */
-  padding: 12px 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1.1em;
-  transition: border-color 0.3s ease;
-}
-.search-input:focus {
-  outline: none;
-  border-color: #6f00ff; /* 포커스 시 보라색 테두리 */
-}
-.search-button {
-  background-color: #6f00ff; /* 보라색 버튼 */
-  color: white;
-  border: none;
-  padding: 12px 25px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1.1em;
-  transition: background-color 0.3s ease;
-}
-.search-button:hover {
-  background-color: #5a00d8;
-}
-
-/* 최근 검색어 태그 스타일 */
-.recent-searches-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-}
-.recent-search-tag {
-  background-color: #e0e0e0;
-  color: #666;
-  padding: 8px 15px;
-  border-radius: 20px; /* 둥근 태그 */
-  font-size: 0.95em;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-.recent-search-tag:hover {
-  background-color: #ccc;
-}
-.no-recent-searches {
-  text-align: center;
-  color: #888;
-  font-style: italic;
-}
-
-/* 검색 결과 그리드 */
-.search-results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* 최소 200px, 자동 채움 */
-  gap: 20px; /* 그리드 아이템 간 간격 */
-  justify-items: center; /* 아이템들을 그리드 셀 내에서 중앙 정렬 */
-}
-.search-result-item {
-  /* empty-box 스타일 재활용 */
-  width: auto; /* 그리드 아이템이라 width: 100% 될 수 있도록 auto */
-  height: auto; /* 내용에 따라 높이 조절 */
-  padding: 15px; /* 내부 패딩 좀 더 넓게 */
-  min-height: 150px; /* 최소 높이 설정 */
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* 내용 위아래로 꽉 채우기 */
+  align-items: center;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.filter-label {
+  font-size: 1.1em;
+  color: #333;
+  font-weight: bold;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1.05em;
+  background-color: white;
+  cursor: pointer;
+  appearance: none; /* 기본 셀렉트 박스 화살표 숨기기 */
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23212121%22%20d%3D%22M7%209.5L4%206.5l3-3z%22%2F%3E%3C%2Fsvg%3E'); /* 커스텀 화살표 */
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+}
+.filter-select:focus {
+  outline: none;
+  border-color: #6f00ff;
+}
+
+
+/* 검색 결과 그리드 */
+.search-results-section {
+  width: 100%;
+  padding-top: 20px;
+}
+.search-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 25px;
+  justify-items: center;
+  margin-top: 20px;
+}
+.search-result-item {
+  width: 100%;
+  min-height: 250px; /* 이미지 고려해서 최소 높이 더 높게 */
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 2px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.search-result-item:hover {
+  border-color: #6f00ff;
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+.search-result-item .product-image {
+  width: 100%;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 10px;
 }
 .search-result-item strong {
-  font-size: 1.1em;
+  font-size: 1.2em;
   margin-bottom: 5px;
   color: #333;
 }
 .search-result-item span {
-  font-size: 0.85em;
+  font-size: 0.9em;
   color: #777;
+  line-height: 1.4;
 }
 .search-result-item .reserve-button {
-  background-color: #007bff;
+  background-color: #6f00ff;
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 10px 15px;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 0.9em;
-  margin-top: 10px;
+  font-size: 1em;
+  margin-top: 15px;
   transition: background-color 0.3s ease;
+  width: 100%;
 }
 .search-result-item .reserve-button:hover {
-  background-color: #0056b3;
+  background-color: #5a00d8;
 }
-.no-results-message, .initial-search-message {
+.no-results-message {
   text-align: center;
   color: #888;
   font-style: italic;
   margin-top: 30px;
+  width: 100%;
 }
 
 /* ⭐ 미디어 쿼리 (모바일 반응형) ⭐ */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .reservation-page-content {
-    padding: 15px;
+    padding: 20px;
     gap: 30px;
+    max-width: 100%; /* 모바일에서 max-width 해제 */
   }
-  .search-form {
-    flex-direction: column; /* 검색창과 버튼 세로로 쌓기 */
+  .section-title { font-size: 1.8em; }
+  .filter-options {
+    flex-direction: column;
     align-items: center;
+    gap: 15px;
   }
-  .search-input {
-    width: 100%;
-    max-width: unset; /* 너비 제한 해제 */
-  }
-  .search-button {
-    width: 100%; /* 버튼도 100% */
-  }
-  .recent-searches-tags {
-    justify-content: flex-start; /* 모바일에서는 왼쪽 정렬 */
-  }
-  .search-results-grid {
-    grid-template-columns: 1fr; /* 모바일에서는 한 줄에 하나씩 */
-  }
+  .filter-group { width: 90%; min-width: unset; }
+  .filter-select { font-size: 0.95em; }
+  .search-results-grid { grid-template-columns: 1fr; }
+  .search-result-item { min-height: unset; padding-bottom: 10px; }
 }
