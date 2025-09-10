@@ -23,6 +23,22 @@ body, html, #root {
   border: 5px solid red;
 }
 
+/* ===== 로그인 (LoginPage.jsx) ===== */
+.welcome-message {
+  font-size: 1em;
+  color: #555;
+  margin-right: 15px;
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.logout-button {
+  background-color: #dc3545;
+}
+.logout-button:hover {
+  background-color: #c82333;
+}
+
 /* ===== 상단 고정 헤더 (BoxTop.jsx) ===== */
 .fixed-header-container {
   position: fixed;
@@ -70,7 +86,7 @@ body, html, #root {
   border-radius: 8px;
 }
 
-/* ===== 페이지 메인 콘텐츠 래퍼 (MainContentWrapper.jsx) ===== */
+/* ===== 페이지 메인 콘텐츠 래퍼 (BoxMain.jsx) ===== */
 .main-page-wrapper {
   margin-top: 100px; 
   margin-bottom: 40px; 

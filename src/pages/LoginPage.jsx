@@ -37,19 +37,19 @@ function LoginPage() {
     e.preventDefault();
     setMessage('');
 
-    if (!username || !password) {
-      setMessage('아이디와 비밀번호를 모두 입력해주세요.');
-      return;
-    }
+    if (!username || !password) { /* ... */ return; }
 
     const foundUser = users.find(user => user.username === username && user.password === password);
 
     if (foundUser) {
       setMessage(`로그인 성공! ${foundUser.nickname}님 환영합니다!`);
-      // 실제 로그인 상태를 저장 (예: sessionStorage나 Context API)
-      sessionStorage.setItem('loggedInUser', JSON.stringify(foundUser)); // 임시 로그인 상태 저장
+      sessionStorage.setItem('loggedInUser', JSON.stringify(foundUser)); 
+      
+      // ⭐⭐⭐ 로그인 성공 시 커스텀 이벤트 발송! ⭐⭐⭐
+      window.dispatchEvent(new Event('loginStateChange')); 
+
       setTimeout(() => {
-        navigate('/'); // 로그인 성공 후 홈으로 이동 (또는 이전 페이지)
+        navigate('/');
       }, 1000);
     } else {
       setMessage('아이디 또는 비밀번호가 일치하지 않습니다.');
@@ -188,6 +188,6 @@ function LoginPage() {
       </BoxMain>
     </div>
   );
-}
+};
 
 export default LoginPage;
