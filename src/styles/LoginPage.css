@@ -1,0 +1,154 @@
+/* src/styles/LoginPage.css */
+
+.auth-container {
+  display: flex;
+  justify-content: center; /* 폼을 중앙에 배치 */
+  align-items: flex-start; /* 상단에서 시작 */
+  width: 100%; /* 부모 MainContentWrapper에 맞춰 너비 사용 */
+  max-width: 500px; /* 로그인 폼의 최대 너비 제한 (너무 넓지 않게) */
+  margin: 50px auto; /* 상하 여백, 좌우 자동 정렬 */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.auth-box {
+  background-color: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  width: 100%; /* 부모 auth-container의 최대 너비를 따르도록 */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 내부 요소들을 중앙 정렬 */
+}
+
+.auth-box h2 {
+  font-size: 2.5em;
+  color: #333;
+  margin-bottom: 30px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.message {
+  font-size: 1em;
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.auth-box form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.input-group label {
+  font-size: 1.1em;
+  color: #555;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1.05em;
+  box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.input-group input::placeholder {
+  color: #bbb;
+}
+.input-group input:focus {
+  outline: none;
+  border-color: #6f00ff; /* 포커스 시 보라색 테두리 */
+  box-shadow: 0 0 0 3px rgba(111, 0, 255, 0.2);
+}
+
+.auth-button {
+  width: 100%;
+  padding: 15px;
+  background-color: #6f00ff; /* 보라색 버튼 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2em;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.auth-button:hover {
+  background-color: #5a00d8;
+  transform: translateY(-2px);
+}
+.auth-button:active {
+  transform: translateY(0);
+}
+
+.auth-toggle {
+  margin-top: 30px;
+  font-size: 1em;
+  color: #777;
+  text-align: center;
+}
+
+.toggle-link {
+  color: #007bff; /* 파란색 링크 */
+  cursor: pointer;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+.toggle-link:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+/* ⭐ 모바일 반응형 ⭐ */
+@media (max-width: 600px) {
+  .auth-container {
+    padding: 15px;
+    margin: 20px auto;
+  }
+  .auth-box {
+    padding: 25px;
+  }
+  .auth-box h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+  }
+  .auth-button {
+    font-size: 1.1em;
+    padding: 12px;
+  }
+  .input-group input {
+    font-size: 0.95em;
+    padding: 10px 12px;
+  }
+  .auth-toggle, .message {
+    font-size: 0.9em;
+  }
+}

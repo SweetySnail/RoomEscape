@@ -6,7 +6,7 @@ function ListPage() {
   const navigate = useNavigate();
 
   const handleGoBack = () => {
-    navigate('/'); // 기본 페이지('/')로 돌아가기
+    navigate('/');
   };
 
   return (
