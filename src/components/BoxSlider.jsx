@@ -19,7 +19,6 @@ function BoxSlider({ title, handleBoxClick }) {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
         const nextIndex = prevIndex + 1;
-        const endOfRealData = productsData.length + itemsPerPage;
         if (nextIndex >= clonedProducts.length - itemsPerPage) {
           if (trackRef.current) {
             trackRef.current.style.transition = 'none';

@@ -17,10 +17,10 @@ function BoxRight() {
       <button className="page-button" onClick={() => handleNavigate('/calendar')}>
         캘린더
       </button>
-      <button className="page-button" onClick={() => handleNavigate('/calendar')}>
+      <button className="page-button" onClick={() => handleNavigate('/event')}>
         이벤트
       </button>
-      <button className="page-button" onClick={() => handleNavigate('/calendar')}>
+      <button className="page-button" onClick={() => handleNavigate('/mypage')}>
         마이페이지
       </button>
     </div>
