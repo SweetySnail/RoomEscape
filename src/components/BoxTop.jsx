@@ -50,8 +50,7 @@ function BoxTop() {
      <header className="fixed-header-container">
       <div className="header-content-wrapper">
         <div className="logo-section">
-          {/* 로고 클릭 시 홈으로 이동 */}
-          <h1 onClick={() => handleNavigate('/')} style={{ cursor: 'pointer', margin: 0, fontSize: '1.8em', color: '#6f00ff' }}>
+          <h1 onClick={() => handleNavigate('/')} style={{ cursor: 'pointer', margin: 0, fontSize: '2.8em', color: '#6f00ff' }}>
             Escape Room
           </h1>
         </div>
@@ -71,17 +70,6 @@ function BoxTop() {
       </div>
     </header>
   );
-  //   <div className="fixed-header-container">
-  //     <div className="header-content-wrapper"> 
-  //       <button className="page-button home-button" onClick={() => handleNavigate('/')}>
-  //         RoomEscape
-  //       </button>
-  //       <button className="page-button" onClick={() => handleNavigate('/login')}>
-  //         로그인/회원가입
-  //       </button>
-  //     </div>
-  //   </div>
-  // );
 }
 
 export default BoxTop;

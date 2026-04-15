@@ -1,89 +1,200 @@
-// src/products.js (총 100개의 방탈출 데이터 - 시/구 분할, 1시간 단위 시간)
+// src/data/products.js
 
-const generateRandomData = () => {
-  const themes = ['공포/스릴러', '판타지/어드벤처', '추리/미스터리', 'SF/미래', '감성/힐링', '코믹/병맛'];
-  const cities = ['서울', '경기', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '제주'];
-  const districtsMap = { // 각 도시에 해당하는 구들 (더미 데이터)
-    '서울': ['강남구', '홍대구', '건대구', '신림구', '혜화구', '종로구', '마포구', '영등포구', '송파구', '동대문구'],
-    '경기': ['수원시', '성남시', '고양시', '용인시', '부천시', '안산시'],
-    '부산': ['해운대구', '서면구', '남포동구'],
-    '대구': ['동구', '서구', '수성구'],
-    '인천': ['부평구', '연수구', '미추홀구'],
-    '광주': ['동구', '서구', '남구'],
-    '대전': ['서구', '유성구'],
-    '울산': ['남구', '중구'],
-    '세종': ['어진동', '나성동'],
-    '제주': ['제주시', '서귀포시'],
-  };
-
-  const timeSlotsHourly = [];
-  for (let h = 8; h <= 22; h++) { // 08:00 ~ 22:00
-    timeSlotsHourly.push(`${h.toString().padStart(2, '0')}:00`);
-  }
-
-  const reviewerNames = ['김민준', '이서연', '박도윤', '최지우', '정하준', '강채원', '조이준', '윤서아'];
-  
-  const products = [];
-
-  for (let i = 1; i <= 100; i++) {
-    const randomTheme = themes[Math.floor(Math.random() * themes.length)];
-    const randomCity = cities[Math.floor(Math.random() * cities.length)];
-    const randomDistrict = districtsMap[randomCity] ? districtsMap[randomCity][Math.floor(Math.random() * districtsMap[randomCity].length)] : '';
-    
-    const randomRating = parseFloat(((Math.random() * 2) + 3).toFixed(1)); // 3.0 to 5.0
-    const randomReviewCount = Math.floor(Math.random() * 200) + 50; // 50 to 250
-
-    const randomAvailableTimes = [];
-    const numTimeSlots = Math.floor(Math.random() * 3) + 1; // 1 to 3 time slots
-    for (let j = 0; j < numTimeSlots; j++) {
-      randomAvailableTimes.push(timeSlotsHourly[Math.floor(Math.random() * timeSlotsHourly.length)]);
-    }
-    const uniqueAvailableTimes = [...new Set(randomAvailableTimes)].sort(); // 중복 제거 및 정렬
-
-    const basePrice = Math.floor(Math.random() * (25 - 20) + 20) * 1000; // 20000 ~ 25000원
-    const priceTable = {
-      '2인': Math.round(basePrice * 2.2 / 100) * 100,
-      '3인': Math.round(basePrice * 2 / 100) * 100,
-      '4인': Math.round(basePrice * 1.8 / 100) * 100,
-    };
-
-    const recentReviews = [];
-    for (let k = 0; k < 5; k++) {
-      const reviewRating = Math.floor(Math.random() * 5) + 1; // 1 to 5
-      const randomComment = `정말 ${reviewRating >= 4 ? '재미있었어요!' : (reviewRating <= 2 ? '아쉬웠어요.' : '괜찮았어요.')} 추천합니다!`;
-      const reviewDate = new Date();
-      reviewDate.setDate(reviewDate.getDate() - Math.floor(Math.random() * 30));
-      recentReviews.push({
-        id: k + 1,
-        reviewer: reviewerNames[Math.floor(Math.random() * reviewerNames.length)],
-        rating: reviewRating,
-        comment: randomComment,
-        date: reviewDate.toISOString().slice(0, 10),
-      });
-    }
-
-    products.push({
-      id: i,
-      title: `${randomCity} ${randomDistrict ? randomDistrict + ' ' : ''}${randomTheme.split('/')[0]} 테마 ${i}`,
-      rating: randomRating,
-      reviewCount: randomReviewCount,
-      theme: randomTheme,
-      location: { city: randomCity, district: randomDistrict }, // ⭐ 위치 객체로 변경!
-      availableTimes: uniqueAvailableTimes, // ⭐ 1시간 단위 시간으로 변경!
-      priceTable: priceTable,
-      recentReviews: recentReviews,
-      description: `이 테마는 ${randomCity} ${randomDistrict ? randomDistrict + ' ' : ''}에 위치한 ${randomTheme} 방탈출입니다. 스릴 넘치는 경험을 약속합니다.`,
-      imageUrl: `/images/theme_${Math.floor(Math.random() * 5) + 1}.jpg`,
-    });
-  }
-  return products;
-};
-
-const productsData = generateRandomData();
+const productsData = [
+  {
+    id: 1,
+    title: '저주받은 저택',
+    rating: 4.8,
+    reviewCount: 214,
+    theme: '공포/스릴러',
+    genre: '공포',
+    difficulty: 5,
+    location: { city: '서울', district: '홍대구' },
+    availableTimes: ['13:00', '15:00', '17:00', '19:00', '21:00'],
+    priceTable: { '2인': 44000, '3인': 60000, '4인': 72000 },
+    description: '100년 된 저택에 얽힌 저주를 풀어라. 공포와 긴장감이 극에 달하는 최고 난이도의 테마.',
+    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '김민준', rating: 5, comment: '역대급 공포! 중간에 포기하고 싶었어요.', date: '2025-08-20' },
+      { id: 2, reviewer: '이서연', rating: 4, comment: '무서운데 재밌어요. 추천합니다!', date: '2025-08-18' },
+      { id: 3, reviewer: '박도윤', rating: 5, comment: '배우분들 연기가 정말 최고였어요.', date: '2025-08-15' },
+    ],
+  },
+  {
+    id: 2,
+    title: '탐정 사무소의 비밀',
+    rating: 4.6,
+    reviewCount: 189,
+    theme: '추리/미스터리',
+    genre: '추리',
+    difficulty: 3,
+    location: { city: '서울', district: '강남구' },
+    availableTimes: ['11:00', '13:00', '15:00', '17:00'],
+    priceTable: { '2인': 40000, '3인': 54000, '4인': 64000 },
+    description: '1920년대 탐정 사무소. 미해결 사건의 진실을 밝혀내라. 촘촘한 퍼즐과 숨겨진 단서들.',
+    imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '최지우', rating: 5, comment: '스토리가 탄탄해서 몰입감이 최고예요.', date: '2025-09-01' },
+      { id: 2, reviewer: '정하준', rating: 4, comment: '힌트 없이 성공했어요! 뿌듯합니다.', date: '2025-08-28' },
+      { id: 3, reviewer: '강채원', rating: 5, comment: '배경이 너무 예뻐요. 사진 찍기도 좋아요.', date: '2025-08-25' },
+    ],
+  },
+  {
+    id: 3,
+    title: '우주 정거장 SOS',
+    rating: 4.7,
+    reviewCount: 302,
+    theme: 'SF/미래',
+    genre: 'SF',
+    difficulty: 4,
+    location: { city: '서울', district: '건대구' },
+    availableTimes: ['10:00', '12:00', '14:00', '16:00', '20:00'],
+    priceTable: { '2인': 46000, '3인': 63000, '4인': 76000 },
+    description: '폭발 직전의 우주 정거장에서 탈출하라. 첨단 장치와 협동이 요구되는 SF 테마의 결정판.',
+    imageUrl: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '조이준', rating: 5, comment: '세트장이 진짜 우주선 같아요! 완전 몰입됩니다.', date: '2025-09-05' },
+      { id: 2, reviewer: '윤서아', rating: 5, comment: '친구들이랑 왔는데 대화가 정말 많이 필요해요.', date: '2025-09-02' },
+      { id: 3, reviewer: '김민준', rating: 4, comment: '난이도가 딱 적당해요. 재방문 의사 있어요.', date: '2025-08-30' },
+    ],
+  },
+  {
+    id: 4,
+    title: '마법사의 서재',
+    rating: 4.3,
+    reviewCount: 156,
+    theme: '판타지/어드벤처',
+    genre: '판타지',
+    difficulty: 2,
+    location: { city: '경기', district: '수원시' },
+    availableTimes: ['10:00', '12:00', '14:00', '16:00', '18:00'],
+    priceTable: { '2인': 38000, '3인': 51000, '4인': 60000 },
+    description: '고대 마법사의 비밀 서재에 갇혔다. 마법 주문과 고서를 해독해 봉인된 문을 열어라.',
+    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '이서연', rating: 4, comment: '초보자도 즐길 수 있어서 좋아요. 가족 추천!', date: '2025-08-22' },
+      { id: 2, reviewer: '박도윤', rating: 4, comment: '판타지 세계관이 잘 살아있어요.', date: '2025-08-19' },
+      { id: 3, reviewer: '최지우', rating: 5, comment: '아이와 함께했는데 너무 재밌었어요.', date: '2025-08-10' },
+    ],
+  },
+  {
+    id: 5,
+    title: '폐병원 301호',
+    rating: 4.9,
+    reviewCount: 421,
+    theme: '공포/스릴러',
+    genre: '공포',
+    difficulty: 5,
+    location: { city: '서울', district: '신림구' },
+    availableTimes: ['15:00', '17:00', '19:00', '21:00'],
+    priceTable: { '2인': 48000, '3인': 66000, '4인': 80000 },
+    description: '폐쇄된 정신병원 301호의 진실. 살아있는 배우와의 상호작용이 포함된 최강 공포 테마.',
+    imageUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '정하준', rating: 5, comment: '인생 방탈출입니다. 진심으로 무서워요.', date: '2025-09-08' },
+      { id: 2, reviewer: '강채원', rating: 5, comment: '배우분이 갑자기 나타나서 진짜 소리질렀어요 ㅠㅠ', date: '2025-09-05' },
+      { id: 3, reviewer: '조이준', rating: 4, comment: '무서운 거 좋아하면 강추. 심약자 비추천.', date: '2025-09-01' },
+    ],
+  },
+  {
+    id: 6,
+    title: '지하 감옥 탈출',
+    rating: 4.2,
+    reviewCount: 178,
+    theme: '추리/미스터리',
+    genre: '어드벤처',
+    difficulty: 3,
+    location: { city: '부산', district: '해운대구' },
+    availableTimes: ['11:00', '13:00', '15:00', '17:00', '19:00'],
+    priceTable: { '2인': 42000, '3인': 57000, '4인': 68000 },
+    description: '억울하게 갇힌 중세 감옥. 60분 안에 탈출하지 못하면 영원히 갇힌다. 팀워크가 핵심.',
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '윤서아', rating: 4, comment: '자물쇠 풀 때 쾌감이 장난 아니에요!', date: '2025-08-30' },
+      { id: 2, reviewer: '김민준', rating: 4, comment: '부산 왔다가 들렀는데 만족스러워요.', date: '2025-08-27' },
+      { id: 3, reviewer: '이서연', rating: 5, comment: '세트 퀄리티가 정말 높아요.', date: '2025-08-20' },
+    ],
+  },
+  {
+    id: 7,
+    title: '시간의 도서관',
+    rating: 4.5,
+    reviewCount: 267,
+    theme: '판타지/어드벤처',
+    genre: '판타지',
+    difficulty: 3,
+    location: { city: '서울', district: '혜화구' },
+    availableTimes: ['10:00', '12:00', '14:00', '16:00', '18:00'],
+    priceTable: { '2인': 40000, '3인': 54000, '4인': 64000 },
+    description: '시간이 멈춘 신비로운 도서관. 흩어진 시간의 조각을 모아 봉인된 출구를 열어라.',
+    imageUrl: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '박도윤', rating: 5, comment: '도서관 배경이 너무 감성적이에요.', date: '2025-09-03' },
+      { id: 2, reviewer: '최지우', rating: 4, comment: '퍼즐이 독창적이고 신선해요.', date: '2025-09-01' },
+      { id: 3, reviewer: '정하준', rating: 5, comment: '스토리 이해하고 나면 더 재밌어요.', date: '2025-08-28' },
+    ],
+  },
+  {
+    id: 8,
+    title: '빨간 방',
+    rating: 4.4,
+    reviewCount: 198,
+    theme: '공포/스릴러',
+    genre: '스릴러',
+    difficulty: 4,
+    location: { city: '서울', district: '강남구' },
+    availableTimes: ['14:00', '16:00', '18:00', '20:00'],
+    priceTable: { '2인': 44000, '3인': 60000, '4인': 72000 },
+    description: '모든 것이 붉은 방. 심리적 공포와 치밀한 트릭이 결합된 독창적인 스릴러 테마.',
+    imageUrl: 'https://images.unsplash.com/photo-1489549132488-d00b7eee80f1?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '강채원', rating: 4, comment: '분위기가 압도적이에요. 색감부터 다르네요.', date: '2025-08-25' },
+      { id: 2, reviewer: '조이준', rating: 5, comment: '결말 반전이 진짜 대박이었어요.', date: '2025-08-22' },
+      { id: 3, reviewer: '윤서아', rating: 4, comment: '심리전이 재밌어요. 혼자 오면 안 될 것 같아요.', date: '2025-08-18' },
+    ],
+  },
+  {
+    id: 9,
+    title: '잃어버린 피라미드',
+    rating: 4.6,
+    reviewCount: 233,
+    theme: '판타지/어드벤처',
+    genre: '어드벤처',
+    difficulty: 4,
+    location: { city: '인천', district: '연수구' },
+    availableTimes: ['10:00', '12:00', '14:00', '16:00'],
+    priceTable: { '2인': 42000, '3인': 57000, '4인': 68000 },
+    description: '이집트 피라미드 속 파라오의 저주. 고대 문자를 해독하고 함정을 피해 탈출하라.',
+    imageUrl: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '김민준', rating: 5, comment: '세계관이 탄탄해서 진짜 이집트에 온 것 같아요.', date: '2025-09-06' },
+      { id: 2, reviewer: '이서연', rating: 4, comment: '함정 장치가 신기하고 재밌어요.', date: '2025-09-02' },
+      { id: 3, reviewer: '박도윤', rating: 5, comment: '친구 생일로 왔는데 대성공이었어요.', date: '2025-08-29' },
+    ],
+  },
+  {
+    id: 10,
+    title: '바이러스 연구소',
+    rating: 4.7,
+    reviewCount: 345,
+    theme: 'SF/미래',
+    genre: 'SF',
+    difficulty: 4,
+    location: { city: '서울', district: '마포구' },
+    availableTimes: ['11:00', '13:00', '15:00', '17:00', '19:00', '21:00'],
+    priceTable: { '2인': 46000, '3인': 63000, '4인': 76000 },
+    description: '치명적 바이러스가 유출된 연구소. 60분 안에 백신을 만들지 못하면 전 세계가 위험하다.',
+    imageUrl: 'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=400&h=300&fit=crop',
+    recentReviews: [
+      { id: 1, reviewer: '최지우', rating: 5, comment: '스케일이 달라요. 진짜 긴박하게 즐겼어요.', date: '2025-09-07' },
+      { id: 2, reviewer: '정하준', rating: 5, comment: '과학 퍼즐이 독특해요. 두뇌 풀가동합니다.', date: '2025-09-04' },
+      { id: 3, reviewer: '강채원', rating: 4, comment: '재방문했어요. 그만큼 재밌다는 뜻!', date: '2025-09-01' },
+    ],
+  },
+];
 
 export default productsData;
 
-// ⭐⭐ ReservationPage.jsx 에서 districtsMap을 사용해야 하므로, districtsMap도 함께 export ⭐⭐
 export const districtsMap = {
   '서울': ['강남구', '홍대구', '건대구', '신림구', '혜화구', '종로구', '마포구', '영등포구', '송파구', '동대문구'],
   '경기': ['수원시', '성남시', '고양시', '용인시', '부천시', '안산시'],

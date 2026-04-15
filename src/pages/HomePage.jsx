@@ -38,18 +38,9 @@ function HomePage() {
       <BoxTop />
       <BoxRight />
       <BoxMain>
-        <BoxSlider 
-          title="월간 인기 Top5"
-          handleBoxClick={handleBoxClick}
-        />
-        <BoxSlider 
-          title="인기 예약 Top5"
-          handleBoxClick={handleBoxClick}
-        />
-        <BoxSlider 
-          title="테마 Top5"
-          handleBoxClick={handleBoxClick}
-        />
+        <BoxSlider title="월간 인기 Top5" sortBy="rating" handleBoxClick={handleBoxClick} />
+        <BoxSlider title="인기 예약 Top5" sortBy="reviewCount" handleBoxClick={handleBoxClick} />
+        <BoxSlider title="테마 Top5" sortBy="random" handleBoxClick={handleBoxClick} />
       </BoxMain>
       
       {showBoxModal && (

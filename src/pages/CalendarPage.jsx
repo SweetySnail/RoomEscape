@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
@@ -14,7 +13,6 @@ import purchasedRecordsData from '../data/purchasedRecordsData';
 import BoxMain from '../components/BoxMain';
 
 function CalendarPage() {
-  const navigate = useNavigate();
   const [purchasedRecords, setPurchasedRecords] = useState(purchasedRecordsData);
   const initialSelectedDate = new Date();
   initialSelectedDate.setHours(0, 0, 0, 0);

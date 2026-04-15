@@ -50,11 +50,10 @@ body, html, #root {
   justify-content: center;
   align-items: center;
   padding: 0;
-
-  /* 추후 삭제(확인용) */
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   border-bottom: 1px solid #eee;
+  height: 80px;
 }
 
 .header-content-wrapper {
@@ -88,7 +87,7 @@ body, html, #root {
 
 /* ===== 페이지 메인 콘텐츠 래퍼 (BoxMain.jsx) ===== */
 .main-page-wrapper {
-  margin-top: 100px; 
+  margin-top: 120px; 
   margin-bottom: 40px; 
   width: 75%;
   margin-left: 70px;

@@ -1,8 +1,17 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0; /* 기존 20px → 8px */
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .carousel-container {
   width: calc(150px * 5 + 10px * 5 * 2);
   max-width: 850px;
   overflow: hidden;
-  margin: 30px auto;
+  margin: 10px auto;
   position: relative;
   background-color: lightcoral;
 }
@@ -16,8 +25,9 @@
 .carousel-track .empty-box {
   flex-shrink: 0;
   width: 150px;
-  height: 150px;
+  height: 140px;
   margin: 10px;
+  padding: 6px;
 }
 
 .carousel-track .page-button {
