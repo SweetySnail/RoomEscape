@@ -5,7 +5,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 9999;
 }
 
 .modal-content {
@@ -29,16 +29,16 @@
   cursor: pointer;
   color: #aaa;
   line-height: 1;
+  z-index: 10;
 }
 .modal-close-button:hover { color: #333; }
 
-/* ===== 상단: 이미지 + 정보 ===== */
+/* ===== 상단 이미지 + 정보 ===== */
 .modal-top {
   display: flex;
   gap: 24px;
   align-items: flex-start;
 }
-
 .modal-image {
   width: 240px;
   height: 240px;
@@ -46,67 +46,38 @@
   border-radius: 10px;
   flex-shrink: 0;
 }
-
 .modal-info {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
 .modal-title {
   font-size: 1.6em;
   font-weight: bold;
   color: #222;
   margin: 0;
 }
-
 .modal-badge-row {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
-
 .modal-badge {
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.85em;
   font-weight: 600;
 }
-.modal-badge.theme {
-  background-color: #ede8ff;
-  color: #6f00ff;
-}
-.modal-badge.genre {
-  background-color: #e8f4ff;
-  color: #0070f3;
-}
+.modal-badge.theme { background-color: #ede8ff; color: #6f00ff; }
+.modal-badge.genre { background-color: #e8f4ff; color: #0070f3; }
 
-.modal-rating {
-  font-size: 1.1em;
-  color: #444;
-}
-.modal-review-count {
-  font-size: 0.9em;
-  color: #999;
-  margin-left: 6px;
-}
+.modal-rating { font-size: 1.1em; color: #444; }
+.modal-review-count { font-size: 0.9em; color: #999; margin-left: 6px; }
+.modal-difficulty { font-size: 1em; color: #444; }
 
-.modal-difficulty {
-  font-size: 1em;
-  color: #444;
-}
-
-.modal-price-table h4 {
-  margin: 0 0 6px 0;
-  font-size: 0.95em;
-  color: #555;
-}
-.price-row-group {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.modal-price-table h4 { margin: 0 0 6px 0; font-size: 0.95em; color: #555; }
+.price-row-group { display: flex; gap: 10px; flex-wrap: wrap; }
 .price-row {
   background-color: #f5f0ff;
   border-radius: 8px;
@@ -115,30 +86,13 @@
   flex-direction: column;
   align-items: center;
 }
-.price-people {
-  font-size: 0.8em;
-  color: #888;
-}
-.price-amount {
-  font-size: 0.95em;
-  font-weight: bold;
-  color: #6f00ff;
-}
+.price-people { font-size: 0.8em; color: #888; }
+.price-amount { font-size: 0.95em; font-weight: bold; color: #6f00ff; }
+.modal-description { font-size: 0.95em; color: #555; line-height: 1.6; margin: 0; }
 
-.modal-description {
-  font-size: 0.95em;
-  color: #555;
-  line-height: 1.6;
-  margin: 0;
-}
+.modal-divider { border: none; border-top: 1px solid #eee; margin: 24px 0; }
 
-.modal-divider {
-  border: none;
-  border-top: 1px solid #eee;
-  margin: 24px 0;
-}
-
-/* ===== 예약 ===== */
+/* ===== 예약 섹션 ===== */
 .modal-reservation h3,
 .modal-reviews h3,
 .modal-location h3 {
@@ -147,12 +101,13 @@
   margin: 0 0 14px 0;
 }
 
+/* 날짜 */
 .date-scroll {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 .date-scroll::-webkit-scrollbar { height: 4px; }
 .date-scroll::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
@@ -170,18 +125,14 @@
   white-space: nowrap;
 }
 .date-btn:hover { border-color: #6f00ff; color: #6f00ff; }
-.date-btn.selected {
-  background-color: #6f00ff;
-  border-color: #6f00ff;
-  color: #fff;
-  font-weight: bold;
-}
+.date-btn.selected { background-color: #6f00ff; border-color: #6f00ff; color: #fff; font-weight: bold; }
 
+/* 시간 */
 .time-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 .time-btn {
   padding: 8px 16px;
@@ -194,44 +145,61 @@
   transition: all 0.2s;
 }
 .time-btn:hover { border-color: #6f00ff; color: #6f00ff; }
-.time-btn.selected {
-  background-color: #6f00ff;
-  border-color: #6f00ff;
-  color: #fff;
-  font-weight: bold;
-}
+.time-btn.selected { background-color: #6f00ff; border-color: #6f00ff; color: #fff; font-weight: bold; }
 
+/* 인원 */
+.people-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.people-btn {
+  padding: 10px 20px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+.people-btn:hover { border-color: #6f00ff; }
+.people-btn.selected { background-color: #6f00ff; border-color: #6f00ff; color: #fff; }
+.people-label { font-size: 1em; font-weight: bold; }
+.people-price { font-size: 0.85em; }
+
+/* 예약 확인 */
 .reservation-confirm {
   background-color: #f5f0ff;
   border-radius: 10px;
-  padding: 14px 18px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
 }
-.reservation-confirm p { margin: 0; font-size: 0.95em; color: #444; }
+.confirm-info p { margin: 4px 0; font-size: 0.95em; color: #444; }
 
 .reserve-button {
   background-color: #6f00ff;
   color: white;
   border: none;
-  padding: 10px 24px;
+  padding: 12px 28px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 1em;
   font-weight: bold;
   transition: background-color 0.2s;
+  white-space: nowrap;
 }
 .reserve-button:hover { background-color: #5a00d8; }
 
 /* ===== 리뷰 ===== */
-.review-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+.review-list { display: flex; flex-direction: column; gap: 12px; }
 .review-item {
   background-color: #fafafa;
   border: 1px solid #eee;
@@ -245,21 +213,144 @@
   margin-bottom: 6px;
   flex-wrap: wrap;
 }
-.reviewer-name {
-  font-weight: bold;
-  font-size: 0.95em;
-  color: #333;
-}
+.reviewer-name { font-weight: bold; font-size: 0.95em; color: #333; }
 .review-rating { color: #f5a623; font-size: 0.9em; }
 .review-date { font-size: 0.8em; color: #aaa; margin-left: auto; }
 .review-comment { margin: 0; font-size: 0.9em; color: #555; line-height: 1.5; }
 
 /* ===== 위치 ===== */
-.modal-location p {
-  font-size: 1em;
-  color: #555;
-  margin: 0;
+.modal-location p { font-size: 1em; color: #555; margin: 0; }
+
+/* ===== 결제 단계 ===== */
+.payment-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
+.payment-title {
+  font-size: 1.8em;
+  color: #222;
+  margin: 0;
+  text-align: center;
+}
+.payment-summary {
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.payment-summary h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.1em;
+  color: #333;
+}
+.payment-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95em;
+  color: #555;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+.payment-summary-item:last-child { border-bottom: none; }
+.payment-summary-item.total {
+  font-size: 1.1em;
+  color: #222;
+  padding-top: 8px;
+  border-top: 2px solid #6f00ff;
+  border-bottom: none;
+}
+.payment-summary-item.total strong { color: #6f00ff; font-size: 1.2em; }
+
+.payment-method h3 { margin: 0 0 12px 0; font-size: 1.1em; color: #333; }
+.payment-method-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.payment-method-btn {
+  padding: 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1em;
+  color: #444;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.payment-method-btn:hover {
+  border-color: #6f00ff;
+  color: #6f00ff;
+  background-color: #f5f0ff;
+}
+
+.payment-notice {
+  background-color: #fff8e1;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 0.9em;
+  color: #856404;
+}
+.payment-notice p { margin: 0; }
+
+.payment-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.back-button {
+  padding: 12px 24px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1em;
+  color: #666;
+  transition: all 0.2s;
+}
+.back-button:hover { border-color: #999; color: #333; }
+
+.confirm-payment-button {
+  padding: 12px 28px;
+  background-color: #6f00ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+.confirm-payment-button:hover { background-color: #5a00d8; }
+
+/* ===== 성공 단계 ===== */
+.success-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+  text-align: center;
+}
+.success-icon { font-size: 4em; }
+.success-container h2 { font-size: 2em; color: #222; margin: 0; }
+.success-container > p { font-size: 1.1em; color: #666; margin: 0; }
+
+.success-summary {
+  width: 100%;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.success-actions { margin-top: 8px; }
 
 /* ===== 모바일 반응형 ===== */
 @media (max-width: 600px) {
@@ -267,4 +358,7 @@
   .modal-top { flex-direction: column; }
   .modal-image { width: 100%; height: 200px; }
   .reservation-confirm { flex-direction: column; align-items: flex-start; }
+  .payment-method-grid { grid-template-columns: 1fr; }
+  .payment-actions { flex-direction: column; }
+  .back-button, .confirm-payment-button { width: 100%; }
 }

@@ -1,23 +1,20 @@
-/* src/styles/ReservationPage.css - 최종본 (BoxMain 크기 유지) */
-
-/* ⭐⭐ 예약 페이지의 BoxMain(contents wrapper) ⭐⭐ */
 .reservation-page-content {
   display: flex;
   flex-direction: column;
-  gap: 40px; /* 각 섹션 간의 간격 */
-  width: 100%; /* 부모 MainContentWrapper 안에서 너비 꽉 채움 */
-  max-width: 1200px; /* ⭐⭐ 핵심! BoxMain 크기 유지 (HomePage/CalendarPage와 동일한 수준!) ⭐⭐ */
-                     /*  이 값이 ReservationPage의 BoxMain 실제 크기를 결정! */
-  padding: 40px; /* 페이지 콘텐츠의 내부 여백 */
+  gap: 40px;
+  width: 100%;
+  max-width: 1200px;
+  padding: 40px;
   box-sizing: border-box;
   background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  align-items: center; /* 내부 섹션들을 중앙 정렬 */
+  align-items: center;
 }
 
-/* 모든 섹션의 타이틀 */
-.section-title, .section-subtitle {
+/* ===== 섹션 타이틀 ===== */
+.section-title,
+.section-subtitle {
   color: #333;
   text-align: center;
   width: 100%;
@@ -26,11 +23,10 @@
 .section-title { font-size: 2.2em; }
 .section-subtitle { font-size: 1.6em; }
 
-
-/* 필터 선택 섹션 스타일 */
+/* ===== 필터 섹션 ===== */
 .filter-selection-section {
   width: 100%;
-  max-width: 900px; /* 필터 섹션 자체는 너무 넓지 않게 */
+  max-width: 900px;
   padding-bottom: 20px;
   border-bottom: 1px solid #eee;
   display: flex;
@@ -69,8 +65,8 @@
   font-size: 1.05em;
   background-color: white;
   cursor: pointer;
-  appearance: none; /* 기본 셀렉트 박스 화살표 숨기기 */
-  background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23212121%22%20d%3D%22M7%209.5L4%206.5l3-3z%22%2F%3E%3C%2Fsvg%3E'); /* 커스텀 화살표 */
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23212121%22%20d%3D%22M7%209.5L4%206.5l3-3z%22%2F%3E%3C%2Fsvg%3E');
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 10px;
@@ -79,71 +75,98 @@
   outline: none;
   border-color: #6f00ff;
 }
+.filter-select:disabled {
+  background-color: #f5f5f5;
+  color: #aaa;
+  cursor: not-allowed;
+}
 
-
-/* 검색 결과 그리드 */
+/* ===== 검색 결과 ===== */
 .search-results-section {
   width: 100%;
   padding-top: 20px;
 }
+
 .search-results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 25px;
   justify-items: center;
   margin-top: 20px;
 }
+
+/* ===== 카드 ===== */
 .search-result-item {
   width: 100%;
-  min-height: 250px; /* 이미지 고려해서 최소 높이 더 높게 */
-  padding: 15px;
+  min-height: 350px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   border: 2px solid #eee;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   background-color: white;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
+
 .search-result-item:hover {
   border-color: #6f00ff;
   transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 12px rgba(111, 0, 255, 0.15);
 }
+
+/* 카드 이미지 */
 .search-result-item .product-image {
   width: 100%;
-  max-height: 120px;
+  height: 180px;
   object-fit: cover;
-  border-radius: 6px;
-  margin-bottom: 10px;
+  border-radius: 0;
+  display: block;
 }
-.search-result-item strong {
-  font-size: 1.2em;
-  margin-bottom: 5px;
+
+/* 카드 텍스트 영역 */
+.card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.card-body strong {
+  font-size: 1.1em;
   color: #333;
+  margin-bottom: 2px;
 }
-.search-result-item span {
-  font-size: 0.9em;
+
+.card-body span {
+  font-size: 0.88em;
   color: #777;
-  line-height: 1.4;
+  line-height: 1.5;
 }
-.search-result-item .reserve-button {
+
+/* 예약 버튼 - 카드 최하단 */
+.reserve-button {
   background-color: #6f00ff;
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
+  padding: 12px 15px;
+  border-radius: 0 0 10px 10px;
   cursor: pointer;
   font-size: 1em;
-  margin-top: 15px;
-  transition: background-color 0.3s ease;
+  font-weight: bold;
   width: 100%;
+  transition: background-color 0.2s ease;
+  margin-top: auto;
 }
-.search-result-item .reserve-button:hover {
+
+.reserve-button:hover {
   background-color: #5a00d8;
 }
+
 .no-results-message {
   text-align: center;
   color: #888;
@@ -152,12 +175,12 @@
   width: 100%;
 }
 
-/* ⭐ 미디어 쿼리 (모바일 반응형) ⭐ */
+/* ===== 모바일 반응형 ===== */
 @media (max-width: 768px) {
   .reservation-page-content {
     padding: 20px;
     gap: 30px;
-    max-width: 100%; /* 모바일에서 max-width 해제 */
+    max-width: 100%;
   }
   .section-title { font-size: 1.8em; }
   .filter-options {
@@ -165,8 +188,14 @@
     align-items: center;
     gap: 15px;
   }
-  .filter-group { width: 90%; min-width: unset; }
-  .filter-select { font-size: 0.95em; }
-  .search-results-grid { grid-template-columns: 1fr; }
-  .search-result-item { min-height: unset; padding-bottom: 10px; }
+  .filter-group {
+    width: 90%;
+    min-width: unset;
+  }
+  .search-results-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-result-item {
+    min-height: unset;
+  }
 }
