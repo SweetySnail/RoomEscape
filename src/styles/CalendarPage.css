@@ -1,13 +1,11 @@
 .calendar-main-content {
   display: flex;
   justify-content: center;
-  align-items: flex-start; 
+  align-items: stretch;  /* flex-start → stretch */
   width: 100%;
   max-width: 1260px;
   gap: 60px;
   box-sizing: border-box;
-
-  /* 추후 삭제(확인용) */
   border: 3px dashed blueviolet;
   background-color: rgba(138, 43, 226, 0.1);
 }
@@ -36,18 +34,24 @@
 .calendar-right {
   padding: 40px;
   box-sizing: border-box;
-  overflow-y: auto;
-  max-height: 700px;
-  flex-basis: calc(40% - 60px); 
+  flex-basis: calc(40% - 60px);
   flex-grow: 1;
   flex-shrink: 0;
-  box-sizing: border-box;
-
-  /* 추후 삭제(검증용) */
   border: 3px solid olive;
   background-color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+
+  /* 추가된 부분 */
+  align-self: stretch;   /* ← 부모 높이에 맞춰 늘어남 */
+  overflow-y: auto;      /* ← 내용 많으면 스크롤 */
+}
+
+.calendar-right h3 {
+  text-align: center;
+  color: #333;
+  font-size: 1.1em;
+  margin-bottom: 20px;
 }
 
 .no-schedule-message {
@@ -221,4 +225,143 @@
     margin-right: 0;
     margin-bottom: 20px;
   }
+}
+
+/* ===== 통계 ===== */
+.calendar-stats {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f5f0ff;
+  border-radius: 10px;
+  padding: 12px 20px;
+  min-width: 70px;
+}
+.stat-number {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #6f00ff;
+}
+.stat-label {
+  font-size: 0.85em;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* ===== 스케줄 아이템 ===== */
+.schedule-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.schedule-item-header h4 {
+  margin: 0;
+  color: #6f00ff;
+  font-size: 1.1em;
+}
+
+.result-badge {
+  font-size: 0.85em;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+.result-badge.success { background-color: #d4edda; color: #155724; }
+.result-badge.fail    { background-color: #f8d7da; color: #721c24; }
+.result-badge.pending { background-color: #fff3cd; color: #856404; }
+
+/* ===== 성공/실패 버튼 ===== */
+.result-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.result-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+.result-btn:hover { opacity: 0.85; }
+.success-btn { background-color: #d4edda; color: #155724; }
+.fail-btn    { background-color: #f8d7da; color: #721c24; }
+
+.result-reset-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: #888;
+  transition: all 0.2s;
+}
+.result-reset-btn:hover { border-color: #6f00ff; color: #6f00ff; }
+
+/* ===== 삭제 버튼 ===== */
+.delete-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: #dc3545;
+  transition: all 0.2s;
+}
+.delete-btn:hover { background-color: #f8d7da; }
+
+/* ===== 달력 타일 이모지 ===== */
+.tile-records {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;        /* 1px → 4px */
+  margin-top: 4px; /* 2px → 4px */
+}
+
+.tile-dot {
+  font-size: 0.75em; /* 0.65em → 0.75em */
+  line-height: 1.2;
+}
+
+/* ===== 달력 타일 배경색 ===== */
+.react-calendar__tile.has-success {
+  background-color: #d4edda !important;
+}
+.react-calendar__tile.has-fail {
+  background-color: #f8d7da !important;
+}
+.react-calendar__tile.has-pending {
+  background-color: #fff3cd !important;
+}
+.react-calendar__tile.has-mixed {
+  background-color: #e8f4ff !important;
+}
+
+/* ===== 관리자 안내 ===== */
+.admin-notice {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #f5f0ff;
+  border-radius: 6px;
+  font-size: 0.85em;
+  color: #6f00ff;
+  text-align: center;
 }

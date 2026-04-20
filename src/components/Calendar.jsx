@@ -12,9 +12,11 @@ function CustomCalendar({ purchasedRecords, selectedDate, onDateChange }) {
     if (!date1 || !date2 || isNaN(date1.getTime()) || isNaN(date2.getTime())) {
       return false;
     }
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
   };
 
   return (
@@ -24,50 +26,62 @@ function CustomCalendar({ purchasedRecords, selectedDate, onDateChange }) {
         value={selectedDate}
 
         tileContent={({ date, view }) => {
-          if (view === 'month') {
-            const tileDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const eventsOnDate = purchasedRecords.filter(record => {
-              const recordDate = new Date(record.date.replace(/-/g, '/')); 
-              recordDate.setHours(0, 0, 0, 0);
+          if (view !== 'month') return null;
 
-              return areDatesEqual(tileDate, recordDate);
-            });
+          const tileDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          const recordsOnDate = purchasedRecords.filter(record => {
+            const recordDate = new Date(record.date.replace(/-/g, '/'));
+            recordDate.setHours(0, 0, 0, 0);
+            return areDatesEqual(tileDate, recordDate);
+          });
 
+          if (recordsOnDate.length === 0) return null;
 
-            if (eventsOnDate.length > 0) {
-              return (
-                <div className="event-summary">
-                  <span className="event-count">{eventsOnDate.length}건</span>
-                </div>
-              );
-            }
-          }
-          return null;
+          return (
+            <div className="tile-records">
+              {recordsOnDate.map(record => (
+                <span key={record.id} className="tile-dot">
+                  {record.success === true && '🟢'}
+                  {record.success === false && '🔴'}
+                  {record.success === null && '⏳'}
+                </span>
+              ))}
+            </div>
+          );
         }}
 
         tileClassName={({ date, view }) => {
-          if (view === 'month') {
-            const classes = [];
-            const tileDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            
-            if (tileDate < today) classes.push('is-past-date');
-            if (areDatesEqual(tileDate, today)) classes.push('is-today-custom');
-            
-            const eventsOnDate = purchasedRecords.filter(record => {
-              const recordDate = new Date(record.date.replace(/-/g, '/'));
-              recordDate.setHours(0, 0, 0, 0);
-              return areDatesEqual(tileDate, recordDate);
-            });
-            if (eventsOnDate.length > 0) classes.push('has-event');
-            if (selectedDate && areDatesEqual(tileDate, selectedDate)) classes.push('selected-date');
+          if (view !== 'month') return null;
 
-            return classes.join(' ');
+          const classes = [];
+          const tileDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+          if (tileDate < today) classes.push('is-past-date');
+          if (areDatesEqual(tileDate, today)) classes.push('is-today-custom');
+          if (selectedDate && areDatesEqual(tileDate, selectedDate)) classes.push('selected-date');
+
+          const recordsOnDate = purchasedRecords.filter(record => {
+            const recordDate = new Date(record.date.replace(/-/g, '/'));
+            recordDate.setHours(0, 0, 0, 0);
+            return areDatesEqual(tileDate, recordDate);
+          });
+
+          if (recordsOnDate.length > 0) {
+            const hasSuccess = recordsOnDate.some(r => r.success === true);
+            const hasFail = recordsOnDate.some(r => r.success === false);
+            const allPending = recordsOnDate.every(r => r.success === null);
+
+            if (hasSuccess && !hasFail) classes.push('has-success');
+            else if (hasFail && !hasSuccess) classes.push('has-fail');
+            else if (allPending) classes.push('has-pending');
+            else classes.push('has-mixed');
           }
-          return null;
+
+          return classes.join(' ');
         }}
       />
     </div>
-  )
+  );
 }
 
 export default CustomCalendar;
