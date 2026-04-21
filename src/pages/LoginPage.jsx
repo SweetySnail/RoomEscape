@@ -1,62 +1,59 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/Global.css'; // 공통 스타일
-import '../styles/LoginPage.css'; // 로그인 페이지 전용 스타일
+import '../styles/Global.css';
+import '../styles/LoginPage.css';
 
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
 
-// 초기 사용자 데이터 (localStorage에 없을 때 사용)
-import initialCustomers from '../data/customer.js'; 
+import initialCustomers from '../data/customer.js';
 
 function LoginPage() {
   const navigate = useNavigate();
 
-  const [isLoginMode, setIsLoginMode] = useState(true); // 로그인 모드 vs 회원가입 모드
+  const [isLoginMode, setIsLoginMode] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState(''); // 회원가입용
-  const [nickname, setNickname] = useState(''); // 회원가입용
-  const [message, setMessage] = useState(''); // 사용자에게 보여줄 메시지
+  const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [message, setMessage] = useState('');
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false); // ← 여기로 이동
 
-  // ⭐ localStorage에 사용자 정보 저장 및 로드 ⭐
   const [users, setUsers] = useState(() => {
-    // 앱 로드 시 localStorage에서 사용자 데이터 불러오기
     const storedUsers = localStorage.getItem('appUsers');
-    return storedUsers ? JSON.parse(storedUsers) : initialCustomers; // 없으면 초기 데이터 사용
+    return storedUsers ? JSON.parse(storedUsers) : initialCustomers;
   });
 
-  // users 상태가 변경될 때마다 localStorage에 저장
   useEffect(() => {
     localStorage.setItem('appUsers', JSON.stringify(users));
   }, [users]);
 
-  // ⭐ 로그인 제출 핸들러 ⭐
+  // 로그인
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     setMessage('');
 
-    if (!username || !password) { /* ... */ return; }
+    if (!username || !password) {
+      setMessage('아이디와 비밀번호를 입력해주세요.');
+      return;
+    }
 
-    const foundUser = users.find(user => user.username === username && user.password === password);
+    const foundUser = users.find(
+      user => user.username === username && user.password === password
+    );
 
     if (foundUser) {
       setMessage(`로그인 성공! ${foundUser.nickname}님 환영합니다!`);
-      sessionStorage.setItem('loggedInUser', JSON.stringify(foundUser)); 
-      
-      // ⭐⭐⭐ 로그인 성공 시 커스텀 이벤트 발송! ⭐⭐⭐
-      window.dispatchEvent(new Event('loginStateChange')); 
-
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
+      sessionStorage.setItem('loggedInUser', JSON.stringify(foundUser));
+      window.dispatchEvent(new Event('loginStateChange'));
+      setTimeout(() => navigate('/'), 1000);
     } else {
       setMessage('아이디 또는 비밀번호가 일치하지 않습니다.');
     }
   };
 
-  // ⭐ 회원가입 제출 핸들러 ⭐
+  // 회원가입
   const handleSignupSubmit = (e) => {
     e.preventDefault();
     setMessage('');
@@ -66,62 +63,68 @@ function LoginPage() {
       return;
     }
 
-    // 아이디 중복 확인
+    if (!agreedToPrivacy) {
+      setMessage('개인정보처리방침에 동의해주세요.');
+      return;
+    }
+
     if (users.some(user => user.username === username)) {
       setMessage('이미 존재하는 아이디입니다. 다른 아이디를 사용해주세요.');
       return;
     }
 
-    // 비밀번호 복잡성 검사 (예: 8자 이상, 특수문자 1개 이상)
     const passwordRegex = /^(?=.*[!@#$%^&*])(?=.*[a-zA-Z]).{8,}$/;
     if (!passwordRegex.test(password)) {
-      setMessage('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
+      setMessage('비밀번호는 영문, 특수문자 포함 8자 이상이어야 합니다.');
       return;
     }
 
     const newUser = {
       username,
-      password, // 실제는 암호화되어 저장
+      password,
       email,
       nickname,
-      // 추가 필드 (생년월일, 성별 등은 나중에 추가 폼 만들어서 받을 수 있음)
-      gender: '', // 임시 빈 값
-      birth: '', // 임시 빈 값
+      gender: '',
+      birth: '',
     };
 
-    setUsers([...users, newUser]); // 새로운 사용자 추가
-    setMessage('회원가입이 성공적으로 완료되었습니다! 로그인해주세요.');
-    // 회원가입 후 로그인 폼으로 전환
+    setUsers([...users, newUser]);
+    setMessage('회원가입이 완료되었습니다! 로그인해주세요.');
     setTimeout(() => {
       setIsLoginMode(true);
-      setUsername(''); // 폼 비우기
+      setUsername('');
       setPassword('');
       setEmail('');
       setNickname('');
+      setAgreedToPrivacy(false);
     }, 1500);
   };
 
-  // 모드 전환
   const toggleMode = () => {
     setIsLoginMode(!isLoginMode);
-    setMessage(''); // 메시지 초기화
-    setUsername(''); // 폼 비우기
+    setMessage('');
+    setUsername('');
     setPassword('');
     setEmail('');
     setNickname('');
+    setAgreedToPrivacy(false);
   };
 
   return (
     <div className="page-container">
       <BoxTop />
-      <BoxRight /> 
+      <BoxRight />
 
       <BoxMain>
         <div className="auth-container">
           <div className="auth-box">
             <h2>{isLoginMode ? '로그인' : '회원가입'}</h2>
-            
-            {message && <p className={`message ${message.includes('성공') ? 'success' : 'error'}`}>{message}</p>}
+
+            {message && (
+              <p className={`message ${message.includes('성공') || message.includes('완료') ? 'success' : 'error'}`}>
+                {message}
+              </p>
+            )}
 
             <form onSubmit={isLoginMode ? handleLoginSubmit : handleSignupSubmit}>
               <div className="input-group">
@@ -146,7 +149,7 @@ function LoginPage() {
                 />
               </div>
 
-              {!isLoginMode && ( // 회원가입 모드일 때만 추가 필드 보여주기
+              {!isLoginMode && (
                 <>
                   <div className="input-group">
                     <label htmlFor="email">이메일</label>
@@ -158,6 +161,7 @@ function LoginPage() {
                       placeholder="이메일을 입력해주세요"
                     />
                   </div>
+
                   <div className="input-group">
                     <label htmlFor="nickname">닉네임</label>
                     <input
@@ -167,6 +171,21 @@ function LoginPage() {
                       onChange={(e) => setNickname(e.target.value)}
                       placeholder="닉네임을 입력해주세요"
                     />
+                  </div>
+
+                  {/* 개인정보처리방침 동의 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9em' }}>
+                    <input
+                      type="checkbox"
+                      id="privacy"
+                      checked={agreedToPrivacy}
+                      onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                    />
+                    <label htmlFor="privacy">
+                      <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: '#6f00ff' }}>
+                        개인정보처리방침
+                      </a>에 동의합니다 (필수)
+                    </label>
                   </div>
                 </>
               )}
@@ -188,6 +207,6 @@ function LoginPage() {
       </BoxMain>
     </div>
   );
-};
+}
 
 export default LoginPage;

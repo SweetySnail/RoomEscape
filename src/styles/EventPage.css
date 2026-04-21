@@ -1,0 +1,338 @@
+.event-page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+}
+
+/* ===== 상단 히어로 배너 ===== */
+.event-hero {
+  width: 100%;
+  height: 320px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.event-hero:hover { transform: scale(1.01); }
+
+.event-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.75));
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 32px;
+  gap: 8px;
+}
+.event-hero-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.85em;
+  font-weight: bold;
+  width: fit-content;
+}
+.event-hero-title {
+  font-size: 2em;
+  color: white;
+  margin: 0;
+  font-weight: bold;
+}
+.event-hero-subtitle {
+  font-size: 1.1em;
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+}
+.event-hero-dday {
+  font-size: 1em;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+/* ===== 섹션 ===== */
+.event-section-title {
+  font-size: 1.5em;
+  color: #222;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.event-count {
+  font-size: 0.75em;
+  background-color: #6f00ff;
+  color: white;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-weight: normal;
+}
+.event-empty {
+  color: #aaa;
+  font-style: italic;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* ===== 이벤트 카드 그리드 ===== */
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+.event-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #eee;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.event-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  border-color: #6f00ff;
+}
+.event-card.ended {
+  opacity: 0.6;
+  filter: grayscale(40%);
+}
+.event-card.ended:hover {
+  transform: none;
+  border-color: #eee;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.event-card-img-wrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+}
+.event-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.event-card-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+.event-card-dday {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(0,0,0,0.6);
+  color: #ffd700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
+.event-card-ended-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: white;
+  letter-spacing: 2px;
+}
+
+.event-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.event-card-body h3 {
+  margin: 0;
+  font-size: 1.1em;
+  color: #222;
+}
+.event-card-subtitle {
+  margin: 0;
+  font-size: 0.9em;
+  color: #666;
+}
+.event-card-date {
+  font-size: 0.82em;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* ===== 이벤트 모달 ===== */
+.event-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+.event-modal-content {
+  background: white;
+  border-radius: 14px;
+  width: 92%;
+  max-width: 620px;
+  max-height: 88vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+.event-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #aaa;
+  z-index: 10;
+}
+.event-modal-close:hover { color: #333; }
+
+.event-modal-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 14px 14px 0 0;
+  display: block;
+}
+
+.event-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.event-modal-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.event-modal-dday {
+  font-size: 0.9em;
+  color: #6f00ff;
+  font-weight: bold;
+}
+.event-modal-body h2 {
+  margin: 0;
+  font-size: 1.6em;
+  color: #222;
+}
+.event-modal-desc {
+  margin: 0;
+  font-size: 0.95em;
+  color: #555;
+  line-height: 1.6;
+}
+.event-modal-date {
+  font-size: 0.88em;
+  color: #aaa;
+  margin: 0;
+}
+.event-modal-divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 4px 0;
+}
+
+/* ===== 이벤트 상세 박스 ===== */
+.event-detail-box {
+  background-color: #f9f7ff;
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.event-detail-box h3 {
+  margin: 0;
+  font-size: 1.05em;
+  color: #333;
+}
+.event-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95em;
+  color: #555;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+.event-detail-row:last-child { border-bottom: none; }
+.highlight { color: #6f00ff; font-size: 1.1em; }
+
+.coupon-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border: 2px dashed #6f00ff;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.coupon-code {
+  background-color: #6f00ff;
+  color: white;
+  padding: 4px 14px;
+  border-radius: 6px;
+  font-size: 1.1em;
+  letter-spacing: 2px;
+  font-family: monospace;
+}
+
+/* ===== 빙고 퀘스트 ===== */
+.bingo-reward {
+  margin: 0;
+  font-size: 1em;
+  color: #6f00ff;
+  font-weight: bold;
+}
+.bingo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.bingo-item {
+  background: white;
+  border: 1.5px solid #e0d4ff;
+  border-radius: 10px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.bingo-icon { font-size: 1.6em; }
+.bingo-text { font-size: 0.78em; color: #555; line-height: 1.3; }
+
+/* ===== 모바일 ===== */
+@media (max-width: 600px) {
+  .event-hero { height: 220px; }
+  .event-hero-title { font-size: 1.4em; }
+  .event-grid { grid-template-columns: 1fr; }
+  .bingo-grid { grid-template-columns: repeat(3, 1fr); }
+  .event-modal-body { padding: 16px; }
+}

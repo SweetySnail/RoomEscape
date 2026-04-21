@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getRefundInfo } from '../utils/RefundPolicy';
 
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
@@ -61,23 +62,31 @@ function CalendarPage() {
   };
 
   // 예약 삭제
-  const handleDeleteRecord = (recordId, productName, date, time) => {
+  const handleDeleteRecord = (recordId, productName, date, time, price) => {
+    const refund = getRefundInfo(date);
+    const refundAmount = Math.floor((price * refund.rate) / 100);
+
     const confirmed = window.confirm(
-      `아래 예약을 삭제하시겠어요?\n\n` +
+      `아래 예약을 취소하시겠어요?\n\n` +
       `📌 테마: ${productName}\n` +
-      `📅 날짜: ${date}\n` +
-      `🕐 시간: ${time}\n\n` +
-      `삭제 후에는 복구가 불가능해요.`
+      `📅 날짜: ${date} · ${time}\n\n` +
+      `💰 환불 정책: ${refund.label}\n` +
+      `💸 환불 예상 금액: ${refundAmount.toLocaleString()}원\n\n` +
+      `취소 후에는 복구가 불가능해요.`
     );
 
     if (!confirmed) return;
 
-    const updated = purchasedRecords.filter(record => record.id !== recordId);
+    const updated = purchasedRecords.map(record =>
+      record.id === recordId
+        ? { ...record, cancelled: true, refundAmount, refundRate: refund.rate }
+        : record
+    );
     setPurchasedRecords(updated);
     localStorage.setItem('reservationRecords', JSON.stringify(updated));
 
-    alert(`예약이 취소되었어요.\n실제 환경에서는 이 시점에 결제 취소 및 서버 예약 취소가 진행됩니다.`);
-  }; 
+    alert(`예약이 취소되었어요.\n환불 금액: ${refundAmount.toLocaleString()}원 (${refund.label})`);
+  };
 
   return (
     <div className="page-container">
@@ -180,10 +189,11 @@ function CalendarPage() {
                         record.id,
                         record.productName,
                         record.date,
-                        record.time
+                        record.time,
+                        record.price
                       )}
                     >
-                      🗑 예약 삭제
+                      🗑 예약 취소
                     </button>
 
                   </div>

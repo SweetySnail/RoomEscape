@@ -1,0 +1,357 @@
+/* ===== 전체 레이아웃 ===== */
+.mypage-content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+  max-width: 860px;
+  box-sizing: border-box;
+}
+
+/* ===== 상단 프로필 ===== */
+.mypage-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #6f00ff, #a855f7);
+  border-radius: 14px;
+  padding: 24px 28px;
+  color: white;
+}
+.mypage-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+.mypage-header-info h2 {
+  margin: 0 0 4px 0;
+  font-size: 1.4em;
+}
+.mypage-header-info p {
+  margin: 0;
+  font-size: 0.95em;
+  opacity: 0.85;
+}
+
+/* ===== 탭 메뉴 ===== */
+.mypage-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mypage-tab-btn {
+  padding: 10px 20px;
+  border: 2px solid #eee;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.95em;
+  color: #555;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+.mypage-tab-btn:hover { border-color: #6f00ff; color: #6f00ff; }
+.mypage-tab-btn.active {
+  background-color: #6f00ff;
+  border-color: #6f00ff;
+  color: white;
+  font-weight: bold;
+}
+
+/* ===== 탭 카드 ===== */
+.tab-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.tab-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.tab-card h3 {
+  margin: 0;
+  font-size: 1.1em;
+  color: #222;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+/* ===== 공통 입력 & 버튼 ===== */
+.mypage-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 1em;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.mypage-input:focus { outline: none; border-color: #6f00ff; }
+
+.mypage-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: bold;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.mypage-btn.primary { background-color: #6f00ff; color: white; }
+.mypage-btn.primary:hover { background-color: #5a00d8; }
+.mypage-btn.small { padding: 6px 12px; font-size: 0.85em; background-color: #f5f0ff; color: #6f00ff; border: 1px solid #e0d4ff; }
+.mypage-btn.small:hover { background-color: #ede8ff; }
+.mypage-btn.danger { background-color: #fff0f0; color: #dc3545; border: 1px solid #f5c6cb; }
+.mypage-btn.danger:hover { background-color: #f8d7da; }
+
+.mypage-msg {
+  margin: 0;
+  font-size: 0.9em;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.mypage-msg.success { background-color: #d4edda; color: #155724; }
+.mypage-msg.error   { background-color: #f8d7da; color: #721c24; }
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.input-row .mypage-input { flex: 1; }
+
+.input-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.empty-msg {
+  text-align: center;
+  color: #aaa;
+  font-size: 0.95em;
+  line-height: 1.8;
+  padding: 20px 0;
+  margin: 0;
+}
+
+/* ===== 기본 정보 테이블 ===== */
+.info-table { display: flex; flex-direction: column; gap: 0; }
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.95em;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { color: #888; }
+.info-value { color: #333; font-weight: 500; }
+
+/* ===== 결제수단 ===== */
+.payment-list { display: flex; flex-direction: column; gap: 10px; }
+.payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1.5px solid #eee;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.payment-item-left { display: flex; align-items: center; gap: 12px; }
+.payment-icon { font-size: 1.5em; }
+.payment-name { font-weight: bold; font-size: 0.95em; display: block; }
+.payment-detail { font-size: 0.82em; color: #aaa; display: block; }
+.payment-item-right { display: flex; gap: 8px; }
+.default-badge {
+  background-color: #6f00ff;
+  color: white;
+  font-size: 0.75em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+.payment-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.payment-select-btn {
+  padding: 12px;
+  border: 1.5px solid #eee;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: #444;
+  transition: all 0.2s;
+}
+.payment-select-btn:hover { border-color: #6f00ff; color: #6f00ff; }
+.payment-select-btn.selected {
+  border-color: #6f00ff;
+  background-color: #f5f0ff;
+  color: #6f00ff;
+  font-weight: bold;
+}
+
+/* ===== 즐겨찾기 ===== */
+.favorite-grid { display: flex; flex-direction: column; gap: 12px; }
+.favorite-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1.5px solid #eee;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.favorite-img {
+  width: 70px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.favorite-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.9em;
+  color: #666;
+}
+.favorite-info strong { color: #222; font-size: 1em; }
+.favorite-remove-btn {
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  color: #ccc;
+  cursor: pointer;
+  padding: 4px;
+}
+.favorite-remove-btn:hover { color: #dc3545; }
+
+.store-list { display: flex; flex-direction: column; gap: 10px; }
+.store-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1.5px solid #eee;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.store-info { display: flex; flex-direction: column; gap: 4px; }
+.store-info strong { font-size: 0.95em; color: #222; }
+.store-info span { font-size: 0.85em; color: #888; }
+
+/* ===== 히스토리 ===== */
+.history-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.history-stat-item {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f5f0ff;
+  border-radius: 10px;
+  padding: 14px 10px;
+}
+.history-stat-item.success { background-color: #d4edda; }
+.history-stat-item.fail    { background-color: #f8d7da; }
+.history-stat-item.pending { background-color: #fff3cd; }
+.history-stat-item.rate    { background-color: #e8f4ff; }
+.history-stat-number { font-size: 1.8em; font-weight: bold; color: #333; }
+.history-stat-label  { font-size: 0.8em; color: #666; margin-top: 4px; }
+
+.history-filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.history-filter-row h3 { margin: 0; }
+.history-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 6px 14px;
+  border: 1.5px solid #eee;
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: #555;
+  transition: all 0.2s;
+}
+.filter-btn:hover { border-color: #6f00ff; color: #6f00ff; }
+.filter-btn.active { background-color: #6f00ff; border-color: #6f00ff; color: white; font-weight: bold; }
+
+.history-list { display: flex; flex-direction: column; gap: 10px; }
+.history-item {
+  padding: 16px;
+  border: 1.5px solid #eee;
+  border-radius: 10px;
+  background: #fafafa;
+  transition: border-color 0.2s;
+}
+.history-item:hover { border-color: #6f00ff; }
+.history-item.cancelled { opacity: 0.55; }
+
+.history-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.history-item-header strong { font-size: 1.05em; color: #222; }
+
+.history-item-detail {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.88em;
+  color: #777;
+}
+
+.result-badge {
+  font-size: 0.82em;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+.result-badge.success   { background-color: #d4edda; color: #155724; }
+.result-badge.fail      { background-color: #f8d7da; color: #721c24; }
+.result-badge.pending   { background-color: #fff3cd; color: #856404; }
+.result-badge.cancelled { background-color: #e2e3e5; color: #383d41; }
+
+/* ===== 모바일 ===== */
+@media (max-width: 600px) {
+  .mypage-header { flex-direction: column; text-align: center; }
+  .mypage-tabs { justify-content: center; }
+  .payment-method-grid { grid-template-columns: repeat(2, 1fr); }
+  .history-stats { gap: 8px; }
+  .history-stat-item { min-width: 60px; padding: 10px 6px; }
+  .history-stat-number { font-size: 1.4em; }
+  .history-filter-row { flex-direction: column; align-items: flex-start; }
+}
