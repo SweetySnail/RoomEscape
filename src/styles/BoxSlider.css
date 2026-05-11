@@ -2,9 +2,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 0; /* 기존 20px → 8px */
+  padding: 8px 0;
   width: 100%;
-  box-sizing: border-box;
+}
+
+.container h2 {
+  font-family: 'Cinzel', serif;
+  color: var(--accent-gold);
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
 }
 
 .carousel-container {
@@ -13,12 +19,12 @@
   overflow: hidden;
   margin: 10px auto;
   position: relative;
-  background-color: lightcoral;
+  border-radius: var(--radius-md);
 }
 
 .carousel-track {
   display: flex;
-  transition: transform 0.8s ease-in-out;
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   width: fit-content;
 }
 
@@ -30,62 +36,55 @@
   padding: 6px;
 }
 
-.carousel-track .page-button {
-    width: auto;
-}
-
+/* ===== 이전/다음 버튼 ===== */
 .carousel-button {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  padding: 10px 15px;
+  background-color: rgba(10, 10, 15, 0.8);
+  color: var(--accent-gold);
+  border: 1px solid var(--border-subtle);
+  padding: 10px 14px;
   cursor: pointer;
-  z-index: 10; /* 박스 위에 표시 */
-  font-size: 24px;
-  border-radius: 50%; /* 원형 버튼 */
-  transition: background-color 0.3s ease;
+  z-index: 10;
+  font-size: 20px;
+  border-radius: 50%;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(8px);
 }
-
 .carousel-button:hover {
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(212, 168, 67, 0.2);
+  border-color: var(--accent-gold);
+  box-shadow: var(--shadow-glow);
 }
+.carousel-button.prev { left: 10px; }
+.carousel-button.next { right: 10px; }
 
-.carousel-button.prev {
-  left: 10px;
-}
-
-.carousel-button.next {
-  right: 10px;
-}
-
+/* ===== 카드 박스 ===== */
 .empty-box {
   width: 150px;
   height: 100px;
-  border: 2px solid #ccc;
+  border: 1px solid var(--border-subtle);
   margin: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  color: #666;
-  font-weight: bold;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  color: var(--text-secondary);
+  font-weight: 500;
   text-align: center;
   padding: 10px;
-  box-sizing: border-box;
-  font-size: 0.9em;
+  font-size: 0.85em;
+  overflow: hidden;
+  transition: all 0.25s ease;
 }
-
-.empty-box.clickable {
-  cursor: pointer;
-  transition: transform 0.2s ease-in-out;
-}
-
+.empty-box.clickable { cursor: pointer; }
 .empty-box.clickable:hover {
-  transform: scale(1.03);
+  transform: translateY(-4px);
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+  color: var(--text-primary);
 }

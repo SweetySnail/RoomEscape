@@ -1,58 +1,20 @@
-/* 고정 헤더 컨테이너 스타일 */
-.fixed-header-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 100;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0;
-  border-bottom: 1px solid #eee;
-
-  /* 추후 삭제(확인용) */
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+/* ===== 헤더 (Global에서 처리, 여기선 로고/버튼만) ===== */
+.logo-section h1 {
+  font-family: 'Cinzel', serif !important;
+  font-size: 2.2em !important;
+  font-weight: 700 !important;
+  color: var(--accent-gold) !important;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 30px var(--accent-glow);
+  transition: text-shadow 0.3s ease;
+}
+.logo-section h1:hover {
+  text-shadow: 0 0 40px rgba(212, 168, 67, 0.5);
 }
 
-.header-content-wrapper {
-  width: 100%; /* 부모(fixed-header-container)의 너비를 일단 꽉 채움 */
-  max-width: 1200px; /* ⭐ 최대 너비 설정 (원하는 간격만큼 줄입니다) */
-                     /*  이 값을 줄이면 버튼들이 더 안쪽으로 모입니다. */
-                     /*  예: 960px, 768px 등으로 조정해보세요. */
-  display: flex; /* 내부 요소(버튼)들을 배치하기 위한 flex 컨테이너 */
-  justify-content: space-between; /* ⭐ 버튼들을 양 끝으로 정렬 */
-  align-items: center;
-  padding: 0 40px; /* ⭐ 여기에서 좌우 간격을 줍니다. (예: 40px, 80px 등) */
-                   /* 이 패딩은 max-width 안쪽에서 적용되므로 버튼이 밀려나지 않습니다. */
-}
-
-/* 버튼 공통 스타일 */
-.page-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  margin: 5px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
-  /* min-height를 기본값으로 지정하여 유연하게 높이 조절 */
-  min-height: 25px; /* 모든 버튼의 기본 최소 높이 */
-  display: flex; /* 버튼 내부 텍스트 세로 중앙 정렬을 위해 플렉스 박스 적용 */
-  align-items: center; /* 세로 중앙 정렬 */
-  justify-content: center; /* 가로 중앙 정렬 */
-}
-
-.page-button:hover {
-  background-color: #0056b3;
-}
-
-/* 홈페이지 버튼 전용 스타일 */
+/* ===== 공통 버튼 (홈) ===== */
 .page-button.home-button {
-  min-height: 40px; /* 요청하신 40px */
-  font-size: 18px; /* 글자 크기 살짝 키워 강조 */
-  padding: 10px 25px; /* 패딩도 살짝 키움 */
+  min-height: 40px;
+  font-size: 0.95em;
+  padding: 10px 20px;
 }

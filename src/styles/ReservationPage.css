@@ -1,3 +1,91 @@
+/* ===== 다크 테마 오버라이드 ===== */
+.reservation-page-content {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.section-title { color: var(--accent-gold) !important; font-family: 'Cinzel', serif; }
+.section-subtitle { color: var(--text-primary) !important; }
+
+.filter-selection-section { border-color: var(--border-subtle) !important; }
+.filter-label { color: var(--text-secondary) !important; }
+.filter-select {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+.filter-select:focus { border-color: var(--accent-gold) !important; }
+.filter-select:disabled {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-muted) !important;
+}
+
+/* 카드 */
+.search-result-item {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+}
+.search-result-item:hover {
+  border-color: var(--accent-gold) !important;
+  box-shadow: var(--shadow-card), var(--shadow-glow) !important;
+  transform: translateY(-6px) !important;
+}
+.card-body strong { color: var(--text-primary) !important; }
+.card-body span { color: var(--text-secondary) !important; }
+
+.reserve-button {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark)) !important;
+  color: #0a0a0f !important;
+  font-weight: 700 !important;
+}
+.reserve-button:hover {
+  background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold)) !important;
+}
+
+/* 검색창 */
+.search-input-wrapper {
+  background: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+}
+.search-input-wrapper:focus-within {
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 0 20px rgba(212, 168, 67, 0.15) !important;
+}
+.search-keyword-input {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+.search-keyword-input::placeholder { color: var(--text-muted) !important; }
+.search-submit-btn {
+  background: var(--accent-gold) !important;
+  color: #0a0a0f !important;
+}
+.search-submit-btn:hover { background: var(--accent-gold-light) !important; }
+.search-clear-btn { color: var(--text-muted) !important; }
+.search-clear-btn:hover { color: var(--text-primary) !important; }
+
+.search-dropdown {
+  background: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+}
+.dropdown-label { color: var(--text-muted) !important; }
+.dropdown-item:hover { background: rgba(212, 168, 67, 0.08) !important; }
+.dropdown-item-title { color: var(--text-primary) !important; }
+.dropdown-item-sub { color: var(--text-muted) !important; }
+
+.search-active-tag span { color: var(--accent-gold) !important; }
+.no-results-message { color: var(--text-muted) !important; }
+.no-results-reset-btn {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+  background: transparent !important;
+}
+.no-results-reset-btn:hover {
+  background: var(--accent-gold) !important;
+  color: #0a0a0f !important;
+}
+
 .reservation-page-content {
   display: flex;
   flex-direction: column;
@@ -109,7 +197,6 @@
   background-color: white;
   cursor: pointer;
   transition: all 0.2s ease;
-  overflow: hidden;
 }
 
 .search-result-item:hover {
@@ -119,6 +206,21 @@
 }
 
 /* 카드 이미지 */
+.search-result-item .product-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 0;
+  display: block;
+}
+
+.search-result-item .image-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+  overflow: hidden; 
+}
+
 .search-result-item .product-image {
   width: 100%;
   height: 180px;
@@ -198,4 +300,211 @@
   .search-result-item {
     min-height: unset;
   }
+}
+
+.card-favorite-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+  z-index: 10;
+}
+.card-favorite-btn:hover { transform: scale(1.15); }
+.card-favorite-btn.active { background: #fff8e1; }
+
+/* ===== 키워드 검색 섹션 ===== */
+.search-keyword-section {
+  width: 100%;
+  max-width: 700px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 검색 입력창 */
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  transition: border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.search-input-wrapper:focus-within {
+  border-color: #6f00ff;
+  box-shadow: 0 2px 12px rgba(111,0,255,0.15);
+}
+
+.search-icon {
+  padding: 0 12px;
+  font-size: 1.1em;
+}
+
+.search-keyword-input {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  outline: none;
+  font-size: 1em;
+  color: #333;
+  background: transparent;
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  padding: 0 10px;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1em;
+  transition: color 0.2s;
+}
+.search-clear-btn:hover { color: #333; }
+
+.search-submit-btn {
+  padding: 14px 22px;
+  background: #6f00ff;
+  color: white;
+  border: none;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.search-submit-btn:hover { background: #5a00d8; }
+
+/* 드롭다운 */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% - 12px + 56px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid #eee;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown-section {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.dropdown-section:last-child { border-bottom: none; }
+
+.dropdown-label {
+  font-size: 0.78em;
+  color: #aaa;
+  padding: 6px 16px 4px;
+  margin: 0;
+  font-weight: bold;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.dropdown-item:hover { background: #f5f0ff; }
+
+.dropdown-item-title {
+  font-size: 0.95em;
+  color: #333;
+}
+.dropdown-item-sub {
+  font-size: 0.82em;
+  color: #aaa;
+}
+.dropdown-item-delete {
+  font-size: 0.85em;
+  color: #ccc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.dropdown-item-delete:hover { color: #dc3545; }
+
+/* 현재 검색어 태그 */
+.search-active-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9em;
+  color: #6f00ff;
+}
+.search-active-tag button {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.85em;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.search-active-tag button:hover {
+  border-color: #6f00ff;
+  color: #6f00ff;
+}
+
+/* 결과 없음 */
+.no-results-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 50px 0;
+}
+.no-results-emoji { font-size: 3em; margin: 0; }
+.no-results-message {
+  color: #888;
+  font-size: 1em;
+  margin: 0;
+}
+.no-results-reset-btn {
+  padding: 8px 20px;
+  border: 1.5px solid #6f00ff;
+  border-radius: 20px;
+  background: white;
+  color: #6f00ff;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+.no-results-reset-btn:hover {
+  background: #6f00ff;
+  color: white;
+}
+
+/* 필터 섹션 - 타이틀 제거 후 심플하게 */
+.filter-selection-section {
+  width: 100%;
+  padding-top: 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
 }

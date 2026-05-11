@@ -1,3 +1,123 @@
+/* ===== 다크 테마 오버라이드 ===== */
+.mypage-content { color: var(--text-primary); }
+
+.mypage-header {
+  background: linear-gradient(135deg, rgba(212, 168, 67, 0.2), rgba(160, 120, 48, 0.1)) !important;
+  border: 1px solid var(--border-subtle);
+}
+.mypage-header-info h2 { color: var(--text-primary) !important; }
+.mypage-header-info p { color: var(--text-secondary) !important; }
+
+.mypage-tab-btn {
+  background: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+.mypage-tab-btn:hover {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+.mypage-tab-btn.active {
+  background: rgba(212, 168, 67, 0.15) !important;
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+
+.tab-card {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+.tab-card h3 {
+  color: var(--accent-gold) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.mypage-input {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+.mypage-input::placeholder { color: var(--text-muted) !important; }
+.mypage-input:focus {
+  border-color: var(--accent-gold) !important;
+  box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.1) !important;
+}
+
+.mypage-btn.primary {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark)) !important;
+  color: #0a0a0f !important;
+}
+.mypage-btn.primary:hover {
+  background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold)) !important;
+}
+.mypage-btn.small {
+  background-color: rgba(212, 168, 67, 0.1) !important;
+  color: var(--accent-gold) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.info-row {
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary);
+}
+.info-label { color: var(--text-muted) !important; }
+.info-value { color: var(--text-primary) !important; }
+
+.payment-item {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+.payment-name { color: var(--text-primary) !important; }
+.payment-detail { color: var(--text-muted) !important; }
+
+.payment-select-btn {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+.payment-select-btn:hover {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+.payment-select-btn.selected {
+  background-color: rgba(212, 168, 67, 0.1) !important;
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+
+.favorite-card, .store-item {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+.favorite-info strong, .store-info strong { color: var(--text-primary) !important; }
+.favorite-info span, .store-info span { color: var(--text-muted) !important; }
+
+.history-item {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+.history-item:hover { border-color: var(--accent-gold) !important; }
+.history-item-header strong { color: var(--text-primary) !important; }
+.history-item-detail span { color: var(--text-muted) !important; }
+
+.filter-btn {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+.filter-btn:hover {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+.filter-btn.active {
+  background: rgba(212, 168, 67, 0.15) !important;
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+
+.empty-msg { color: var(--text-muted) !important; }
+
 /* ===== 전체 레이아웃 ===== */
 .mypage-content {
   display: flex;
@@ -354,4 +474,39 @@
   .history-stat-item { min-width: 60px; padding: 10px 6px; }
   .history-stat-number { font-size: 1.4em; }
   .history-filter-row { flex-direction: column; align-items: flex-start; }
+}
+
+/* 리뷰 작성 버튼 */
+.review-write-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #6f00ff, #a855f7);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+.review-write-btn:hover { opacity: 0.85; }
+
+/* 리뷰 완료 뱃지 */
+.result-badge.reviewed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.mypage-points {
+  margin-top: 6px;
+  font-size: 0.95em;
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.15);
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.mypage-points strong {
+  color: #ffd700;
 }

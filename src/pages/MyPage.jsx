@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
+import ReviewModal from '../components/ReviewModal';
+import { getPoints } from '../utils/PointUtils';
 import '../styles/Global.css';
 import '../styles/MyPage.css';
+
 
 function MyPage() {
   const navigate = useNavigate();
@@ -46,6 +49,9 @@ function MyPage() {
             <div className="mypage-header-info">
               <h2>{loggedInUser.nickname}님, 환영해요!</h2>
               <p>{loggedInUser.email}</p>
+              <div className="mypage-points">
+                💎 보유 포인트: <strong>{getPoints().toLocaleString()} P</strong>
+              </div>
             </div>
           </div>
 
@@ -384,16 +390,9 @@ function PaymentTab() {
 // 탭 3: 즐겨찾기
 // =============================================
 function FavoriteTab() {
-  const [favoriteThemes] = useState(() => {
+  const [themes, setThemes] = useState(() => {
     return JSON.parse(localStorage.getItem('favoriteThemes') || '[]');
   });
-  const [favoriteStores] = useState(() => {
-    return JSON.parse(localStorage.getItem('favoriteStores') || '[]');
-  });
-
-  // 즐겨찾기 테마 삭제
-  const [themes, setThemes] = useState(favoriteThemes);
-  const [stores, setStores] = useState(favoriteStores);
 
   const removeTheme = (id) => {
     const updated = themes.filter(t => t.id !== id);
@@ -401,22 +400,14 @@ function FavoriteTab() {
     localStorage.setItem('favoriteThemes', JSON.stringify(updated));
   };
 
-  const removeStore = (id) => {
-    const updated = stores.filter(s => s.id !== id);
-    setStores(updated);
-    localStorage.setItem('favoriteStores', JSON.stringify(updated));
-  };
-
   return (
     <div className="tab-section">
-
-      {/* 즐겨찾기 테마 */}
       <div className="tab-card">
-        <h3>⭐ 즐겨찾기 테마</h3>
+        <h3>⭐ 즐겨찾기 테마 ({themes.length}개)</h3>
         {themes.length === 0 ? (
           <p className="empty-msg">
             즐겨찾기한 테마가 없어요.<br />
-            테마 상세 페이지에서 ⭐를 눌러 추가해보세요!
+            테마 카드나 상세 팝업에서 ☆를 눌러 추가해보세요!
           </p>
         ) : (
           <div className="favorite-grid">
@@ -428,9 +419,14 @@ function FavoriteTab() {
                 <div className="favorite-info">
                   <strong>{theme.title}</strong>
                   <span>{theme.theme}</span>
+                  <span>⭐ {theme.rating} ({theme.reviewCount} 리뷰)</span>
                   <span>{theme.location?.city} {theme.location?.district}</span>
                 </div>
-                <button className="favorite-remove-btn" onClick={() => removeTheme(theme.id)}>
+                <button
+                  className="favorite-remove-btn"
+                  onClick={() => removeTheme(theme.id)}
+                  title="즐겨찾기 제거"
+                >
                   ✕
                 </button>
               </div>
@@ -438,32 +434,6 @@ function FavoriteTab() {
           </div>
         )}
       </div>
-
-      {/* 즐겨찾기 점포 */}
-      <div className="tab-card">
-        <h3>📍 즐겨찾기 점포</h3>
-        {stores.length === 0 ? (
-          <p className="empty-msg">
-            즐겨찾기한 점포가 없어요.<br />
-            자주 가는 점포를 추가해보세요!
-          </p>
-        ) : (
-          <div className="store-list">
-            {stores.map(store => (
-              <div key={store.id} className="store-item">
-                <div className="store-info">
-                  <strong>{store.name}</strong>
-                  <span>{store.address}</span>
-                </div>
-                <button className="favorite-remove-btn" onClick={() => removeStore(store.id)}>
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
     </div>
   );
 }
@@ -476,30 +446,38 @@ function HistoryTab() {
     return JSON.parse(localStorage.getItem('reservationRecords') || '[]');
   });
   const [filter, setFilter] = useState('all');
+  const [reviewTarget, setReviewTarget] = useState(null); // 리뷰 작성 대상
 
   const filteredRecords = records.filter(r => {
     if (filter === 'success') return r.success === true;
-    if (filter === 'fail') return r.success === false;
-    if (filter === 'pending') return r.success === null;
+    if (filter === 'fail')    return r.success === false;
+    if (filter === 'pending') return r.success === null && !r.cancelled;
     if (filter === 'cancelled') return r.cancelled === true;
     return true;
   });
 
   const stats = {
-    total: records.length,
+    total:   records.length,
     success: records.filter(r => r.success === true).length,
-    fail: records.filter(r => r.success === false).length,
+    fail:    records.filter(r => r.success === false).length,
     pending: records.filter(r => r.success === null && !r.cancelled).length,
   };
 
-  const successRate = stats.total > 0
-    ? Math.round((stats.success / (stats.success + stats.fail)) * 100) || 0
+  const successRate = (stats.success + stats.fail) > 0
+    ? Math.round((stats.success / (stats.success + stats.fail)) * 100)
     : 0;
+
+  const handleReviewSubmit = () => {
+    // 리뷰 제출 후 records 새로고침
+    const updated = JSON.parse(localStorage.getItem('reservationRecords') || '[]');
+    setRecords(updated);
+    setReviewTarget(null);
+  };
 
   return (
     <div className="tab-section">
 
-      {/* 통계 요약 */}
+      {/* 통계 */}
       <div className="tab-card">
         <h3>나의 방탈출 통계</h3>
         <div className="history-stats">
@@ -526,16 +504,17 @@ function HistoryTab() {
         </div>
       </div>
 
-      {/* 필터 + 목록 */}
+      {/* 예약 목록 */}
       <div className="tab-card">
         <div className="history-filter-row">
           <h3>예약 목록</h3>
           <div className="history-filters">
             {[
-              { key: 'all',     label: '전체' },
-              { key: 'success', label: '🟢 성공' },
-              { key: 'fail',    label: '🔴 실패' },
-              { key: 'pending', label: '⏳ 미완료' },
+              { key: 'all',       label: '전체' },
+              { key: 'success',   label: '🟢 성공' },
+              { key: 'fail',      label: '🔴 실패' },
+              { key: 'pending',   label: '⏳ 미완료' },
+              { key: 'cancelled', label: '취소됨' },
             ].map(f => (
               <button
                 key={f.key}
@@ -553,30 +532,53 @@ function HistoryTab() {
         ) : (
           <div className="history-list">
             {[...filteredRecords].reverse().map(record => (
-              <div key={record.id} className={`history-item ${record.cancelled ? 'cancelled' : ''}`}>
-                <div className="history-item-left">
-                  <div className="history-item-header">
-                    <strong>{record.productName}</strong>
+              <div
+                key={record.id}
+                className={`history-item ${record.cancelled ? 'cancelled' : ''}`}
+              >
+                <div className="history-item-header">
+                  <strong>{record.productName}</strong>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {record.success === true  && <span className="result-badge success">🟢 성공</span>}
                     {record.success === false && <span className="result-badge fail">🔴 실패</span>}
                     {record.success === null && !record.cancelled &&
                       <span className="result-badge pending">⏳ 미완료</span>}
                     {record.cancelled && <span className="result-badge cancelled">취소됨</span>}
-                  </div>
-                  <div className="history-item-detail">
-                    <span>📅 {record.date}</span>
-                    <span>🕐 {record.time}</span>
-                    <span>👥 {record.people}</span>
-                    <span>🎭 {record.theme}</span>
-                    <span>💰 {record.price?.toLocaleString()}원</span>
+                    {record.reviewed && <span className="result-badge reviewed">✍️ 리뷰완료</span>}
                   </div>
                 </div>
+
+                <div className="history-item-detail">
+                  <span>📅 {record.date}</span>
+                  <span>🕐 {record.time}</span>
+                  <span>👥 {record.people}</span>
+                  <span>🎭 {record.theme}</span>
+                  <span>💰 {record.price?.toLocaleString()}원</span>
+                </div>
+
+                {/* 리뷰 작성 버튼 - 완료된 예약이고 아직 리뷰 안 썼을 때 */}
+                {record.success !== null && !record.cancelled && !record.reviewed && (
+                  <button
+                    className="review-write-btn"
+                    onClick={() => setReviewTarget(record)}
+                  >
+                    ✍️ 리뷰 작성하고 100P 받기
+                  </button>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
 
+      {/* 리뷰 모달 */}
+      {reviewTarget && (
+        <ReviewModal
+          record={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSubmit={handleReviewSubmit}
+        />
+      )}
     </div>
   );
 }

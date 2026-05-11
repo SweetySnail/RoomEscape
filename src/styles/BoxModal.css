@@ -1,3 +1,164 @@
+/* ===== 다크 테마 오버라이드 ===== */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary)) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-card), var(--shadow-glow) !important;
+  color: var(--text-primary);
+}
+
+.modal-close-button { color: var(--text-muted) !important; }
+.modal-close-button:hover { color: var(--accent-gold) !important; }
+
+.modal-title { color: var(--text-primary) !important; }
+
+.modal-badge.theme {
+  background-color: rgba(212, 168, 67, 0.15) !important;
+  color: var(--accent-gold) !important;
+}
+.modal-badge.genre {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-secondary) !important;
+}
+
+.modal-rating { color: var(--text-primary) !important; }
+.modal-review-count { color: var(--text-muted) !important; }
+.modal-description { color: var(--text-secondary) !important; }
+.modal-divider { border-color: var(--border-subtle) !important; }
+
+/* 가격표 */
+.price-row {
+  background-color: rgba(212, 168, 67, 0.08) !important;
+  border: 1px solid var(--border-subtle);
+}
+.price-people { color: var(--text-muted) !important; }
+.price-amount { color: var(--accent-gold) !important; }
+
+/* 날짜/시간/인원 버튼 */
+.date-btn, .time-btn, .people-btn {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+.date-btn:hover, .time-btn:hover, .people-btn:hover {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+.date-btn.selected, .time-btn.selected, .people-btn.selected {
+  background-color: var(--accent-gold) !important;
+  border-color: var(--accent-gold) !important;
+  color: #0a0a0f !important;
+}
+
+/* 예약 확인 */
+.reservation-confirm {
+  background-color: rgba(212, 168, 67, 0.08) !important;
+  border: 1px solid var(--border-subtle);
+}
+.confirm-info p { color: var(--text-secondary) !important; }
+
+/* 예약 버튼 */
+.reserve-button {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark)) !important;
+  color: #0a0a0f !important;
+  font-weight: 700 !important;
+}
+.reserve-button:hover {
+  background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold)) !important;
+}
+
+/* 리뷰 */
+.modal-reservation h3,
+.modal-reviews h3,
+.modal-location h3 {
+  color: var(--accent-gold) !important;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.04em;
+}
+
+.review-item {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+.reviewer-name { color: var(--text-primary) !important; }
+.review-date { color: var(--text-muted) !important; }
+.review-comment { color: var(--text-secondary) !important; }
+
+.modal-location p { color: var(--text-secondary) !important; }
+
+/* 결제 */
+.payment-container h2 { color: var(--accent-gold) !important; }
+.payment-summary {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-subtle);
+}
+.payment-summary h3 { color: var(--accent-gold) !important; }
+.payment-summary-item { color: var(--text-secondary) !important; border-color: var(--border-subtle) !important; }
+.payment-summary-item.total {
+  color: var(--text-primary) !important;
+  border-color: var(--accent-gold) !important;
+}
+.payment-summary-item.total strong { color: var(--accent-gold) !important; }
+
+.payment-method h3 { color: var(--accent-gold) !important; }
+.payment-method-btn {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+.payment-method-btn:hover {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+  background-color: rgba(212, 168, 67, 0.08) !important;
+}
+
+.payment-notice {
+  background-color: rgba(212, 168, 67, 0.06) !important;
+  color: var(--text-muted) !important;
+}
+
+.back-button {
+  background: transparent !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+.back-button:hover {
+  border-color: var(--accent-gold) !important;
+  color: var(--accent-gold) !important;
+}
+.confirm-payment-button {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark)) !important;
+  color: #0a0a0f !important;
+  font-weight: 700 !important;
+}
+.confirm-payment-button:hover {
+  background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold)) !important;
+}
+
+/* 성공 */
+.success-container h2 { color: var(--accent-gold) !important; }
+.success-container p { color: var(--text-secondary) !important; }
+.success-summary {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-subtle);
+}
+
+/* 즐겨찾기 버튼 */
+.favorite-btn {
+  border-color: var(--border-subtle) !important;
+  color: var(--text-muted);
+  background: transparent !important;
+}
+.favorite-btn:hover { border-color: var(--accent-gold) !important; }
+.favorite-btn.active {
+  border-color: var(--accent-gold) !important;
+  background-color: rgba(212, 168, 67, 0.1) !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -361,4 +522,20 @@
   .payment-method-grid { grid-template-columns: 1fr; }
   .payment-actions { flex-direction: column; }
   .back-button, .confirm-payment-button { width: 100%; }
+}
+
+.favorite-btn {
+  background: none;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 1.4em;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.favorite-btn:hover { border-color: #f5a623; }
+.favorite-btn.active {
+  border-color: #f5a623;
+  background-color: #fff8e1;
 }

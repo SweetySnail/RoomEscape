@@ -1,0 +1,169 @@
+.super-header {
+  background: linear-gradient(135deg,
+    rgba(212, 168, 67, 0.2),
+    rgba(160, 120, 48, 0.1)
+  ) !important;
+  border-color: var(--accent-gold) !important;
+}
+
+/* ===== 매장 테이블 ===== */
+.stores-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.stores-table-header {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 0.7fr 1.2fr 1.2fr 1.2fr 0.7fr 0.7fr;
+  padding: 10px 16px;
+  background: rgba(212, 168, 67, 0.08);
+  font-size: 0.8em;
+  color: var(--accent-gold);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.stores-table-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 0.7fr 1.2fr 1.2fr 1.2fr 0.7fr 0.7fr;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.88em;
+  color: var(--text-secondary);
+  align-items: center;
+  transition: background 0.15s;
+}
+.stores-table-row:hover { background: rgba(212, 168, 67, 0.04); }
+
+.fee-rate { color: var(--accent-gold) !important; font-weight: 700; }
+.fee-amount { color: #6fcf97 !important; font-weight: 700; }
+
+.detail-btn {
+  padding: 5px 12px;
+  background: rgba(212, 168, 67, 0.1);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-sm);
+  color: var(--accent-gold);
+  cursor: pointer;
+  font-size: 0.82em;
+  transition: all 0.2s;
+}
+.detail-btn:hover { background: rgba(212, 168, 67, 0.2); }
+
+/* ===== 수수료 정산 ===== */
+.fee-summary-card {
+  border-color: rgba(212, 168, 67, 0.4) !important;
+}
+
+.fee-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fee-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fee-summary-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fee-summary-left strong {
+  color: var(--text-primary);
+  font-size: 1em;
+}
+.fee-summary-left span {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+.fee-contact { color: var(--accent-gold) !important; }
+
+.fee-summary-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.fee-calc {
+  display: flex;
+  gap: 8px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.fee-total {
+  font-size: 1.2em;
+  font-weight: 700;
+  color: #6fcf97;
+}
+
+.fee-grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  background: rgba(212, 168, 67, 0.1);
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+.fee-grand-total span {
+  font-size: 1em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.fee-grand-total strong {
+  font-size: 1.4em;
+  color: var(--accent-gold);
+}
+
+/* ===== 매장 상세 모달 ===== */
+.store-detail-modal {
+  max-width: 800px !important;
+}
+
+.store-detail-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+.store-info-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.9em;
+}
+.store-info-row span { color: var(--text-muted); width: 60px; flex-shrink: 0; }
+.store-info-row strong { color: var(--text-primary); }
+
+.store-detail-modal h4 {
+  color: var(--accent-gold);
+  font-size: 0.95em;
+  margin: 0 0 12px 0;
+  font-family: 'Cinzel', serif;
+}
+
+@media (max-width: 768px) {
+  .stores-table-header,
+  .stores-table-row {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+  .stores-table-header span:nth-child(n+5),
+  .stores-table-row span:nth-child(n+5) { display: none; }
+  .store-detail-info { grid-template-columns: 1fr; }
+}

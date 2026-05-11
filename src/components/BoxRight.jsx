@@ -1,4 +1,3 @@
-// src/components/BoxRight.jsx 전체 교체
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Global.css';
@@ -8,6 +7,19 @@ function BoxRight() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [loggedInUser, setLoggedInUser] = useState(() => {
+    const user = sessionStorage.getItem('loggedInUser');
+    return user ? JSON.parse(user) : null;
+  });
+
+  useEffect(() => {
+    const handleChange = () => {
+      const user = sessionStorage.getItem('loggedInUser');
+      setLoggedInUser(user ? JSON.parse(user) : null);
+    };
+    window.addEventListener('loginStateChange', handleChange);
+    return () => window.removeEventListener('loginStateChange', handleChange);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -15,15 +27,19 @@ function BoxRight() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const isSuper = loggedInUser?.adminRole === 'super';
+  const isAdmin = loggedInUser?.isAdmin;
+
   const menus = [
     { path: '/',         label: '홈',       icon: '🏠' },
     { path: '/reserve',  label: '예약',     icon: '🔍' },
     { path: '/calendar', label: '캘린더',   icon: '📅' },
     { path: '/event',    label: '이벤트',   icon: '🎉' },
     { path: '/mypage',   label: '마이페이지', icon: '👤' },
+    ...(isAdmin && !isSuper ? [{ path: '/admin',       label: '관리자',   icon: '🔐' }] : []),
+    ...(isSuper             ? [{ path: '/super-admin', label: '총괄관리', icon: '👑' }] : []),
   ];
 
-  // 모바일: 하단 탭바
   if (isMobile) {
     return (
       <nav className="bottom-tab-bar">
@@ -41,7 +57,6 @@ function BoxRight() {
     );
   }
 
-  // 데스크톱: 기존 우측 사이드바
   return (
     <div className="right-fixed-box">
       {menus.map(menu => (

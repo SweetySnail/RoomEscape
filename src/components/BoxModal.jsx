@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import '../styles/BoxModal.css';
+import { isFavorite, toggleFavorite } from '../utils/FavoriteUtils';
+import { getPoints, spendPoints } from '../utils/PointUtils';
 
 function BoxModal({ productData, onClose }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedPeople, setSelectedPeople] = useState('');
   const [step, setStep] = useState('reservation'); // 'reservation' | 'payment' | 'success'
+  const [favorited, setFavorited] = useState(isFavorite(productData?.id));
+  const [usePoint, setUsePoint] = useState(false);
 
   if (!productData) return null;
+
+  const currentPoints = getPoints();
+  const selectedPrice = selectedPeople ? productData.priceTable[selectedPeople] : null;
+  const pointDiscount = usePoint ? Math.min(currentPoints, selectedPrice || 0) : 0;
+  const finalPrice = (selectedPrice || 0) - pointDiscount;
 
   // 오늘부터 14일치 날짜 생성
   const generateDates = () => {
@@ -27,26 +36,30 @@ function BoxModal({ productData, onClose }) {
   };
   const dates = generateDates();
 
-  // 선택된 인원에 따른 가격
-  const selectedPrice = selectedPeople
-    ? productData.priceTable[selectedPeople]
-    : null;
-
-  // 결제 성공 처리 → 캘린더에 등록
+  // 결제 성공 처리
   const handlePaymentSuccess = () => {
+    // 포인트 차감
+    if (usePoint && pointDiscount > 0) {
+      spendPoints(pointDiscount, `${productData.title} 예약 결제`);
+    }
+
     const newRecord = {
       id: Date.now(),
+      productId: productData.id,
       date: selectedDate,
       productName: productData.title,
       time: selectedTime,
       people: selectedPeople,
-      price: selectedPrice,
+      price: finalPrice,
+      originalPrice: selectedPrice,
+      usedPoints: pointDiscount,
       rating: null,
       theme: productData.theme,
-      success: null, // 성공/실패는 나중에 캘린더에서 기록
+      success: null,
+      reviewed: false,
+      cancelled: false,
     };
 
-    // localStorage에 예약 기록 저장
     const existing = JSON.parse(localStorage.getItem('reservationRecords') || '[]');
     existing.push(newRecord);
     localStorage.setItem('reservationRecords', JSON.stringify(existing));
@@ -59,23 +72,46 @@ function BoxModal({ productData, onClose }) {
     <>
       {/* 상단: 이미지 + 기본 정보 */}
       <div className="modal-top">
-        <img src={productData.imageUrl} alt={productData.title} className="modal-image" />
+        <img
+          src={productData.imageUrl}
+          alt={productData.title}
+          className="modal-image"
+        />
         <div className="modal-info">
-          <h2 className="modal-title">{productData.title}</h2>
+
+          {/* 제목 + 즐겨찾기 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <h2 className="modal-title">{productData.title}</h2>
+            <button
+              className={`favorite-btn ${favorited ? 'active' : ''}`}
+              onClick={() => {
+                const result = toggleFavorite(productData);
+                setFavorited(result);
+              }}
+            >
+              {favorited ? '⭐' : '☆'}
+            </button>
+          </div>
+
           <div className="modal-badge-row">
             <span className="modal-badge theme">{productData.theme}</span>
             <span className="modal-badge genre">{productData.genre}</span>
           </div>
+
           <div className="modal-rating">
             ⭐ <strong>{productData.rating}</strong>
             <span className="modal-review-count">({productData.reviewCount}개 리뷰)</span>
           </div>
+
           <div className="modal-difficulty">
             난이도&nbsp;
             {Array.from({ length: 5 }, (_, i) => (
-              <span key={i} style={{ color: i < productData.difficulty ? '#6f00ff' : '#ddd' }}>★</span>
+              <span key={i} style={{ color: i < productData.difficulty ? '#6f00ff' : '#ddd' }}>
+                ★
+              </span>
             ))}
           </div>
+
           <div className="modal-price-table">
             <h4>인원별 가격</h4>
             <div className="price-row-group">
@@ -87,6 +123,7 @@ function BoxModal({ productData, onClose }) {
               ))}
             </div>
           </div>
+
           <p className="modal-description">{productData.description}</p>
         </div>
       </div>
@@ -101,7 +138,11 @@ function BoxModal({ productData, onClose }) {
             <button
               key={date.value}
               className={`date-btn ${selectedDate === date.value ? 'selected' : ''}`}
-              onClick={() => { setSelectedDate(date.value); setSelectedTime(''); }}
+              onClick={() => {
+                setSelectedDate(date.value);
+                setSelectedTime('');
+                setSelectedPeople('');
+              }}
             >
               {date.label}
             </button>
@@ -117,7 +158,10 @@ function BoxModal({ productData, onClose }) {
                 <button
                   key={time}
                   className={`time-btn ${selectedTime === time ? 'selected' : ''}`}
-                  onClick={() => setSelectedTime(time)}
+                  onClick={() => {
+                    setSelectedTime(time);
+                    setSelectedPeople('');
+                  }}
                 >
                   {time}
                 </button>
@@ -214,12 +258,44 @@ function BoxModal({ productData, onClose }) {
           <span>인원</span>
           <strong>{selectedPeople}</strong>
         </div>
-        <div className="payment-summary-item total">
-          <span>결제 금액</span>
+        <div className="payment-summary-item">
+          <span>기본 금액</span>
           <strong>{selectedPrice?.toLocaleString()}원</strong>
+        </div>
+
+        {/* 포인트 사용 */}
+        <div className="payment-summary-item">
+          <span>보유 포인트</span>
+          <strong style={{ color: '#6f00ff' }}>💎 {currentPoints.toLocaleString()} P</strong>
+        </div>
+        <div className="payment-summary-item">
+          <span>포인트 사용</span>
+          <button
+            style={{
+              padding: '6px 14px',
+              border: `1.5px solid ${usePoint ? '#6f00ff' : '#ddd'}`,
+              borderRadius: '6px',
+              background: usePoint ? '#f5f0ff' : 'white',
+              color: usePoint ? '#6f00ff' : '#666',
+              cursor: currentPoints > 0 ? 'pointer' : 'not-allowed',
+              fontSize: '0.9em',
+              fontWeight: 'bold',
+            }}
+            onClick={() => currentPoints > 0 && setUsePoint(!usePoint)}
+          >
+            {usePoint
+              ? `✅ -${pointDiscount.toLocaleString()}P 사용중`
+              : currentPoints > 0 ? '포인트 사용하기' : '포인트 없음'}
+          </button>
+        </div>
+
+        <div className="payment-summary-item total">
+          <span>최종 결제 금액</span>
+          <strong>{finalPrice.toLocaleString()}원</strong>
         </div>
       </div>
 
+      {/* 결제 수단 */}
       <div className="payment-method">
         <h3>결제 수단</h3>
         <div className="payment-method-grid">
@@ -270,9 +346,15 @@ function BoxModal({ productData, onClose }) {
           <span>인원</span>
           <strong>{selectedPeople}</strong>
         </div>
+        {pointDiscount > 0 && (
+          <div className="payment-summary-item">
+            <span>포인트 할인</span>
+            <strong style={{ color: '#6f00ff' }}>-{pointDiscount.toLocaleString()}P</strong>
+          </div>
+        )}
         <div className="payment-summary-item total">
           <span>결제 금액</span>
-          <strong>{selectedPrice?.toLocaleString()}원</strong>
+          <strong>{finalPrice.toLocaleString()}원</strong>
         </div>
       </div>
 
@@ -290,8 +372,8 @@ function BoxModal({ productData, onClose }) {
         <button className="modal-close-button" onClick={onClose}>×</button>
 
         {step === 'reservation' && renderReservation()}
-        {step === 'payment' && renderPayment()}
-        {step === 'success' && renderSuccess()}
+        {step === 'payment'     && renderPayment()}
+        {step === 'success'     && renderSuccess()}
       </div>
     </div>
   );

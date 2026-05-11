@@ -1,49 +1,39 @@
+/* ===== 우측 사이드바 ===== */
 .right-fixed-box {
-  position: fixed; /* 화면에 고정 */
-  top: 30%; /* 고정 헤더 아래에 위치 (헤더 높이 + 여유 공간) */
-  right: 20px; /* 우측에서 20px 떨어지게 */
-  width: 150px; /* 박스 너비 */
-  background-color: rgba(255, 255, 255, 0.95); /* 투명도 있는 흰색 배경 */
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* 그림자 */
-  z-index: 90; /* 고정 헤더보다 낮은 z-index */
+  position: fixed;
+  top: 30%;
+  right: 50px;
+  width: 200px;
+  padding: 20px;
+  z-index: 90;
   display: flex;
-  flex-direction: column; /* 버튼들을 세로로 나열 */
-  gap: 10px; /* 버튼 사이 간격 */
-  align-items: stretch; /* 버튼이 박스 너비를 채우도록 */
-}
-
-/* 기존 스타일 유지하고 아래 추가 */
-
-.page-button.active {
-  background-color: #5a00d8;
-  font-weight: bold;
+  flex-direction: column;
+  gap: 20px;
+  align-items: stretch;
+  background-color: rgba(18, 18, 26, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
 }
 
 /* ===== 모바일 하단 탭바 ===== */
-.bottom-tab-bar {
-  display: none;
-}
+.bottom-tab-bar { display: none; }
 
 @media (max-width: 768px) {
-  /* 사이드바 숨기기 */
-  .right-fixed-box {
-    display: none;
-  }
+  .right-fixed-box { display: none; }
 
-  /* 하단 탭바 표시 */
   .bottom-tab-bar {
     display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
-    background-color: white;
-    border-top: 1px solid #eee;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+    height: 64px;
+    background-color: rgba(12, 12, 18, 0.98);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-subtle);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
     z-index: 200;
   }
 
@@ -53,31 +43,17 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
     background: none;
     border: none;
     cursor: pointer;
-    color: #aaa;
+    color: var(--text-muted);
     transition: color 0.2s;
     padding: 0;
   }
+  .bottom-tab-btn.active { color: var(--accent-gold); }
+  .bottom-tab-icon { font-size: 1.3em; line-height: 1; }
+  .bottom-tab-label { font-size: 0.62em; font-weight: 500; }
 
-  .bottom-tab-btn.active {
-    color: #6f00ff;
-  }
-
-  .bottom-tab-icon {
-    font-size: 1.3em;
-    line-height: 1;
-  }
-
-  .bottom-tab-label {
-    font-size: 0.65em;
-    font-weight: 500;
-  }
-
-  /* 하단 탭바 높이만큼 콘텐츠 여백 추가 */
-  .main-page-wrapper {
-    margin-bottom: 70px;
-  }
+  .main-page-wrapper { margin-bottom: 80px; }
 }
