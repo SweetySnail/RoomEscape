@@ -492,9 +492,11 @@
   background: rgba(0,0,0,0.8);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 9999;
   backdrop-filter: blur(4px);
+  overflow-y: auto;
+  padding: 40px 20px;
 }
 .admin-modal {
   background: var(--bg-card);
@@ -503,14 +505,21 @@
   padding: 28px;
   width: 92%;
   max-width: 600px;
-  max-height: 88vh;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 16px;
   box-shadow: var(--shadow-card), var(--shadow-glow);
 }
+
+.store-detail-modal {
+  max-width: 800px !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
 .admin-modal h3 {
   font-family: 'Cinzel', serif;
   color: var(--accent-gold);

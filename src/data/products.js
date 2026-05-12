@@ -4,7 +4,7 @@ const productsData = [
   // =============================================
   {
     id: 101,
-    title: '공포의 집 (서초)',
+    title: '공포의 집',
     rating: 4.7, reviewCount: 182,
     theme: '공포/스릴러', genre: '공포', difficulty: 5,
     location: { city: '서울', district: '서초구' },
@@ -20,7 +20,7 @@ const productsData = [
   },
   {
     id: 102,
-    title: '저주의 방 (서초)',
+    title: '저주의 방',
     rating: 4.5, reviewCount: 143,
     theme: '공포/스릴러', genre: '공포', difficulty: 4,
     location: { city: '서울', district: '서초구' },
@@ -30,12 +30,12 @@ const productsData = [
     description: '100년 된 저주의 방. 해 지기 전에 탈출하지 못하면 영원히 갇힌다.',
     imageUrl: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?w=400&h=300&fit=crop',
     recentReviews: [
-      { id: 1, reviewer: '박도윤', rating: 5, comment: '진짜 무서웠어요. 다시 도전할게요!', date: '2026-04-20' },
+      { id: 1, reviewer: '박도윤', rating: 5, comment: '진짜 무서웠어요!', date: '2026-04-20' },
     ],
   },
   {
     id: 103,
-    title: '달빛 로맨스 (서초)',
+    title: '달빛 로맨스',
     rating: 4.6, reviewCount: 210,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '서울', district: '서초구' },
@@ -50,7 +50,7 @@ const productsData = [
   },
   {
     id: 104,
-    title: '비밀의 편지 (서초)',
+    title: '비밀의 편지',
     rating: 4.4, reviewCount: 156,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '서울', district: '서초구' },
@@ -65,7 +65,7 @@ const productsData = [
   },
   {
     id: 105,
-    title: '웃음 폭발 (서초)',
+    title: '웃음 폭발',
     rating: 4.3, reviewCount: 198,
     theme: '코미디', genre: '코미디', difficulty: 1,
     location: { city: '서울', district: '서초구' },
@@ -80,7 +80,7 @@ const productsData = [
   },
   {
     id: 106,
-    title: '코미디 클럽 (서초)',
+    title: '코미디 클럽',
     rating: 4.2, reviewCount: 167,
     theme: '코미디', genre: '코미디', difficulty: 1,
     location: { city: '서울', district: '서초구' },
@@ -93,13 +93,12 @@ const productsData = [
       { id: 1, reviewer: '조이준', rating: 4, comment: '가볍게 즐기기 딱 좋아요!', date: '2026-05-05' },
     ],
   },
-
   // =============================================
   // 블랙이스케이프 종로점 (김득춘)
   // =============================================
   {
     id: 201,
-    title: '어둠의 사원 (종로)',
+    title: '어둠의 사원',
     rating: 4.8, reviewCount: 231,
     theme: '공포/스릴러', genre: '공포', difficulty: 5,
     location: { city: '서울', district: '종로구' },
@@ -114,7 +113,7 @@ const productsData = [
   },
   {
     id: 202,
-    title: '우주탈출 (종로)',
+    title: '우주탈출',
     rating: 4.6, reviewCount: 189,
     theme: 'SF/미래', genre: 'SF', difficulty: 4,
     location: { city: '서울', district: '종로구' },
@@ -129,7 +128,7 @@ const productsData = [
   },
   {
     id: 203,
-    title: '미래도시 (종로)',
+    title: '미래도시',
     rating: 4.5, reviewCount: 165,
     theme: 'SF/미래', genre: 'SF', difficulty: 3,
     location: { city: '서울', district: '종로구' },
@@ -144,7 +143,7 @@ const productsData = [
   },
   {
     id: 204,
-    title: '미스터리 저택 (종로)',
+    title: '미스터리 저택',
     rating: 4.7, reviewCount: 203,
     theme: '추리/미스터리', genre: '추리', difficulty: 4,
     location: { city: '서울', district: '종로구' },
@@ -159,7 +158,7 @@ const productsData = [
   },
   {
     id: 205,
-    title: '사라진 유언 (종로)',
+    title: '사라진 유언',
     rating: 4.4, reviewCount: 178,
     theme: '추리/미스터리', genre: '추리', difficulty: 3,
     location: { city: '서울', district: '종로구' },
@@ -172,13 +171,12 @@ const productsData = [
       { id: 1, reviewer: '최지우', rating: 4, comment: '힌트 없이 성공했어요!', date: '2026-05-07' },
     ],
   },
-
   // =============================================
   // 블랙이스케이프 용답점 (김득춘)
   // =============================================
   {
     id: 301,
-    title: '지옥의 문 (용답)',
+    title: '지옥의 문',
     rating: 4.9, reviewCount: 312,
     theme: '공포/스릴러', genre: '공포', difficulty: 5,
     location: { city: '서울', district: '성동구' },
@@ -193,7 +191,7 @@ const productsData = [
   },
   {
     id: 302,
-    title: '공포특급 (용답)',
+    title: '공포특급',
     rating: 4.7, reviewCount: 256,
     theme: '공포/스릴러', genre: '공포', difficulty: 4,
     location: { city: '서울', district: '성동구' },
@@ -208,7 +206,7 @@ const productsData = [
   },
   {
     id: 303,
-    title: '혈의 누 (용답)',
+    title: '혈의 누',
     rating: 4.6, reviewCount: 198,
     theme: '공포/스릴러', genre: '공포', difficulty: 4,
     location: { city: '서울', district: '성동구' },
@@ -223,7 +221,7 @@ const productsData = [
   },
   {
     id: 304,
-    title: '코믹수사대 (용답)',
+    title: '코믹수사대',
     rating: 4.3, reviewCount: 187,
     theme: '코미디', genre: '코미디', difficulty: 2,
     location: { city: '서울', district: '성동구' },
@@ -238,7 +236,7 @@ const productsData = [
   },
   {
     id: 305,
-    title: '개그콘서트 (용답)',
+    title: '개그콘서트',
     rating: 4.1, reviewCount: 145,
     theme: '코미디', genre: '코미디', difficulty: 1,
     location: { city: '서울', district: '성동구' },
@@ -253,7 +251,7 @@ const productsData = [
   },
   {
     id: 306,
-    title: '정글탐험 (용답)',
+    title: '정글탐험',
     rating: 4.5, reviewCount: 223,
     theme: '판타지/어드벤처', genre: '어드벤처', difficulty: 3,
     location: { city: '서울', district: '성동구' },
@@ -268,7 +266,7 @@ const productsData = [
   },
   {
     id: 307,
-    title: '해저탐험 (용답)',
+    title: '해저탐험',
     rating: 4.4, reviewCount: 176,
     theme: '판타지/어드벤처', genre: '어드벤처', difficulty: 3,
     location: { city: '서울', district: '성동구' },
@@ -283,7 +281,7 @@ const productsData = [
   },
   {
     id: 308,
-    title: '사막의 보물 (용답)',
+    title: '사막의 보물',
     rating: 4.6, reviewCount: 201,
     theme: '판타지/어드벤처', genre: '어드벤처', difficulty: 4,
     location: { city: '서울', district: '성동구' },
@@ -296,13 +294,12 @@ const productsData = [
       { id: 1, reviewer: '최지우', rating: 5, comment: '이집트 느낌이 물씬!', date: '2026-04-30' },
     ],
   },
-
   // =============================================
   // 미스터리박스 강남점 (이수진)
   // =============================================
   {
     id: 401,
-    title: '살인마의 집 (강남)',
+    title: '살인마의 집',
     rating: 4.8, reviewCount: 267,
     theme: '공포/스릴러', genre: '공포', difficulty: 5,
     location: { city: '서울', district: '강남구' },
@@ -317,7 +314,7 @@ const productsData = [
   },
   {
     id: 402,
-    title: '공포탈출 (강남)',
+    title: '공포탈출',
     rating: 4.6, reviewCount: 198,
     theme: '공포/스릴러', genre: '공포', difficulty: 4,
     location: { city: '서울', district: '강남구' },
@@ -332,7 +329,7 @@ const productsData = [
   },
   {
     id: 403,
-    title: '달콤한 비밀 (강남)',
+    title: '달콤한 비밀',
     rating: 4.7, reviewCount: 234,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '서울', district: '강남구' },
@@ -347,7 +344,7 @@ const productsData = [
   },
   {
     id: 404,
-    title: '첫사랑 (강남)',
+    title: '첫사랑',
     rating: 4.5, reviewCount: 189,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '서울', district: '강남구' },
@@ -362,7 +359,7 @@ const productsData = [
   },
   {
     id: 405,
-    title: '로맨스 인 서울 (강남)',
+    title: '로맨스 인 서울',
     rating: 4.4, reviewCount: 167,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '서울', district: '강남구' },
@@ -377,7 +374,7 @@ const productsData = [
   },
   {
     id: 406,
-    title: '탐정 홈즈 (강남)',
+    title: '탐정 홈즈',
     rating: 4.8, reviewCount: 289,
     theme: '추리/미스터리', genre: '추리', difficulty: 4,
     location: { city: '서울', district: '강남구' },
@@ -392,7 +389,7 @@ const productsData = [
   },
   {
     id: 407,
-    title: '사라진 증인 (강남)',
+    title: '사라진 증인',
     rating: 4.6, reviewCount: 212,
     theme: '추리/미스터리', genre: '추리', difficulty: 3,
     location: { city: '서울', district: '강남구' },
@@ -405,13 +402,12 @@ const productsData = [
       { id: 1, reviewer: '박도윤', rating: 4, comment: '스토리가 탄탄해요!', date: '2026-05-03' },
     ],
   },
-
   // =============================================
   // 미스터리박스 홍대점 (이수진)
   // =============================================
   {
     id: 501,
-    title: '심해공포 (홍대)',
+    title: '심해공포',
     rating: 4.7, reviewCount: 245,
     theme: '공포/스릴러', genre: '공포', difficulty: 5,
     location: { city: '서울', district: '마포구' },
@@ -426,7 +422,7 @@ const productsData = [
   },
   {
     id: 502,
-    title: '좀비바이러스 (홍대)',
+    title: '좀비바이러스',
     rating: 4.5, reviewCount: 198,
     theme: '공포/스릴러', genre: '공포', difficulty: 4,
     location: { city: '서울', district: '마포구' },
@@ -441,7 +437,7 @@ const productsData = [
   },
   {
     id: 503,
-    title: '우리의 이야기 (홍대)',
+    title: '우리의 이야기',
     rating: 4.6, reviewCount: 213,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '서울', district: '마포구' },
@@ -456,7 +452,7 @@ const productsData = [
   },
   {
     id: 504,
-    title: '벚꽃 연인 (홍대)',
+    title: '벚꽃 연인',
     rating: 4.4, reviewCount: 178,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '서울', district: '마포구' },
@@ -471,7 +467,7 @@ const productsData = [
   },
   {
     id: 505,
-    title: '미래전쟁 (홍대)',
+    title: '미래전쟁',
     rating: 4.7, reviewCount: 231,
     theme: 'SF/미래', genre: 'SF', difficulty: 4,
     location: { city: '서울', district: '마포구' },
@@ -486,7 +482,7 @@ const productsData = [
   },
   {
     id: 506,
-    title: '로봇의 반란 (홍대)',
+    title: '로봇의 반란',
     rating: 4.5, reviewCount: 187,
     theme: 'SF/미래', genre: 'SF', difficulty: 3,
     location: { city: '서울', district: '마포구' },
@@ -499,13 +495,12 @@ const productsData = [
       { id: 1, reviewer: '김민준', rating: 4, comment: '아이디어가 참신해요!', date: '2026-05-04' },
     ],
   },
-
   // =============================================
   // 이스케이프킹 부산점 (박준혁)
   // =============================================
   {
     id: 601,
-    title: '귀신의 집 (부산)',
+    title: '귀신의 집',
     rating: 4.8, reviewCount: 312,
     theme: '공포/스릴러', genre: '공포', difficulty: 5,
     location: { city: '부산', district: '해운대구' },
@@ -520,7 +515,7 @@ const productsData = [
   },
   {
     id: 602,
-    title: '핏빛 병원 (부산)',
+    title: '핏빛 병원',
     rating: 4.7, reviewCount: 267,
     theme: '공포/스릴러', genre: '공포', difficulty: 4,
     location: { city: '부산', district: '해운대구' },
@@ -535,7 +530,7 @@ const productsData = [
   },
   {
     id: 603,
-    title: '사랑의 미로 (부산)',
+    title: '사랑의 미로',
     rating: 4.5, reviewCount: 198,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '부산', district: '해운대구' },
@@ -550,7 +545,7 @@ const productsData = [
   },
   {
     id: 604,
-    title: '프로포즈 (부산)',
+    title: '프로포즈',
     rating: 4.6, reviewCount: 223,
     theme: '로맨스', genre: '로맨스', difficulty: 2,
     location: { city: '부산', district: '해운대구' },
@@ -565,7 +560,7 @@ const productsData = [
   },
   {
     id: 605,
-    title: '우주선 탈출 (부산)',
+    title: '우주선 탈출',
     rating: 4.7, reviewCount: 256,
     theme: 'SF/미래', genre: 'SF', difficulty: 4,
     location: { city: '부산', district: '해운대구' },
@@ -580,7 +575,7 @@ const productsData = [
   },
   {
     id: 606,
-    title: '타임머신 (부산)',
+    title: '타임머신',
     rating: 4.5, reviewCount: 189,
     theme: 'SF/미래', genre: 'SF', difficulty: 3,
     location: { city: '부산', district: '해운대구' },
@@ -595,7 +590,7 @@ const productsData = [
   },
   {
     id: 607,
-    title: '코미디 탈출 (부산)',
+    title: '코미디 탈출',
     rating: 4.2, reviewCount: 156,
     theme: '코미디', genre: '코미디', difficulty: 1,
     location: { city: '부산', district: '해운대구' },

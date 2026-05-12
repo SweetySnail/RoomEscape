@@ -167,3 +167,44 @@
   .stores-table-row span:nth-child(n+5) { display: none; }
   .store-detail-info { grid-template-columns: 1fr; }
 }
+
+/* 지점별 섹션 */
+.branch-section {
+  margin-top: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.branch-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 10px 16px;
+  background: rgba(212, 168, 67, 0.1);
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--accent-gold);
+  align-items: center;
+}
+.branch-name { font-size: 0.95em; }
+
+/* 필터 행 */
+.store-filter-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 4px;
+}
+.store-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.store-filter-group label {
+  font-size: 0.78em;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

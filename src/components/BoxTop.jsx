@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { logOut } from '../services/authService';
 import '../styles/Global.css';
 import '../styles/HomePage.css';
 
@@ -35,15 +36,17 @@ function BoxTop() {
     navigate(path);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('loggedInUser'); // 세션 스토리지에서 사용자 정보 제거
-    setLoggedInUser(null); // 상태 업데이트
-
-    // 다른 컴포넌트(BoxTop, LoginPage)에 변경 알림 (동일한 이벤트를 dispatch)
-    window.dispatchEvent(new Event('loginStateChange')); 
-
-    alert('로그아웃 되었습니다.');
-    navigate('/'); // 로그아웃 후 홈으로 이동
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      sessionStorage.removeItem('loggedInUser');
+      setLoggedInUser(null);
+      window.dispatchEvent(new Event('loginStateChange'));
+      alert('로그아웃 되었습니다.');
+      navigate('/');
+    } catch (error) {
+      alert('로그아웃 중 오류가 발생했어요.');
+    }
   };
 
   return (
