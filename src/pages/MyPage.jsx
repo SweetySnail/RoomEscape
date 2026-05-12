@@ -5,27 +5,32 @@ import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
 import ReviewModal from '../components/ReviewModal';
 import { getPoints } from '../utils/PointUtils';
+import { useAuth } from '../hooks/useAuth';
+import { getMyReservations } from '../services/reservationService';
+import { getMyReviews } from '../services/reviewService';
+import { getPointHistory } from '../services/pointService';
+import { updateNickname, updateUserData } from '../services/authService';
 import '../styles/Global.css';
 import '../styles/MyPage.css';
 
 
 function MyPage() {
   const navigate = useNavigate();
+  const { user: authUser, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loggedInUser, setLoggedInUser] = useState(null);
 
-  // 로그인 확인
   useEffect(() => {
-    const user = sessionStorage.getItem('loggedInUser');
-    if (!user) {
+    if (loading) return;
+    if (!authUser) {
       alert('로그인이 필요한 페이지예요!');
       navigate('/login');
       return;
     }
-    setLoggedInUser(JSON.parse(user));
-  }, [navigate]);
+    setLoggedInUser(authUser);
+  }, [authUser, loading, navigate]);
 
-  if (!loggedInUser) return null;
+  if (loading || !loggedInUser) return null;
 
   const tabs = [
     { id: 'profile',  label: '👤 개인정보' },
@@ -41,7 +46,6 @@ function MyPage() {
       <BoxMain>
         <div className="mypage-content">
 
-          {/* 상단 프로필 요약 */}
           <div className="mypage-header">
             <div className="mypage-avatar">
               {loggedInUser.nickname?.charAt(0).toUpperCase()}
@@ -50,12 +54,11 @@ function MyPage() {
               <h2>{loggedInUser.nickname}님, 환영해요!</h2>
               <p>{loggedInUser.email}</p>
               <div className="mypage-points">
-                💎 보유 포인트: <strong>{getPoints().toLocaleString()} P</strong>
+                💎 보유 포인트: <strong>{(loggedInUser.points || 0).toLocaleString()} P</strong>
               </div>
             </div>
           </div>
 
-          {/* 탭 메뉴 */}
           <div className="mypage-tabs">
             {tabs.map(tab => (
               <button
@@ -68,12 +71,11 @@ function MyPage() {
             ))}
           </div>
 
-          {/* 탭 콘텐츠 */}
           <div className="mypage-tab-content">
-            {activeTab === 'profile'  && <ProfileTab  loggedInUser={loggedInUser} setLoggedInUser={setLoggedInUser} />}
-            {activeTab === 'payment'  && <PaymentTab />}
+            {activeTab === 'profile'  && <ProfileTab loggedInUser={loggedInUser} setLoggedInUser={setLoggedInUser} />}
+            {activeTab === 'payment'  && <PaymentTab loggedInUser={loggedInUser} />}
             {activeTab === 'favorite' && <FavoriteTab />}
-            {activeTab === 'history'  && <HistoryTab />}
+            {activeTab === 'history'  && <HistoryTab loggedInUser={loggedInUser} />}
           </div>
 
         </div>
@@ -93,34 +95,28 @@ function ProfileTab({ loggedInUser, setLoggedInUser }) {
   const [nicknameMsg, setNicknameMsg] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
 
-  const handleNicknameChange = () => {
-    if (!nickname.trim()) {
-      setNicknameMsg('닉네임을 입력해주세요.');
-      return;
+  const handleNicknameChange = async () => {
+    if (!nickname.trim()) { setNicknameMsg('닉네임을 입력해주세요.'); return; }
+    try {
+      await updateNickname(loggedInUser.uid, nickname);
+      const updated = { ...loggedInUser, nickname };
+      sessionStorage.setItem('loggedInUser', JSON.stringify(updated));
+      setLoggedInUser(updated);
+      window.dispatchEvent(new Event('loginStateChange'));
+      setNicknameMsg('✅ 닉네임이 변경되었어요!');
+    } catch (error) {
+      setNicknameMsg('닉네임 변경 중 오류가 발생했어요.');
     }
-    // sessionStorage 업데이트
-    const updated = { ...loggedInUser, nickname };
-    sessionStorage.setItem('loggedInUser', JSON.stringify(updated));
-    setLoggedInUser(updated);
-
-    // localStorage 유저 목록도 업데이트
-    const users = JSON.parse(localStorage.getItem('appUsers') || '[]');
-    const updatedUsers = users.map(u =>
-      u.username === loggedInUser.username ? { ...u, nickname } : u
-    );
-    localStorage.setItem('appUsers', JSON.stringify(updatedUsers));
-    window.dispatchEvent(new Event('loginStateChange'));
-    setNicknameMsg('✅ 닉네임이 변경되었어요!');
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     setPasswordMsg('');
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordMsg('모든 항목을 입력해주세요.');
       return;
     }
-    if (currentPassword !== loggedInUser.password) {
-      setPasswordMsg('현재 비밀번호가 일치하지 않아요.');
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg('새 비밀번호가 일치하지 않아요.');
       return;
     }
     const passwordRegex = /^(?=.*[!@#$%^&*])(?=.*[a-zA-Z]).{8,}$/;
@@ -128,28 +124,29 @@ function ProfileTab({ loggedInUser, setLoggedInUser }) {
       setPasswordMsg('새 비밀번호는 영문, 특수문자 포함 8자 이상이어야 해요.');
       return;
     }
-    if (newPassword !== confirmPassword) {
-      setPasswordMsg('새 비밀번호가 일치하지 않아요.');
-      return;
-    }
-    const updated = { ...loggedInUser, password: newPassword };
-    sessionStorage.setItem('loggedInUser', JSON.stringify(updated));
 
-    const users = JSON.parse(localStorage.getItem('appUsers') || '[]');
-    const updatedUsers = users.map(u =>
-      u.username === loggedInUser.username ? { ...u, password: newPassword } : u
-    );
-    localStorage.setItem('appUsers', JSON.stringify(updatedUsers));
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setPasswordMsg('✅ 비밀번호가 변경되었어요!');
+    try {
+      // Firebase Auth 비밀번호 변경
+      const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import('firebase/auth');
+      const { auth } = await import('../firebase');
+      const credential = EmailAuthProvider.credential(loggedInUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordMsg('✅ 비밀번호가 변경되었어요!');
+    } catch (error) {
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        setPasswordMsg('현재 비밀번호가 일치하지 않아요.');
+      } else {
+        setPasswordMsg('비밀번호 변경 중 오류가 발생했어요.');
+      }
+    }
   };
 
   return (
     <div className="tab-section">
-
-      {/* 닉네임 변경 */}
       <div className="tab-card">
         <h3>닉네임 변경</h3>
         <div className="input-row">
@@ -160,9 +157,7 @@ function ProfileTab({ loggedInUser, setLoggedInUser }) {
             placeholder="새 닉네임 입력"
             className="mypage-input"
           />
-          <button className="mypage-btn primary" onClick={handleNicknameChange}>
-            변경
-          </button>
+          <button className="mypage-btn primary" onClick={handleNicknameChange}>변경</button>
         </div>
         {nicknameMsg && (
           <p className={`mypage-msg ${nicknameMsg.startsWith('✅') ? 'success' : 'error'}`}>
@@ -171,31 +166,18 @@ function ProfileTab({ loggedInUser, setLoggedInUser }) {
         )}
       </div>
 
-      {/* 비밀번호 변경 */}
       <div className="tab-card">
         <h3>비밀번호 변경</h3>
         <div className="input-group-vertical">
-          <input
-            type="password"
-            value={currentPassword}
+          <input type="password" value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            placeholder="현재 비밀번호"
-            className="mypage-input"
-          />
-          <input
-            type="password"
-            value={newPassword}
+            placeholder="현재 비밀번호" className="mypage-input" />
+          <input type="password" value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="새 비밀번호 (영문+특수문자 8자 이상)"
-            className="mypage-input"
-          />
-          <input
-            type="password"
-            value={confirmPassword}
+            placeholder="새 비밀번호 (영문+특수문자 8자 이상)" className="mypage-input" />
+          <input type="password" value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="새 비밀번호 확인"
-            className="mypage-input"
-          />
+            placeholder="새 비밀번호 확인" className="mypage-input" />
           <button className="mypage-btn primary" onClick={handlePasswordChange}>
             비밀번호 변경
           </button>
@@ -207,32 +189,27 @@ function ProfileTab({ loggedInUser, setLoggedInUser }) {
         )}
       </div>
 
-      {/* 기본 정보 표시 */}
       <div className="tab-card">
         <h3>기본 정보</h3>
         <div className="info-table">
-          <div className="info-row">
-            <span className="info-label">아이디</span>
-            <span className="info-value">{loggedInUser.username}</span>
-          </div>
           <div className="info-row">
             <span className="info-label">이메일</span>
             <span className="info-value">{loggedInUser.email}</span>
           </div>
           <div className="info-row">
-            <span className="info-label">성별</span>
-            <span className="info-value">
-              {loggedInUser.gender === 'm' ? '남성' :
-               loggedInUser.gender === 'f' ? '여성' : '미입력'}
+            <span className="info-label">포인트</span>
+            <span className="info-value" style={{ color: 'var(--accent-gold)', fontWeight: 'bold' }}>
+              💎 {(loggedInUser.points || 0).toLocaleString()} P
             </span>
           </div>
           <div className="info-row">
-            <span className="info-label">생년월일</span>
-            <span className="info-value">{loggedInUser.birth || '미입력'}</span>
+            <span className="info-label">가입일</span>
+            <span className="info-value">
+              {loggedInUser.createdAt?.slice(0, 10) || '정보 없음'}
+            </span>
           </div>
         </div>
       </div>
-
     </div>
   );
 }
@@ -441,70 +418,73 @@ function FavoriteTab() {
 // =============================================
 // 탭 4: 히스토리
 // =============================================
-function HistoryTab() {
-  const [records, setRecords] = useState(() => {
-    return JSON.parse(localStorage.getItem('reservationRecords') || '[]');
-  });
+function HistoryTab({ loggedInUser }) {
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [reviewTarget, setReviewTarget] = useState(null); // 리뷰 작성 대상
+  const [reviewTarget, setReviewTarget] = useState(null);
+
+  useEffect(() => {
+    const loadRecords = async () => {
+      if (!loggedInUser?.uid) return;
+      try {
+        const data = await getMyReservations(loggedInUser.uid);
+        setRecords(data);
+      } catch (error) {
+        console.error('예약 불러오기 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadRecords();
+  }, [loggedInUser]);
 
   const filteredRecords = records.filter(r => {
-    if (filter === 'success') return r.success === true;
-    if (filter === 'fail')    return r.success === false;
-    if (filter === 'pending') return r.success === null && !r.cancelled;
+    if (filter === 'success')   return r.success === true;
+    if (filter === 'fail')      return r.success === false;
+    if (filter === 'pending')   return r.success === null && !r.cancelled;
     if (filter === 'cancelled') return r.cancelled === true;
     return true;
   });
 
   const stats = {
-    total:   records.length,
+    total:   records.filter(r => !r.cancelled).length,
     success: records.filter(r => r.success === true).length,
     fail:    records.filter(r => r.success === false).length,
     pending: records.filter(r => r.success === null && !r.cancelled).length,
   };
 
   const successRate = (stats.success + stats.fail) > 0
-    ? Math.round((stats.success / (stats.success + stats.fail)) * 100)
-    : 0;
+    ? Math.round((stats.success / (stats.success + stats.fail)) * 100) : 0;
 
-  const handleReviewSubmit = () => {
-    // 리뷰 제출 후 records 새로고침
-    const updated = JSON.parse(localStorage.getItem('reservationRecords') || '[]');
-    setRecords(updated);
+  const handleReviewSubmit = async () => {
+    const data = await getMyReservations(loggedInUser.uid);
+    setRecords(data);
     setReviewTarget(null);
   };
 
+  if (loading) return <p className="empty-msg">불러오는 중...</p>;
+
   return (
     <div className="tab-section">
-
-      {/* 통계 */}
       <div className="tab-card">
         <h3>나의 방탈출 통계</h3>
         <div className="history-stats">
-          <div className="history-stat-item">
-            <span className="history-stat-number">{stats.total}</span>
-            <span className="history-stat-label">총 예약</span>
-          </div>
-          <div className="history-stat-item success">
-            <span className="history-stat-number">{stats.success}</span>
-            <span className="history-stat-label">🟢 성공</span>
-          </div>
-          <div className="history-stat-item fail">
-            <span className="history-stat-number">{stats.fail}</span>
-            <span className="history-stat-label">🔴 실패</span>
-          </div>
-          <div className="history-stat-item pending">
-            <span className="history-stat-number">{stats.pending}</span>
-            <span className="history-stat-label">⏳ 미완료</span>
-          </div>
-          <div className="history-stat-item rate">
-            <span className="history-stat-number">{successRate}%</span>
-            <span className="history-stat-label">성공률</span>
-          </div>
+          {[
+            { cls: '',        num: stats.total,   label: '총 예약' },
+            { cls: 'success', num: stats.success, label: '🟢 성공' },
+            { cls: 'fail',    num: stats.fail,    label: '🔴 실패' },
+            { cls: 'pending', num: stats.pending, label: '⏳ 미완료' },
+            { cls: 'rate',    num: `${successRate}%`, label: '성공률' },
+          ].map(s => (
+            <div key={s.label} className={`history-stat-item ${s.cls}`}>
+              <span className="history-stat-number">{s.num}</span>
+              <span className="history-stat-label">{s.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* 예약 목록 */}
       <div className="tab-card">
         <div className="history-filter-row">
           <h3>예약 목록</h3>
@@ -538,7 +518,7 @@ function HistoryTab() {
               >
                 <div className="history-item-header">
                   <strong>{record.productName}</strong>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {record.success === true  && <span className="result-badge success">🟢 성공</span>}
                     {record.success === false && <span className="result-badge fail">🔴 실패</span>}
                     {record.success === null && !record.cancelled &&
@@ -556,7 +536,6 @@ function HistoryTab() {
                   <span>💰 {record.price?.toLocaleString()}원</span>
                 </div>
 
-                {/* 리뷰 작성 버튼 - 완료된 예약이고 아직 리뷰 안 썼을 때 */}
                 {record.success !== null && !record.cancelled && !record.reviewed && (
                   <button
                     className="review-write-btn"
@@ -571,7 +550,6 @@ function HistoryTab() {
         )}
       </div>
 
-      {/* 리뷰 모달 */}
       {reviewTarget && (
         <ReviewModal
           record={reviewTarget}

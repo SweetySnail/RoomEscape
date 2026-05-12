@@ -28,17 +28,37 @@ function BoxRight() {
   }, []);
 
   const isSuper = loggedInUser?.adminRole === 'super';
-  const isAdmin = loggedInUser?.isAdmin;
+  const isStore = loggedInUser?.adminRole === 'store';
+  const isUser  = loggedInUser && !isSuper && !isStore;
 
-  const menus = [
-    { path: '/',         label: '홈',       icon: '🏠' },
-    { path: '/reserve',  label: '예약',     icon: '🔍' },
-    { path: '/calendar', label: '캘린더',   icon: '📅' },
-    { path: '/event',    label: '이벤트',   icon: '🎉' },
-    { path: '/mypage',   label: '마이페이지', icon: '👤' },
-    ...(isAdmin && !isSuper ? [{ path: '/admin',       label: '관리자',   icon: '🔐' }] : []),
-    ...(isSuper             ? [{ path: '/super-admin', label: '총괄관리', icon: '👑' }] : []),
-  ];
+  // 역할별 메뉴
+  const getMenus = () => {
+    if (isSuper) {
+      return [
+        { path: '/super-admin', label: '대시보드',  icon: '📊' },
+      ];
+    }
+    if (isStore) {
+      return [
+        { path: '/admin',      label: '대시보드',  icon: '📊' },
+        { path: '/admin/reservations', label: '예약관리', icon: '📋' },
+      ];
+    }
+    // 일반 사용자 + 익명
+    return [
+      { path: '/',         label: '홈',        icon: '🏠' },
+      { path: '/reserve',  label: '예약',      icon: '🔍' },
+      { path: '/event',    label: '이벤트',    icon: '🎉' },
+      ...(isUser ? [
+        { path: '/calendar', label: '캘린더',  icon: '📅' },
+        { path: '/mypage',   label: '마이페이지', icon: '👤' },
+      ] : [
+        { path: '/login',    label: '로그인',  icon: '🔑' },
+      ]),
+    ];
+  };
+
+  const menus = getMenus();
 
   if (isMobile) {
     return (

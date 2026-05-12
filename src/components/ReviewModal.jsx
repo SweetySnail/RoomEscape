@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import '../styles/ReviewModal.css';
-import { addPoints } from '../utils/PointUtils';
+import { addReview } from '../services/reviewService';
+import { addPoints } from '../services/pointService';
+import { markAsReviewed } from '../services/reservationService';
 
 function ReviewModal({ record, onClose, onSubmit }) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) {
       alert('별점을 선택해주세요!');
       return;
@@ -18,34 +21,40 @@ function ReviewModal({ record, onClose, onSubmit }) {
       return;
     }
 
-    const newReview = {
-      id: Date.now(),
-      productId: record.productId,
-      productName: record.productName,
-      reviewer: JSON.parse(sessionStorage.getItem('loggedInUser') || '{}').nickname || '익명',
-      rating,
-      comment: comment.trim(),
-      date: new Date().toISOString().slice(0, 10),
-      reservationId: record.id,
-    };
+    const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || '{}');
 
-    // 리뷰 저장
-    const reviews = JSON.parse(localStorage.getItem('userReviews') || '[]');
-    reviews.push(newReview);
-    localStorage.setItem('userReviews', JSON.stringify(reviews));
+    setLoading(true);
+    try {
+      const newReview = {
+        uid: loggedInUser.uid || 'guest',
+        productId: record.productId,
+        productName: record.productName,
+        reviewer: loggedInUser.nickname || '익명',
+        rating,
+        comment: comment.trim(),
+        date: new Date().toISOString().slice(0, 10),
+        reservationId: record.id,
+      };
 
-    // 포인트 적립
-    addPoints(100, `${record.productName} 리뷰 작성`);
+      // Firestore에 리뷰 저장
+      await addReview(newReview);
 
-    // 예약 기록에 리뷰 완료 표시
-    const records = JSON.parse(localStorage.getItem('reservationRecords') || '[]');
-    const updatedRecords = records.map(r =>
-      r.id === record.id ? { ...r, reviewed: true } : r
-    );
-    localStorage.setItem('reservationRecords', JSON.stringify(updatedRecords));
+      // 예약에 리뷰 완료 표시
+      await markAsReviewed(record.id);
 
-    setSubmitted(true);
-    onSubmit(newReview);
+      // 포인트 적립
+      if (loggedInUser.uid) {
+        await addPoints(loggedInUser.uid, 100, `${record.productName} 리뷰 작성`);
+      }
+
+      setSubmitted(true);
+      onSubmit(newReview);
+    } catch (error) {
+      console.error('리뷰 저장 실패:', error);
+      alert('리뷰 저장 중 오류가 발생했어요. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -127,9 +136,9 @@ function ReviewModal({ record, onClose, onSubmit }) {
         <button
           className="review-submit-btn"
           onClick={handleSubmit}
-          disabled={rating === 0 || comment.trim().length < 10}
+          disabled={rating === 0 || comment.trim().length < 10 || loading}
         >
-          리뷰 등록하고 100P 받기 💎
+          {loading ? '저장 중...' : '리뷰 등록하고 100P 받기 💎'}
         </button>
       </div>
     </div>

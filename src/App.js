@@ -1,37 +1,75 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-import SuperAdminPage from './pages/SuperAdminPage';
-import AdminPage from './pages/AdminPage';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ReservationPage from './pages/ReservationPage';
 import CalendarPage from './pages/CalendarPage';
+import ListPage from './pages/ListPage';
 import EventPage from './pages/EventPage';
 import MyPage from './pages/MyPage';
+import AdminPage from './pages/AdminPage';
+import SuperAdminPage from './pages/SuperAdminPage';
 import PrivacyPage from './pages/PrivacyPage';
-
-// 임시 - 더미 데이터 생성 후 삭제
-import { generateDummyData } from './generateDummyData';
-generateDummyData();
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/super-admin" element={<SuperAdminPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/reserve" element={<ReservationPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/event" element={<EventPage />} />
-        <Route path="/mypage" element={<MyPage />} />
+        {/* 누구나 접근 가능 */}
+        <Route path="/login"   element={<LoginPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+
+        {/* 익명 + 일반 사용자만 (관리자 접근 시 admin으로 리다이렉트) */}
+        <Route path="/" element={
+          <ProtectedRoute allowedRoles={['anonymous', 'user']}>
+            <HomePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/reserve" element={
+          <ProtectedRoute allowedRoles={['anonymous', 'user']}>
+            <ReservationPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/event" element={
+          <ProtectedRoute allowedRoles={['anonymous', 'user']}>
+            <EventPage />
+          </ProtectedRoute>
+        } />
+
+        {/* 로그인한 일반 사용자만 */}
+        <Route path="/calendar" element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <CalendarPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/mypage" element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <MyPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/list" element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <ListPage />
+          </ProtectedRoute>
+        } />
+
+        {/* 매장 관리자 */}
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={['store']}>
+            <AdminPage />
+          </ProtectedRoute>
+        } />
+
+        {/* 총괄 관리자 */}
+        <Route path="/super-admin" element={
+          <ProtectedRoute allowedRoles={['super']}>
+            <SuperAdminPage />
+          </ProtectedRoute>
+        } />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 
