@@ -552,3 +552,42 @@
   border-color: var(--border-subtle) !important;
   color: var(--text-muted) !important;
 }
+
+/* ===== 비로그인 결제 ===== */
+.guest-email-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(212, 168, 67, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.guest-email-section h3 {
+  color: var(--accent-gold) !important;
+  font-size: 1em;
+  margin: 0 0 8px 0;
+}
+
+.guest-email-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.95em;
+  font-family: 'Noto Sans KR', sans-serif;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.guest-email-input::placeholder { color: var(--text-muted); }
+.guest-email-input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+}
+
+.guest-login-nudge {
+  margin-top: 10px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}

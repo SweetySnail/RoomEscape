@@ -21,7 +21,7 @@ function App() {
         <Route path="/login"   element={<LoginPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
 
-        {/* 익명 + 일반 사용자만 (관리자 접근 시 admin으로 리다이렉트) */}
+        {/* 비회원 + 회원 접근 가능 (관리자는 admin으로) */}
         <Route path="/" element={
           <ProtectedRoute allowedRoles={['anonymous', 'user']}>
             <HomePage />
@@ -38,7 +38,7 @@ function App() {
           </ProtectedRoute>
         } />
 
-        {/* 로그인한 일반 사용자만 */}
+        {/* 로그인한 회원만 */}
         <Route path="/calendar" element={
           <ProtectedRoute allowedRoles={['user']}>
             <CalendarPage />
@@ -55,14 +55,14 @@ function App() {
           </ProtectedRoute>
         } />
 
-        {/* 매장 관리자 */}
+        {/* 매장 관리자 전용 */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['store']}>
             <AdminPage />
           </ProtectedRoute>
         } />
 
-        {/* 총괄 관리자 */}
+        {/* 총괄 관리자 전용 */}
         <Route path="/super-admin" element={
           <ProtectedRoute allowedRoles={['super']}>
             <SuperAdminPage />

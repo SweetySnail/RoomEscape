@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/BoxModal.css';
-import { isFavorite, toggleFavorite } from '../utils/FavoriteUtils';
+import { toggleFavorite } from '../utils/FavoriteUtils';
+import { checkIsFavorite } from '../services/favoriteService';
 import { addReservation, getBookedTimes } from '../services/reservationService';
 import { spendPoints } from '../services/pointService';
 import { getReviewsByProduct } from '../services/reviewService';
@@ -11,11 +12,12 @@ function BoxModal({ productData, onClose }) {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedPeople, setSelectedPeople] = useState('');
   const [step, setStep] = useState('reservation');
-  const [favorited, setFavorited] = useState(isFavorite(productData?.id));
+  const [favorited, setFavorited] = useState(false);
   const [usePoint, setUsePoint] = useState(false);
   const [userReviews, setUserReviews] = useState([]);
   const [currentPoints, setCurrentPoints] = useState(0);
   const [bookedTimes, setBookedTimes] = useState([]);
+  const [guestEmail, setGuestEmail] = useState('');
 
   const selectedPrice = selectedPeople ? productData?.priceTable[selectedPeople] : null;
   const pointDiscount = usePoint ? Math.min(currentPoints, selectedPrice || 0) : 0;
@@ -48,6 +50,21 @@ function BoxModal({ productData, onClose }) {
       }
     };
     loadReviews();
+  }, [productData]);
+
+  // 즐겨찾기 초기 상태 불러오기
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+      if (!loggedInUser?.uid || !productData?.id) return;
+      try {
+        const status = await checkIsFavorite(loggedInUser.uid, productData.id);
+        setFavorited(status);
+      } catch (error) {
+        console.error('즐겨찾기 상태 확인 실패:', error);
+      }
+    };
+    loadFavoriteStatus();
   }, [productData]);
 
   // early return은 모든 Hook 이후에
@@ -85,14 +102,16 @@ function BoxModal({ productData, onClose }) {
 
   // 결제 성공 처리
   const handlePaymentSuccess = async () => {
-    const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || '{}');
+    const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+
     try {
-      if (usePoint && pointDiscount > 0 && loggedInUser.uid) {
+      // 로그인한 경우만 포인트 차감
+      if (loggedInUser?.uid && usePoint && pointDiscount > 0) {
         await spendPoints(loggedInUser.uid, pointDiscount, `${productData.title} 예약 결제`);
       }
 
       const newRecord = {
-        uid: loggedInUser.uid || 'guest',
+        uid: loggedInUser?.uid || 'guest',
         productId: productData.id,
         productName: productData.title,
         branch: productData.branch || '',
@@ -102,12 +121,14 @@ function BoxModal({ productData, onClose }) {
         people: selectedPeople,
         price: finalPrice,
         originalPrice: selectedPrice,
-        usedPoints: pointDiscount,
+        usedPoints: loggedInUser?.uid ? pointDiscount : 0,
         success: null,
         reviewed: false,
         cancelled: false,
         autoSuccess: false,
         escapeMinutes: null,
+        // 비로그인 시 연락처 저장
+        guestEmail: loggedInUser?.uid ? null : guestEmail,
       };
 
       await addReservation(newRecord);
@@ -121,7 +142,6 @@ function BoxModal({ productData, onClose }) {
   // ===== 예약 단계 =====
   const renderReservation = () => (
     <>
-      {/* 상단: 이미지 + 기본 정보 */}
       <div className="modal-top">
         <img src={productData.imageUrl} alt={productData.title} className="modal-image" />
         <div className="modal-info">
@@ -130,8 +150,8 @@ function BoxModal({ productData, onClose }) {
             <h2 className="modal-title">{productData.title}</h2>
             <button
               className={`favorite-btn ${favorited ? 'active' : ''}`}
-              onClick={() => {
-                const result = toggleFavorite(productData);
+              onClick={async () => {
+                const result = await toggleFavorite(productData);
                 setFavorited(result);
               }}
             >
@@ -176,7 +196,6 @@ function BoxModal({ productData, onClose }) {
 
       <hr className="modal-divider" />
 
-      {/* 날짜 / 시간 / 인원 선택 */}
       <div className="modal-reservation">
         <h3>📅 날짜 선택</h3>
         <div className="date-scroll">
@@ -247,16 +266,7 @@ function BoxModal({ productData, onClose }) {
             </div>
             <button
               className="reserve-button"
-              onClick={() => {
-                const user = sessionStorage.getItem('loggedInUser');
-                if (!user) {
-                  if (window.confirm('로그인 후 예약이 가능해요.\n로그인 페이지로 이동할까요?')) {
-                    window.location.href = '/login';
-                  }
-                  return;
-                }
-                setStep('payment');
-              }}
+              onClick={() => setStep('payment')}
             >
               결제하기
             </button>
@@ -266,11 +276,9 @@ function BoxModal({ productData, onClose }) {
 
       <hr className="modal-divider" />
 
-      {/* 리뷰 */}
       <div className="modal-reviews">
         <h3>💬 최근 리뷰</h3>
         <div className="review-list">
-          {/* Firestore 리뷰 */}
           {userReviews.map((review) => (
             <div key={review.id} className="review-item">
               <div className="review-header">
@@ -284,7 +292,6 @@ function BoxModal({ productData, onClose }) {
             </div>
           ))}
 
-          {/* 더미 리뷰 - Firestore 리뷰 없을 때만 */}
           {userReviews.length === 0 && (productData.recentReviews ?? []).map((review) => (
             <div key={review.id} className="review-item">
               <div className="review-header">
@@ -313,7 +320,6 @@ function BoxModal({ productData, onClose }) {
 
       <hr className="modal-divider" />
 
-      {/* 위치 */}
       <div className="modal-location">
         <h3>📍 위치</h3>
         <p>{productData.location.city} {productData.location.district}</p>
@@ -322,87 +328,119 @@ function BoxModal({ productData, onClose }) {
   );
 
   // ===== 결제 단계 =====
-  const renderPayment = () => (
-    <div className="payment-container">
-      <h2 className="payment-title">💳 결제</h2>
+  const renderPayment = () => {
+    const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
 
-      <div className="payment-summary">
-        <h3>예약 정보 확인</h3>
-        <div className="payment-summary-item">
-          <span>테마</span>
-          <strong>{productData.title}</strong>
+    return (
+      <div className="payment-container">
+        <h2 className="payment-title">💳 결제</h2>
+
+        <div className="payment-summary">
+          <h3>예약 정보 확인</h3>
+          <div className="payment-summary-item">
+            <span>테마</span><strong>{productData.title}</strong>
+          </div>
+          <div className="payment-summary-item">
+            <span>날짜</span><strong>{selectedDate}</strong>
+          </div>
+          <div className="payment-summary-item">
+            <span>시간</span><strong>{selectedTime}</strong>
+          </div>
+          <div className="payment-summary-item">
+            <span>인원</span><strong>{selectedPeople}</strong>
+          </div>
+          <div className="payment-summary-item">
+            <span>기본 금액</span><strong>{selectedPrice?.toLocaleString()}원</strong>
+          </div>
+
+          {/* 로그인한 경우만 포인트 표시 */}
+          {loggedInUser?.uid && (
+            <>
+              <div className="payment-summary-item">
+                <span>보유 포인트</span>
+                <strong style={{ color: 'var(--accent-gold)' }}>
+                  💎 {currentPoints.toLocaleString()} P
+                </strong>
+              </div>
+              <div className="payment-summary-item">
+                <span>포인트 사용</span>
+                <button
+                  style={{
+                    padding: '6px 14px',
+                    border: `1.5px solid ${usePoint ? 'var(--accent-gold)' : 'var(--border-subtle)'}`,
+                    borderRadius: 'var(--radius-sm)',
+                    background: usePoint ? 'rgba(212,168,67,0.15)' : 'transparent',
+                    color: usePoint ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                    cursor: currentPoints > 0 ? 'pointer' : 'not-allowed',
+                    fontSize: '0.9em',
+                    fontWeight: 'bold',
+                  }}
+                  onClick={() => currentPoints > 0 && setUsePoint(!usePoint)}
+                >
+                  {usePoint
+                    ? `✅ -${pointDiscount.toLocaleString()}P 사용중`
+                    : currentPoints > 0 ? '포인트 사용하기' : '포인트 없음'}
+                </button>
+              </div>
+            </>
+          )}
+
+          <div className="payment-summary-item total">
+            <span>최종 결제 금액</span>
+            <strong>{finalPrice.toLocaleString()}원</strong>
+          </div>
         </div>
-        <div className="payment-summary-item">
-          <span>날짜</span>
-          <strong>{selectedDate}</strong>
+
+        {/* 비로그인 시 이메일 입력 */}
+        {!loggedInUser?.uid && (
+          <div className="guest-email-section">
+            <h3>📧 예약 확인 이메일</h3>
+            <p style={{ fontSize: '0.85em', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
+              비회원 예약 시 예약 내역을 이메일로 확인할 수 있어요.
+            </p>
+            <input
+              type="email"
+              className="guest-email-input"
+              placeholder="이메일 주소를 입력해주세요 (선택)"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+            />
+            <div className="guest-login-nudge">
+              <span>💡 </span>
+              <span
+                style={{ color: 'var(--accent-gold)', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => window.location.href = '/login'}
+              >
+                로그인
+              </span>
+              <span>하시면 포인트 적립 및 예약 관리가 가능해요!</span>
+            </div>
+          </div>
+        )}
+
+        {/* 결제 수단 */}
+        <div className="payment-method">
+          <h3>결제 수단</h3>
+          <div className="payment-method-grid">
+            {['신용카드', '카카오페이', '네이버페이', '토스'].map((method) => (
+              <button key={method} className="payment-method-btn">{method}</button>
+            ))}
+          </div>
         </div>
-        <div className="payment-summary-item">
-          <span>시간</span>
-          <strong>{selectedTime}</strong>
+
+        <div className="payment-notice">
+          <p>⚠️ 현재 테스트 환경입니다. 실제 결제가 이루어지지 않아요.</p>
         </div>
-        <div className="payment-summary-item">
-          <span>인원</span>
-          <strong>{selectedPeople}</strong>
-        </div>
-        <div className="payment-summary-item">
-          <span>기본 금액</span>
-          <strong>{selectedPrice?.toLocaleString()}원</strong>
-        </div>
-        <div className="payment-summary-item">
-          <span>보유 포인트</span>
-          <strong style={{ color: 'var(--accent-gold)' }}>
-            💎 {currentPoints.toLocaleString()} P
-          </strong>
-        </div>
-        <div className="payment-summary-item">
-          <span>포인트 사용</span>
-          <button
-            style={{
-              padding: '6px 14px',
-              border: `1.5px solid ${usePoint ? 'var(--accent-gold)' : 'var(--border-subtle)'}`,
-              borderRadius: 'var(--radius-sm)',
-              background: usePoint ? 'rgba(212,168,67,0.15)' : 'transparent',
-              color: usePoint ? 'var(--accent-gold)' : 'var(--text-secondary)',
-              cursor: currentPoints > 0 ? 'pointer' : 'not-allowed',
-              fontSize: '0.9em',
-              fontWeight: 'bold',
-            }}
-            onClick={() => currentPoints > 0 && setUsePoint(!usePoint)}
-          >
-            {usePoint
-              ? `✅ -${pointDiscount.toLocaleString()}P 사용중`
-              : currentPoints > 0 ? '포인트 사용하기' : '포인트 없음'}
+
+        <div className="payment-actions">
+          <button className="back-button" onClick={() => setStep('reservation')}>← 뒤로</button>
+          <button className="confirm-payment-button" onClick={handlePaymentSuccess}>
+            결제 완료 (테스트)
           </button>
         </div>
-        <div className="payment-summary-item total">
-          <span>최종 결제 금액</span>
-          <strong>{finalPrice.toLocaleString()}원</strong>
-        </div>
       </div>
-
-      <div className="payment-method">
-        <h3>결제 수단</h3>
-        <div className="payment-method-grid">
-          {['신용카드', '카카오페이', '네이버페이', '토스'].map((method) => (
-            <button key={method} className="payment-method-btn">{method}</button>
-          ))}
-        </div>
-      </div>
-
-      <div className="payment-notice">
-        <p>⚠️ 현재 테스트 환경입니다. 실제 결제가 이루어지지 않아요.</p>
-      </div>
-
-      <div className="payment-actions">
-        <button className="back-button" onClick={() => setStep('reservation')}>
-          ← 뒤로
-        </button>
-        <button className="confirm-payment-button" onClick={handlePaymentSuccess}>
-          결제 완료 (테스트)
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   // ===== 성공 단계 =====
   const renderSuccess = () => (
@@ -413,20 +451,16 @@ function BoxModal({ productData, onClose }) {
 
       <div className="success-summary">
         <div className="payment-summary-item">
-          <span>테마</span>
-          <strong>{productData.title}</strong>
+          <span>테마</span><strong>{productData.title}</strong>
         </div>
         <div className="payment-summary-item">
-          <span>날짜</span>
-          <strong>{selectedDate}</strong>
+          <span>날짜</span><strong>{selectedDate}</strong>
         </div>
         <div className="payment-summary-item">
-          <span>시간</span>
-          <strong>{selectedTime}</strong>
+          <span>시간</span><strong>{selectedTime}</strong>
         </div>
         <div className="payment-summary-item">
-          <span>인원</span>
-          <strong>{selectedPeople}</strong>
+          <span>인원</span><strong>{selectedPeople}</strong>
         </div>
         {pointDiscount > 0 && (
           <div className="payment-summary-item">
@@ -437,15 +471,12 @@ function BoxModal({ productData, onClose }) {
           </div>
         )}
         <div className="payment-summary-item total">
-          <span>결제 금액</span>
-          <strong>{finalPrice.toLocaleString()}원</strong>
+          <span>결제 금액</span><strong>{finalPrice.toLocaleString()}원</strong>
         </div>
       </div>
 
       <div className="success-actions">
-        <button className="confirm-payment-button" onClick={onClose}>
-          확인
-        </button>
+        <button className="confirm-payment-button" onClick={onClose}>확인</button>
       </div>
     </div>
   );

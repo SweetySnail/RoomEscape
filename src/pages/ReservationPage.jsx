@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/Global.css';
 import '../styles/ReservationPage.css';
 
@@ -8,11 +8,26 @@ import BoxMain from '../components/BoxMain';
 import BoxModal from '../components/BoxModal';
 
 import productsData, { districtsMap } from '../data/products.js';
-import { isFavorite, toggleFavorite } from '../utils/FavoriteUtils';
+import { toggleFavorite } from '../utils/FavoriteUtils';
+import { checkIsFavorite } from '../services/favoriteService';
 
 // ===== 카드 컴포넌트 =====
 function ProductCard({ product, onClick }) {
-  const [favorited, setFavorited] = useState(isFavorite(product.id));
+  const [favorited, setFavorited] = useState(false);
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+      if (!loggedInUser?.uid) return;
+      try {
+        const status = await checkIsFavorite(loggedInUser.uid, product.id);
+        setFavorited(status);
+      } catch (error) {
+        console.error('즐겨찾기 상태 확인 실패:', error);
+      }
+    };
+    loadStatus();
+  }, [product.id]);
 
   return (
     <div className="search-result-item" onClick={() => onClick(product)}>
@@ -21,9 +36,9 @@ function ProductCard({ product, onClick }) {
           <img src={product.imageUrl} alt={product.title} className="product-image" />
           <button
             className={`card-favorite-btn ${favorited ? 'active' : ''}`}
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              const result = toggleFavorite(product);
+              const result = await toggleFavorite(product);
               setFavorited(result);
             }}
           >
@@ -59,17 +74,14 @@ function ReservationPage() {
   const [selectedTheme, setSelectedTheme] = useState('선택 안함');
   const [selectedTime, setSelectedTime] = useState('선택 안함');
   const [searchResults, setSearchResults] = useState([]);
-
-  // 검색 관련 상태
   const [searchKeyword, setSearchKeyword] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [recentSearches, setRecentSearches] = useState(() => {
     return JSON.parse(localStorage.getItem('recentSearches') || '[]');
   });
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const searchRef = useRef(null);
+  const searchRef = React.useRef(null);
 
-  // 자동완성 후보 — 입력값 기반으로 테마명 필터링
   const suggestions = inputValue.trim().length > 0
     ? productsData
         .filter(p =>
@@ -79,7 +91,6 @@ function ReservationPage() {
         .slice(0, 5)
     : [];
 
-  // 검색창 외부 클릭 시 자동완성 닫기
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -90,11 +101,8 @@ function ReservationPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 필터 + 키워드 검색 적용
   useEffect(() => {
     let results = productsData;
-
-    // 키워드 검색
     if (searchKeyword.trim() !== '') {
       results = results.filter(p =>
         p.title.toLowerCase().includes(searchKeyword.toLowerCase()) ||
@@ -103,8 +111,6 @@ function ReservationPage() {
         p.location.district.includes(searchKeyword)
       );
     }
-
-    // 필터
     if (selectedCity !== '선택 안함') {
       results = results.filter(p => p.location.city === selectedCity);
     }
@@ -119,33 +125,26 @@ function ReservationPage() {
         p.availableTimes && p.availableTimes.includes(selectedTime)
       );
     }
-
     setSearchResults(results);
   }, [searchKeyword, selectedCity, selectedDistrict, selectedTheme, selectedTime]);
 
-  // 검색 실행
   const handleSearch = (keyword) => {
     const trimmed = keyword.trim();
     setSearchKeyword(trimmed);
     setInputValue(trimmed);
     setShowSuggestions(false);
-
     if (trimmed === '') return;
-
-    // 최근 검색어 저장 (중복 제거, 최대 5개)
     const updated = [trimmed, ...recentSearches.filter(s => s !== trimmed)].slice(0, 5);
     setRecentSearches(updated);
     localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
 
-  // 검색어 초기화
   const handleClearSearch = () => {
     setSearchKeyword('');
     setInputValue('');
     setShowSuggestions(false);
   };
 
-  // 최근 검색어 삭제
   const handleDeleteRecent = (keyword, e) => {
     e.stopPropagation();
     const updated = recentSearches.filter(s => s !== keyword);
@@ -153,7 +152,6 @@ function ReservationPage() {
     localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
 
-  // 드롭다운 필터
   const rawCities = [...new Set(productsData.map(p => p.location.city).filter(Boolean))];
   const sortedCities = rawCities.sort((a, b) => {
     const priority = (city) => {
@@ -191,11 +189,9 @@ function ReservationPage() {
       <BoxMain>
         <div className="reservation-page-content">
 
-          {/* ===== 검색창 ===== */}
+          {/* 검색창 */}
           <section className="search-keyword-section" ref={searchRef}>
             <h2 className="section-title">방탈출 검색</h2>
-
-            {/* 검색 입력창 */}
             <div className="search-input-wrapper">
               <span className="search-icon">🔍</span>
               <input
@@ -215,18 +211,13 @@ function ReservationPage() {
               {inputValue && (
                 <button className="search-clear-btn" onClick={handleClearSearch}>✕</button>
               )}
-              <button
-                className="search-submit-btn"
-                onClick={() => handleSearch(inputValue)}
-              >
+              <button className="search-submit-btn" onClick={() => handleSearch(inputValue)}>
                 검색
               </button>
             </div>
 
-            {/* 자동완성 + 최근 검색어 드롭다운 */}
             {showSuggestions && (
               <div className="search-dropdown">
-                {/* 자동완성 */}
                 {suggestions.length > 0 && (
                   <div className="dropdown-section">
                     <p className="dropdown-label">🔍 연관 검색</p>
@@ -237,13 +228,13 @@ function ReservationPage() {
                         onClick={() => handleSearch(product.title)}
                       >
                         <span className="dropdown-item-title">{product.title}</span>
-                        <span className="dropdown-item-sub">{product.theme} · {product.location.city}</span>
+                        <span className="dropdown-item-sub">
+                          {product.theme} · {product.location.city}
+                        </span>
                       </button>
                     ))}
                   </div>
                 )}
-
-                {/* 최근 검색어 */}
                 {recentSearches.length > 0 && inputValue.trim() === '' && (
                   <div className="dropdown-section">
                     <p className="dropdown-label">🕐 최근 검색어</p>
@@ -267,7 +258,6 @@ function ReservationPage() {
               </div>
             )}
 
-            {/* 현재 검색어 표시 */}
             {searchKeyword && (
               <div className="search-active-tag">
                 <span>🔍 "{searchKeyword}" 검색 중</span>
@@ -276,7 +266,7 @@ function ReservationPage() {
             )}
           </section>
 
-          {/* ===== 필터 ===== */}
+          {/* 필터 */}
           <section className="filter-selection-section">
             <div className="filter-options">
               <div className="filter-group">
@@ -338,12 +328,12 @@ function ReservationPage() {
             </div>
           </section>
 
-          {/* ===== 검색 결과 ===== */}
+          {/* 검색 결과 */}
           <section className="search-results-section">
             <h3 className="section-subtitle">
               테마 목록 ({searchResults.length}개)
               {searchKeyword && (
-                <span style={{ fontSize: '0.7em', color: '#6f00ff', marginLeft: '10px' }}>
+                <span style={{ fontSize: '0.7em', color: 'var(--accent-gold)', marginLeft: '10px' }}>
                   "{searchKeyword}" 검색 결과
                 </span>
               )}

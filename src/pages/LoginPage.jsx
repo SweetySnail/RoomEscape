@@ -87,7 +87,7 @@ function LoginPage() {
     setLoading(true);
     try {
       await signUp({ email, password, nickname: finalNickname });
-      setMessage(`회원가입 완료! 닉네임: ${finalNickname} 🎉`);
+      setMessage(`회원가입 완료! 닉네임: ${finalNickname} 🎉 신규가입 500P 지급!`);
       setTimeout(() => {
         setIsLoginMode(true);
         setEmail('');

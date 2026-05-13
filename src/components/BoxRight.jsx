@@ -31,30 +31,38 @@ function BoxRight() {
   const isStore = loggedInUser?.adminRole === 'store';
   const isUser  = loggedInUser && !isSuper && !isStore;
 
-  // 역할별 메뉴
   const getMenus = () => {
+    // 총괄 관리자
     if (isSuper) {
       return [
-        { path: '/super-admin', label: '대시보드',  icon: '📊' },
+        { path: '/super-admin', label: '대시보드', icon: '📊' },
       ];
     }
+
+    // 매장 관리자
     if (isStore) {
       return [
-        { path: '/admin',      label: '대시보드',  icon: '📊' },
-        { path: '/admin/reservations', label: '예약관리', icon: '📋' },
+        { path: '/admin', label: '대시보드', icon: '📊' },
       ];
     }
-    // 일반 사용자 + 익명
-    return [
-      { path: '/',         label: '홈',        icon: '🏠' },
-      { path: '/reserve',  label: '예약',      icon: '🔍' },
-      { path: '/event',    label: '이벤트',    icon: '🎉' },
-      ...(isUser ? [
-        { path: '/calendar', label: '캘린더',  icon: '📅' },
+
+    // 로그인한 일반 회원
+    if (isUser) {
+      return [
+        { path: '/',         label: '홈',        icon: '🏠' },
+        { path: '/reserve',  label: '예약',      icon: '🔍' },
+        { path: '/calendar', label: '캘린더',    icon: '📅' },
+        { path: '/event',    label: '이벤트',    icon: '🎉' },
         { path: '/mypage',   label: '마이페이지', icon: '👤' },
-      ] : [
-        { path: '/login',    label: '로그인',  icon: '🔑' },
-      ]),
+      ];
+    }
+
+    // 비로그인 (익명)
+    return [
+      { path: '/',        label: '홈',      icon: '🏠' },
+      { path: '/reserve', label: '예약',    icon: '🔍' },
+      { path: '/event',   label: '이벤트',  icon: '🎉' },
+      { path: '/login',   label: '로그인',  icon: '🔑' },
     ];
   };
 

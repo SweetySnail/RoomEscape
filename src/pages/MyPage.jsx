@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getMyReservations } from '../services/reservationService';
 import { getMyReviews } from '../services/reviewService';
 import { getPointHistory } from '../services/pointService';
+import { getMyFavorites, removeFavorite } from '../services/favoriteService';
 import { updateNickname, updateUserData } from '../services/authService';
 import '../styles/Global.css';
 import '../styles/MyPage.css';
@@ -367,15 +368,37 @@ function PaymentTab() {
 // 탭 3: 즐겨찾기
 // =============================================
 function FavoriteTab() {
-  const [themes, setThemes] = useState(() => {
-    return JSON.parse(localStorage.getItem('favoriteThemes') || '[]');
-  });
+  const [themes, setThemes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const removeTheme = (id) => {
-    const updated = themes.filter(t => t.id !== id);
-    setThemes(updated);
-    localStorage.setItem('favoriteThemes', JSON.stringify(updated));
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+      if (!loggedInUser?.uid) { setLoading(false); return; }
+      try {
+        const data = await getMyFavorites(loggedInUser.uid);
+        setThemes(data);
+      } catch (error) {
+        console.error('즐겨찾기 불러오기 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  const removeTheme = async (productId) => {
+    const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+    if (!loggedInUser?.uid) return;
+    try {
+      await removeFavorite(loggedInUser.uid, productId);
+      setThemes(prev => prev.filter(t => t.productId !== productId));
+    } catch (error) {
+      console.error('즐겨찾기 제거 실패:', error);
+    }
   };
+
+  if (loading) return <p className="empty-msg">불러오는 중...</p>;
 
   return (
     <div className="tab-section">
@@ -398,10 +421,11 @@ function FavoriteTab() {
                   <span>{theme.theme}</span>
                   <span>⭐ {theme.rating} ({theme.reviewCount} 리뷰)</span>
                   <span>{theme.location?.city} {theme.location?.district}</span>
+                  {theme.branch && <span>🏪 {theme.branch}</span>}
                 </div>
                 <button
                   className="favorite-remove-btn"
-                  onClick={() => removeTheme(theme.id)}
+                  onClick={() => removeTheme(theme.productId)}
                   title="즐겨찾기 제거"
                 >
                   ✕

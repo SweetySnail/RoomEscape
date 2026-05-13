@@ -9,31 +9,41 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  increment,
+  collection,
+  addDoc,
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 // 회원가입
-export const signUp = async ({ username, password, email, nickname, gender, birth }) => {
-  // Firebase Auth로 계정 생성
+export const signUp = async ({ email, password, nickname }) => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
-  // 닉네임 설정
   await updateProfile(user, { displayName: nickname });
 
-  // Firestore에 추가 정보 저장
+  // Firestore에 유저 정보 저장
   await setDoc(doc(db, 'users', user.uid), {
     uid: user.uid,
-    username,
     email,
     nickname,
-    gender: gender || '',
-    birth: birth || '',
+    gender: '',
+    birth: '',
     isAdmin: false,
     adminRole: null,
     managedStores: [],
-    points: 0,
+    points: 500,          // ← 신규가입 500포인트 지급
     createdAt: new Date().toISOString(),
+  });
+
+  // 포인트 지급 히스토리 기록
+  await addDoc(collection(db, 'pointHistory'), {
+    uid: user.uid,
+    type: 'earn',
+    amount: 500,
+    reason: '🎉 신규가입 축하 포인트',
+    date: new Date().toISOString(),
+    balance: 500,
   });
 
   return user;
@@ -44,7 +54,6 @@ export const signIn = async (email, password) => {
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 
-  // Firestore에서 추가 정보 불러오기
   const userDoc = await getDoc(doc(db, 'users', user.uid));
   if (!userDoc.exists()) throw new Error('유저 정보를 찾을 수 없어요.');
 
