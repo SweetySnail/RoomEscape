@@ -8,11 +8,6 @@ import '../styles/Global.css';
 import '../styles/AdminPage.css';
 import '../styles/SuperAdminPage.css';
 
-// 관리자 권한에 따라 데이터 필터링
-const filterByStore = (records, themes) => {
-  return records.filter(r => themes.includes(r.productName));
-};
-
 function SuperAdminPage() {
   const navigate = useNavigate();
   const [loggedInUser, setLoggedInUser] = useState(null);

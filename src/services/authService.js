@@ -9,7 +9,6 @@ import {
   setDoc,
   getDoc,
   updateDoc,
-  increment,
   collection,
   addDoc,
 } from 'firebase/firestore';

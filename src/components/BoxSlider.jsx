@@ -94,6 +94,7 @@ function BoxSlider({ title, sortBy, handleBoxClick }) {
         }
       }, 50);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

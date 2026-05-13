@@ -4,13 +4,10 @@ import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
 import ReviewModal from '../components/ReviewModal';
-import { getPoints } from '../utils/PointUtils';
 import { useAuth } from '../hooks/useAuth';
 import { getMyReservations } from '../services/reservationService';
-import { getMyReviews } from '../services/reviewService';
-import { getPointHistory } from '../services/pointService';
 import { getMyFavorites, removeFavorite } from '../services/favoriteService';
-import { updateNickname, updateUserData } from '../services/authService';
+import { updateNickname } from '../services/authService';
 import '../styles/Global.css';
 import '../styles/MyPage.css';
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
@@ -296,34 +296,7 @@ function StoreReservations({ records, setRecords }) {
   const [escapeMinutes, setEscapeMinutes] = useState('');
   const timerRefs = useRef({});
 
-  // 30분 자동 성공
-  useEffect(() => {
-    const now = Date.now();
-    records.forEach(record => {
-      if (record.success === null && !record.cancelled && !timerRefs.current[record.id]) {
-        const createdAt = new Date(record.createdAt).getTime();
-        const remaining = Math.max(0, 30 * 60 * 1000 - (now - createdAt));
-        timerRefs.current[record.id] = setTimeout(async () => {
-          await handleResultUpdate(record.id, true, null, true);
-        }, remaining);
-      }
-    });
-    return () => Object.values(timerRefs.current).forEach(clearTimeout);
-  }, [records]);
-
-  const filteredRecords = records.filter(r => {
-    const matchFilter =
-      filter === 'all'       ? true :
-      filter === 'pending'   ? r.success === null && !r.cancelled :
-      filter === 'success'   ? r.success === true :
-      filter === 'fail'      ? r.success === false :
-      filter === 'cancelled' ? r.cancelled : true;
-    const matchSearch = searchKeyword
-      ? r.productName?.includes(searchKeyword) : true;
-    return matchFilter && matchSearch;
-  });
-
-  const handleResultUpdate = async (recordId, success, minutes = null, auto = false) => {
+  const handleResultUpdate = useCallback(async (recordId, success, minutes = null, auto = false) => {
     if (timerRefs.current[recordId]) {
       clearTimeout(timerRefs.current[recordId]);
       delete timerRefs.current[recordId];
@@ -337,7 +310,35 @@ function StoreReservations({ records, setRecords }) {
     } catch (error) {
       alert('업데이트 중 오류가 발생했어요.');
     }
-  };
+  }, [setRecords]);
+
+  // 30분 자동 성공
+  useEffect(() => {
+    const refs = timerRefs.current;
+    const now = Date.now();
+    records.forEach(record => {
+      if (record.success === null && !record.cancelled && !refs[record.id]) {
+        const createdAt = new Date(record.createdAt).getTime();
+        const remaining = Math.max(0, 30 * 60 * 1000 - (now - createdAt));
+        refs[record.id] = setTimeout(async () => {
+          await handleResultUpdate(record.id, true, null, true);
+        }, remaining);
+      }
+    });
+    return () => Object.values(refs).forEach(clearTimeout);
+  }, [records, handleResultUpdate]);
+
+  const filteredRecords = records.filter(r => {
+    const matchFilter =
+      filter === 'all'       ? true :
+      filter === 'pending'   ? r.success === null && !r.cancelled :
+      filter === 'success'   ? r.success === true :
+      filter === 'fail'      ? r.success === false :
+      filter === 'cancelled' ? r.cancelled : true;
+    const matchSearch = searchKeyword
+      ? r.productName?.includes(searchKeyword) : true;
+    return matchFilter && matchSearch;
+  });
 
   return (
     <div className="tab-section">
