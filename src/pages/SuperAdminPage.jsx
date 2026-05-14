@@ -140,7 +140,7 @@ function DashboardTab({ stores, reservations }) {
   const thisReservations = activeReservations.filter(r => r.date?.startsWith(thisMonth));
 
   const totalRevenue = activeReservations.reduce((s, r) => s + (r.price || 0), 0);
-  const thisRevenue = thisReservations.reduce((s, r) => s + (r.price || 0), 0);
+  const _thisRevenue = thisReservations.reduce((s, r) => s + (r.price || 0), 0);
 
   const totalFee = stores.reduce((sum, store) => {
     const storeThemeNames = store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
@@ -364,7 +364,6 @@ function RegisterTab({ onComplete }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState('');
-  const [createdStoreId, setCreatedStoreId] = useState('');
 
   const [storeForm, setStoreForm] = useState({
     ownerName: '',
@@ -418,7 +417,6 @@ function RegisterTab({ onComplete }) {
     setLoading(true);
     try {
       const storeId = await createStore({ ...storeForm, branches });
-      setCreatedStoreId(storeId);
 
       const tempPassword = generateTempPassword();
       setGeneratedPassword(tempPassword);
