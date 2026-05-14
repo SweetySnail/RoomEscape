@@ -13,11 +13,18 @@ function ProtectedRoute({ children, allowedRoles }) {
 
   const role = getRole(user);
 
+  // 매장관리자 첫 로그인 시 비밀번호 변경 강제
+  if (
+    role === 'store' &&
+    user?.passwordChanged === false &&
+    window.location.pathname !== '/change-password'
+  ) {
+    return <Navigate to="/change-password" replace />;
+  }
+
   if (!allowedRoles.includes(role)) {
-    // 관리자는 각자 페이지로
     if (role === 'store') return <Navigate to="/admin" replace />;
     if (role === 'super') return <Navigate to="/super-admin" replace />;
-    // 비로그인이 로그인 필요 페이지 접근 시
     return <Navigate to="/login" replace />;
   }
 

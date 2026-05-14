@@ -12,6 +12,7 @@ import MyPage from './pages/MyPage';
 import AdminPage from './pages/AdminPage';
 import SuperAdminPage from './pages/SuperAdminPage';
 import PrivacyPage from './pages/PrivacyPage';
+import PasswordChangePage from './pages/PasswordChangePage';
 
 function App() {
   return (
@@ -21,7 +22,14 @@ function App() {
         <Route path="/login"   element={<LoginPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
 
-        {/* 비회원 + 회원 접근 가능 (관리자는 admin으로) */}
+        {/* 첫 로그인 비밀번호 변경 (매장관리자 전용) */}
+        <Route path="/change-password" element={
+          <ProtectedRoute allowedRoles={['store']}>
+            <PasswordChangePage />
+          </ProtectedRoute>
+        } />
+
+        {/* 비회원 + 회원 접근 가능 */}
         <Route path="/" element={
           <ProtectedRoute allowedRoles={['anonymous', 'user']}>
             <HomePage />
