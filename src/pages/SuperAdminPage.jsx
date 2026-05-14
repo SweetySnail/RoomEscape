@@ -11,10 +11,17 @@ import '../styles/Global.css';
 import '../styles/AdminPage.css';
 import '../styles/SuperAdminPage.css';
 
-// 임시 비밀번호 생성
 const generateTempPassword = () => {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
   return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
+
+const GENRE_OPTIONS = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
+const BANK_OPTIONS = ['국민은행', '신한은행', '우리은행', '하나은행', 'IBK기업은행', 'NH농협은행', '카카오뱅크', '토스뱅크', '케이뱅크', '새마을금고', '수협은행', '부산은행', '대구은행', '광주은행', '전북은행', '경남은행', '제주은행'];
+
+const calcFee = (store, revenue, themeCount = 0) => {
+  if (store.feeType === 'fixed') return (store.fixedFee || 0) * themeCount;
+  return Math.floor(revenue * (store.discountRate || 0) / 100);
 };
 
 function SuperAdminPage() {
@@ -22,6 +29,7 @@ function SuperAdminPage() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stores, setStores] = useState([]);
+  const [expiredStores, setExpiredStores] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +51,8 @@ function SuperAdminPage() {
         getAllStores(),
         getAllReservations(),
       ]);
-      setStores(storeList);
+      setStores(storeList.filter(s => s.status !== 'expired'));
+      setExpiredStores(storeList.filter(s => s.status === 'expired'));
       setReservations(reservationList);
     } catch (error) {
       console.error('데이터 불러오기 실패:', error);
@@ -72,6 +81,7 @@ function SuperAdminPage() {
     { id: 'stores',    label: '🏪 매장 관리' },
     { id: 'register',  label: '➕ 사업자 등록' },
     { id: 'fee',       label: '💳 수수료 정산' },
+    { id: 'expired',   label: '📁 계약 종료' },
   ];
 
   return (
@@ -80,8 +90,6 @@ function SuperAdminPage() {
       <BoxRight />
       <BoxMain>
         <div className="admin-content">
-
-          {/* 헤더 */}
           <div className="admin-header super-header">
             <div>
               <h1 className="admin-title">👑 총괄 관리자 페이지</h1>
@@ -90,13 +98,10 @@ function SuperAdminPage() {
             <div className="admin-header-info">
               <span className="admin-role-badge super">👑 총괄관리자</span>
               <span>{loggedInUser.nickname}</span>
-              <span>{new Date().toLocaleDateString('ko-KR', {
-                year: 'numeric', month: 'long', day: 'numeric'
-              })}</span>
+              <span>{new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
           </div>
 
-          {/* 탭 */}
           <div className="admin-tabs">
             {tabs.map(tab => (
               <button
@@ -110,20 +115,12 @@ function SuperAdminPage() {
           </div>
 
           <div className="admin-tab-content">
-            {activeTab === 'dashboard' && (
-              <DashboardTab stores={stores} reservations={reservations} />
-            )}
-            {activeTab === 'stores' && (
-              <StoresTab stores={stores} reservations={reservations} onUpdate={loadData} />
-            )}
-            {activeTab === 'register' && (
-              <RegisterTab onComplete={() => { loadData(); setActiveTab('stores'); }} />
-            )}
-            {activeTab === 'fee' && (
-              <FeeTab stores={stores} reservations={reservations} />
-            )}
+            {activeTab === 'dashboard' && <DashboardTab stores={stores} reservations={reservations} />}
+            {activeTab === 'stores'    && <StoresTab stores={stores} reservations={reservations} onUpdate={loadData} />}
+            {activeTab === 'register'  && <RegisterTab onComplete={() => { loadData(); setActiveTab('stores'); }} />}
+            {activeTab === 'fee'       && <FeeTab stores={stores} reservations={reservations} />}
+            {activeTab === 'expired'   && <ExpiredTab expiredStores={expiredStores} />}
           </div>
-
         </div>
       </BoxMain>
     </div>
@@ -135,20 +132,20 @@ function SuperAdminPage() {
 // =============================================
 function DashboardTab({ stores, reservations }) {
   const thisMonth = new Date().toISOString().slice(0, 7);
-
   const activeReservations = reservations.filter(r => !r.cancelled);
   const thisReservations = activeReservations.filter(r => r.date?.startsWith(thisMonth));
-
   const totalRevenue = activeReservations.reduce((s, r) => s + (r.price || 0), 0);
+  const totalBranches = stores.reduce((s, store) => s + (store.branches?.length || 0), 0);
 
   const totalFee = stores.reduce((sum, store) => {
-    const storeThemeNames = store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
-    const storeThis = thisReservations.filter(r => storeThemeNames.includes(r.productName));
-    const storeRevenue = storeThis.reduce((s, r) => s + (r.price || 0), 0);
-    return sum + Math.floor(storeRevenue * (store.discountRate || 0) / 100);
+    const themeNames = store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
+    const themeCount = themeNames.length;
+    const storeRevenue = thisReservations
+      .filter(r => themeNames.includes(r.productName))
+      .reduce((s, r) => s + (r.price || 0), 0);
+    return sum + calcFee(store, storeRevenue, themeCount);
   }, 0);
 
-  // 계약 만료 임박 매장 (30일 이내)
   const today = new Date();
   const soonExpiring = stores.filter(store => {
     if (!store.contractEnd) return false;
@@ -163,10 +160,11 @@ function DashboardTab({ stores, reservations }) {
         <h3>핵심 지표</h3>
         <div className="dashboard-stats">
           {[
-            { icon: '🏪', label: '계약 매장 수',       value: `${stores.length}개` },
-            { icon: '💰', label: '전체 누적 매출',      value: `${totalRevenue.toLocaleString()}원` },
-            { icon: '📅', label: '이번달 예약 수',      value: `${thisReservations.length}건` },
-            { icon: '💎', label: '이번달 플랫폼 수익',  value: `${totalFee.toLocaleString()}원` },
+            { icon: '🏢', label: '계약 사업자 수',    value: `${stores.length}개` },
+            { icon: '🏪', label: '계약 지점 수',      value: `${totalBranches}개` },
+            { icon: '💰', label: '전체 누적 매출',    value: `${totalRevenue.toLocaleString()}원` },
+            { icon: '📅', label: '이번달 예약 수',    value: `${thisReservations.length}건` },
+            { icon: '💎', label: '이번달 플랫폼 수익', value: `${totalFee.toLocaleString()}원` },
           ].map(s => (
             <div key={s.label} className="dashboard-stat-item">
               <span className="dashboard-stat-icon">{s.icon}</span>
@@ -179,10 +177,9 @@ function DashboardTab({ stores, reservations }) {
 
       {soonExpiring.length > 0 && (
         <div className="admin-card" style={{ borderLeft: '4px solid #ff6b7a' }}>
-          <h3>⚠️ 계약 만료 임박 매장 (30일 이내)</h3>
+          <h3>⚠️ 계약 만료 임박 (30일 이내)</h3>
           {soonExpiring.map(store => {
-            const end = new Date(store.contractEnd);
-            const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+            const diffDays = Math.ceil((new Date(store.contractEnd) - today) / (1000 * 60 * 60 * 24));
             return (
               <div key={store.id} className="compare-row">
                 <span>{store.ownerName}</span>
@@ -206,36 +203,29 @@ function StoresTab({ stores, reservations, onUpdate }) {
   const [filterOwner, setFilterOwner] = useState('전체');
 
   const thisMonth = new Date().toISOString().slice(0, 7);
-  const prevMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)
-    .toISOString().slice(0, 7);
+  const prevMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7);
 
-  const getThemeNames = (store) =>
-    store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
+  const getThemeNames = (store) => store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
 
   const getStoreStats = (store) => {
     const themeNames = getThemeNames(store);
+    const themeCount = themeNames.length;
     const active = reservations.filter(r => themeNames.includes(r.productName) && !r.cancelled);
-    const thisRecs = active.filter(r => r.date?.startsWith(thisMonth));
-    const prevRecs = active.filter(r => r.date?.startsWith(prevMonth));
-    const cancelCount = reservations.filter(r => themeNames.includes(r.productName) && r.cancelled).length;
-    const totalRevenue = active.reduce((s, r) => s + (r.price || 0), 0);
-    const thisRevenue = thisRecs.reduce((s, r) => s + (r.price || 0), 0);
-    const prevRevenue = prevRecs.reduce((s, r) => s + (r.price || 0), 0);
-    const thisFee = store.feeType === 'fixed'
-    ? (store.fixedFee || 0)
-    : Math.floor(thisRevenue * (store.discountRate || 0) / 100);
-    return { totalRevenue, thisRevenue, prevRevenue, thisFee, cancelCount };
+    const thisRevenue = active.filter(r => r.date?.startsWith(thisMonth)).reduce((s, r) => s + (r.price || 0), 0);
+    const prevRevenue = active.filter(r => r.date?.startsWith(prevMonth)).reduce((s, r) => s + (r.price || 0), 0);
+    const thisFee = calcFee(store, thisRevenue, themeCount);
+    const prevFee = calcFee(store, prevRevenue, themeCount);
+    return { thisRevenue, prevRevenue, thisFee, prevFee, themeCount };
   };
 
-  const filteredStores = stores.filter(s =>
-    filterOwner === '전체' || s.ownerName === filterOwner
-  );
+  const filteredStores = stores.filter(s => filterOwner === '전체' || s.ownerName === filterOwner);
 
   const handleSaveEdit = async () => {
     try {
       await updateStore(editingStore.id, {
+        feeType: editingStore.feeType,
         discountRate: Number(editingStore.discountRate),
-        contractStart: editingStore.contractStart,
+        fixedFee: Number(editingStore.fixedFee),
         contractEnd: editingStore.contractEnd,
       });
       alert('저장되었어요!');
@@ -246,13 +236,33 @@ function StoresTab({ stores, reservations, onUpdate }) {
     }
   };
 
+  const handleExpire = async (store) => {
+    if (!window.confirm(`${store.ownerName} 매장의 계약을 종료할까요?`)) return;
+    try {
+      await updateStore(store.id, {
+        status: 'expired',
+        expiredAt: new Date().toISOString(),
+      });
+      alert('계약이 종료되었어요.');
+      setEditingStore(null);
+      onUpdate();
+    } catch (error) {
+      alert('처리 실패: ' + error.message);
+    }
+  };
+
+  const feeTypeLabel = (store) => {
+    if (store.feeType === 'fixed') return `지정금액 (${(store.fixedFee || 0).toLocaleString()}원/방)`;
+    return `요율 ${store.discountRate || 0}%`;
+  };
+
   return (
     <div className="tab-section">
       <div className="admin-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h3 style={{ margin: 0 }}>🏪 매장별 현황</h3>
           <div className="store-filter-group">
-            <label>사장명 필터</label>
+            <label>사업자명 필터</label>
             <select
               className="admin-input admin-select"
               style={{ width: 'auto', marginLeft: '8px' }}
@@ -260,79 +270,75 @@ function StoresTab({ stores, reservations, onUpdate }) {
               onChange={(e) => setFilterOwner(e.target.value)}
             >
               <option value="전체">전체</option>
-              {stores.map(s => (
-                <option key={s.id} value={s.ownerName}>{s.ownerName}</option>
-              ))}
+              {stores.map(s => <option key={s.id} value={s.ownerName}>{s.ownerName}</option>)}
             </select>
           </div>
         </div>
 
         <div className="stores-table">
-          <div className="stores-table-header" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
-            <span>사장명</span>
-            <span>수수료율</span>
-            <span>계약시작</span>
-            <span>계약종료</span>
-            <span>누적매출</span>
-            <span>이번달매출</span>
-            <span>이번달수수료</span>
-            <span>취소건수</span>
+          <div className="stores-table-header" style={{ gridTemplateColumns: '1.2fr 1fr 0.7fr 1fr 1fr 1fr 1.2fr 1fr 1fr' }}>
+            <span>사업자명</span>
+            <span>매장명(지점)</span>
+            <span>테마 수</span>
+            <span>계약일</span>
+            <span>지난달 매출</span>
+            <span>이번달 매출</span>
+            <span>수수료 방식</span>
+            <span>이번달 수수료</span>
             <span>관리</span>
           </div>
+
           {filteredStores.map(store => {
             const stats = getStoreStats(store);
             const isEditing = editingStore?.id === store.id;
+            const branchNames = store.branches?.map(b => b.branchName).join(', ') || '-';
+
             return (
-              <div key={store.id} className="stores-table-row" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr' }}>
+              <div key={store.id} className="stores-table-row"
+                style={{ gridTemplateColumns: '1.2fr 1fr 0.7fr 1fr 1fr 1fr 1.2fr 1fr 1fr' }}>
                 <span>{store.ownerName}</span>
-
-                {/* 수수료율 */}
-                {isEditing ? (
-                  <input
-                    type="number"
-                    className="admin-input"
-                    style={{ width: '60px' }}
-                    value={editingStore.discountRate}
-                    onChange={(e) => setEditingStore({ ...editingStore, discountRate: e.target.value })}
-                  />
-                ) : (
-                  <span className="fee-rate">{store.discountRate}%</span>
-                )}
-
-                {/* 계약 시작일 */}
-                {isEditing ? (
-                  <input
-                    type="date"
-                    className="admin-input"
-                    value={editingStore.contractStart || ''}
-                    onChange={(e) => setEditingStore({ ...editingStore, contractStart: e.target.value })}
-                  />
-                ) : (
-                  <span>{store.contractStart || '-'}</span>
-                )}
-
-                {/* 계약 종료일 */}
-                {isEditing ? (
-                  <input
-                    type="date"
-                    className="admin-input"
-                    value={editingStore.contractEnd || ''}
-                    onChange={(e) => setEditingStore({ ...editingStore, contractEnd: e.target.value })}
-                  />
-                ) : (
-                  <span>{store.contractEnd || '-'}</span>
-                )}
-
-                <span>{stats.totalRevenue.toLocaleString()}원</span>
+                <span style={{ fontSize: '0.85em' }}>{branchNames}</span>
+                <span>{stats.themeCount}개</span>
+                <span style={{ fontSize: '0.85em' }}>
+                  {store.contractStart}<br/>~ {store.contractEnd}
+                </span>
+                <span>{stats.prevRevenue.toLocaleString()}원</span>
                 <span>{stats.thisRevenue.toLocaleString()}원</span>
-                <span className="fee-amount">{stats.thisFee.toLocaleString()}원</span>
-                <span>{stats.cancelCount}건</span>
 
-                <div style={{ display: 'flex', gap: '4px' }}>
+                {isEditing ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <select className="admin-input admin-select" style={{ fontSize: '0.8em' }}
+                      value={editingStore.feeType}
+                      onChange={(e) => setEditingStore({ ...editingStore, feeType: e.target.value })}>
+                      <option value="rate">요율(%)</option>
+                      <option value="fixed">지정금액</option>
+                    </select>
+                    {editingStore.feeType === 'rate' ? (
+                      <input type="number" className="admin-input" style={{ width: '60px' }}
+                        value={editingStore.discountRate}
+                        onChange={(e) => setEditingStore({ ...editingStore, discountRate: e.target.value })} />
+                    ) : (
+                      <input type="number" className="admin-input" style={{ width: '90px' }}
+                        placeholder="원/방"
+                        value={editingStore.fixedFee || ''}
+                        onChange={(e) => setEditingStore({ ...editingStore, fixedFee: e.target.value })} />
+                    )}
+                  </div>
+                ) : (
+                  <span className="fee-rate" style={{ fontSize: '0.85em' }}>{feeTypeLabel(store)}</span>
+                )}
+
+                <span className="fee-amount">{stats.thisFee.toLocaleString()}원</span>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {isEditing ? (
                     <>
+                      <input type="date" className="admin-input"
+                        value={editingStore.contractEnd || ''}
+                        onChange={(e) => setEditingStore({ ...editingStore, contractEnd: e.target.value })} />
                       <button className="result-action-btn success" onClick={handleSaveEdit}>저장</button>
                       <button className="result-action-btn reset" onClick={() => setEditingStore(null)}>취소</button>
+                      <button className="result-action-btn fail" onClick={() => handleExpire(store)}>계약종료</button>
                     </>
                   ) : (
                     <>
@@ -361,8 +367,6 @@ function StoresTab({ stores, reservations, onUpdate }) {
 // =============================================
 // 사업자 등록 탭
 // =============================================
-const GENRE_OPTIONS = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
-
 function RegisterTab({ onComplete }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -372,12 +376,12 @@ function RegisterTab({ onComplete }) {
     ownerName: '',
     email: '',
     contact: '',
-    bankName: '',
+    bankName: BANK_OPTIONS[0],
     bankAccount: '',
     bankHolder: '',
-    feeType: 'rate',      // 'rate' | 'fixed'
-    discountRate: 10,     // 요율(%) 
-    fixedFee: '',         // 지정금액(원)
+    feeType: 'rate',
+    discountRate: 10,
+    fixedFee: '',
     contractStart: '',
     contractEnd: '',
   });
@@ -388,58 +392,42 @@ function RegisterTab({ onComplete }) {
 
   function emptyTheme() {
     return {
-      name: '',
-      genre: '공포',
-      difficulty: 'normal',
-      minPeople: 2,
-      maxPeople: 6,
-      duration: 60,
-      description: '',
-      pricing: [{ people: 2, price: '' }],  // 인원별 가격
+      name: '', genre: '공포', difficulty: 'normal',
+      minPeople: 2, maxPeople: 6, duration: 60,
+      description: '', imageFile: null, imagePreview: '',
+      pricing: [{ people: 2, price: '' }],
     };
   }
 
   const addBranch = () => setBranches([...branches, { branchName: '', address: '', themes: [emptyTheme()] }]);
   const removeBranch = (bi) => setBranches(branches.filter((_, i) => i !== bi));
+  const addTheme = (bi) => { const u = [...branches]; u[bi].themes.push(emptyTheme()); setBranches(u); };
+  const removeTheme = (bi, ti) => { const u = [...branches]; u[bi].themes = u[bi].themes.filter((_, i) => i !== ti); setBranches(u); };
+  const updateBranch = (bi, field, value) => { const u = [...branches]; u[bi][field] = value; setBranches(u); };
+  const updateTheme = (bi, ti, field, value) => { const u = [...branches]; u[bi].themes[ti][field] = value; setBranches(u); };
 
-  const addTheme = (bi) => {
-    const updated = [...branches];
-    updated[bi].themes.push(emptyTheme());
-    setBranches(updated);
-  };
-  const removeTheme = (bi, ti) => {
-    const updated = [...branches];
-    updated[bi].themes = updated[bi].themes.filter((_, i) => i !== ti);
-    setBranches(updated);
-  };
-  const updateBranch = (bi, field, value) => {
-    const updated = [...branches];
-    updated[bi][field] = value;
-    setBranches(updated);
-  };
-  const updateTheme = (bi, ti, field, value) => {
-    const updated = [...branches];
-    updated[bi].themes[ti][field] = value;
-    setBranches(updated);
+  // 이미지 미리보기 (업로드 기능은 추후 활성화)
+  const handleImageChange = (bi, ti, file) => {
+    if (!file) return;
+    const u = [...branches];
+    u[bi].themes[ti].imageFile = file;
+    u[bi].themes[ti].imagePreview = URL.createObjectURL(file);
+    setBranches(u);
   };
 
-  // 인원별 가격 추가/수정/삭제
   const addPricing = (bi, ti) => {
-    const updated = [...branches];
-    const theme = updated[bi].themes[ti];
-    const lastPeople = theme.pricing[theme.pricing.length - 1]?.people || 1;
-    theme.pricing.push({ people: lastPeople + 1, price: '' });
-    setBranches(updated);
+    const u = [...branches];
+    const last = u[bi].themes[ti].pricing.slice(-1)[0]?.people || 1;
+    u[bi].themes[ti].pricing.push({ people: last + 1, price: '' });
+    setBranches(u);
   };
   const updatePricing = (bi, ti, pi, field, value) => {
-    const updated = [...branches];
-    updated[bi].themes[ti].pricing[pi][field] = value;
-    setBranches(updated);
+    const u = [...branches]; u[bi].themes[ti].pricing[pi][field] = value; setBranches(u);
   };
   const removePricing = (bi, ti, pi) => {
-    const updated = [...branches];
-    updated[bi].themes[ti].pricing = updated[bi].themes[ti].pricing.filter((_, i) => i !== pi);
-    setBranches(updated);
+    const u = [...branches];
+    u[bi].themes[ti].pricing = u[bi].themes[ti].pricing.filter((_, i) => i !== pi);
+    setBranches(u);
   };
 
   const handleRegisterStore = async () => {
@@ -448,7 +436,16 @@ function RegisterTab({ onComplete }) {
     }
     setLoading(true);
     try {
-      const storeId = await createStore({ ...storeForm, branches });
+      // 이미지는 추후 구현 예정 - imageFile, imagePreview 제거 후 저장
+      const branchesClean = branches.map(branch => ({
+        ...branch,
+        themes: branch.themes.map(theme => {
+          const { imageFile, imagePreview, ...rest } = theme;
+          return { ...rest, imageUrl: '' };
+        }),
+      }));
+
+      const storeId = await createStore({ ...storeForm, branches: branchesClean });
       const tempPassword = generateTempPassword();
       setGeneratedPassword(tempPassword);
       await createStoreAdminAccount({
@@ -497,7 +494,6 @@ function RegisterTab({ onComplete }) {
 
   return (
     <div className="tab-section">
-      {/* 기본 정보 */}
       <div className="admin-card">
         <h3>📋 사업자 기본 정보</h3>
         <div className="input-group-vertical">
@@ -505,73 +501,59 @@ function RegisterTab({ onComplete }) {
             { label: '사장 이름 *', field: 'ownerName', type: 'text' },
             { label: '사업자 이메일 * (로그인 계정)', field: 'email', type: 'email' },
             { label: '연락처 *', field: 'contact', type: 'text' },
-            { label: '은행명', field: 'bankName', type: 'text' },
             { label: '계좌번호', field: 'bankAccount', type: 'text' },
             { label: '예금주', field: 'bankHolder', type: 'text' },
           ].map(({ label, field, type }) => (
             <div key={field} className="input-row">
               <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>{label}</label>
-              <input
-                type={type}
-                className="mypage-input"
-                value={storeForm[field]}
-                onChange={(e) => setStoreForm({ ...storeForm, [field]: e.target.value })}
-              />
+              <input type={type} className="mypage-input" value={storeForm[field]}
+                onChange={(e) => setStoreForm({ ...storeForm, [field]: e.target.value })} />
             </div>
           ))}
+
+          {/* 은행명 선택 */}
+          <div className="input-row">
+            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>은행명</label>
+            <select className="admin-input admin-select" value={storeForm.bankName}
+              onChange={(e) => setStoreForm({ ...storeForm, bankName: e.target.value })}>
+              {BANK_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
 
           {/* 수수료 방식 */}
           <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
             <label style={{ color: 'var(--text-muted)' }}>수수료 방식</label>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="feeType"
-                  value="rate"
-                  checked={storeForm.feeType === 'rate'}
-                  onChange={() => setStoreForm({ ...storeForm, feeType: 'rate' })}
-                />
-                요율 (%)
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="feeType"
-                  value="fixed"
-                  checked={storeForm.feeType === 'fixed'}
-                  onChange={() => setStoreForm({ ...storeForm, feeType: 'fixed' })}
-                />
-                지정금액 (원)
-              </label>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              {[
+                { value: 'rate', label: '요율 (%) — 전체 매출의 N%' },
+                { value: 'fixed', label: '지정금액 — 방 개수 × N원' },
+              ].map(opt => (
+                <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input type="radio" name="feeType" value={opt.value}
+                    checked={storeForm.feeType === opt.value}
+                    onChange={() => setStoreForm({ ...storeForm, feeType: opt.value })} />
+                  {opt.label}
+                </label>
+              ))}
             </div>
             {storeForm.feeType === 'rate' ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="number"
-                  className="mypage-input"
-                  style={{ width: '80px' }}
+                <input type="number" className="mypage-input" style={{ width: '80px' }}
                   value={storeForm.discountRate}
-                  onChange={(e) => setStoreForm({ ...storeForm, discountRate: Number(e.target.value) })}
-                />
+                  onChange={(e) => setStoreForm({ ...storeForm, discountRate: Number(e.target.value) })} />
                 <span style={{ color: 'var(--text-muted)' }}>%</span>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="number"
-                  className="mypage-input"
-                  style={{ width: '140px' }}
-                  placeholder="예) 50000"
+                <input type="number" className="mypage-input" style={{ width: '140px' }}
+                  placeholder="방 1개당 금액"
                   value={storeForm.fixedFee}
-                  onChange={(e) => setStoreForm({ ...storeForm, fixedFee: Number(e.target.value) })}
-                />
-                <span style={{ color: 'var(--text-muted)' }}>원 / 월</span>
+                  onChange={(e) => setStoreForm({ ...storeForm, fixedFee: Number(e.target.value) })} />
+                <span style={{ color: 'var(--text-muted)' }}>원 × 방 개수</span>
               </div>
             )}
           </div>
 
-          {/* 계약기간 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계약 시작일</label>
             <input type="date" className="mypage-input" value={storeForm.contractStart}
@@ -628,14 +610,11 @@ function RegisterTab({ onComplete }) {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  {/* 테마명 */}
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>테마명</label>
                     <input type="text" className="mypage-input" value={theme.name}
                       onChange={(e) => updateTheme(bi, ti, 'name', e.target.value)} />
                   </div>
-
-                  {/* 장르 선택 */}
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>장르</label>
                     <select className="admin-input admin-select" value={theme.genre}
@@ -643,8 +622,6 @@ function RegisterTab({ onComplete }) {
                       {GENRE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
-
-                  {/* 난이도 */}
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>난이도</label>
                     <select className="admin-input admin-select" value={theme.difficulty}
@@ -655,15 +632,11 @@ function RegisterTab({ onComplete }) {
                       <option value="expert">전문가</option>
                     </select>
                   </div>
-
-                  {/* 진행시간 */}
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>진행시간 (분)</label>
                     <input type="number" className="mypage-input" value={theme.duration}
                       onChange={(e) => updateTheme(bi, ti, 'duration', e.target.value)} />
                   </div>
-
-                  {/* 최소/최대 인원 */}
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>최소 인원</label>
                     <input type="number" className="mypage-input" value={theme.minPeople}
@@ -675,7 +648,20 @@ function RegisterTab({ onComplete }) {
                       onChange={(e) => updateTheme(bi, ti, 'maxPeople', e.target.value)} />
                   </div>
 
-                  {/* 테마 설명 */}
+                  {/* 이미지 업로드 UI (기능은 추후 활성화) */}
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>
+                      테마 이미지 <span style={{ color: '#ff6b7a', fontSize: '0.85em' }}>(업로드 기능 준비 중)</span>
+                    </label>
+                    <input type="file" accept="image/*"
+                      onChange={(e) => handleImageChange(bi, ti, e.target.files[0])}
+                      style={{ marginBottom: '8px' }} />
+                    {theme.imagePreview && (
+                      <img src={theme.imagePreview} alt="미리보기"
+                        style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '6px' }} />
+                    )}
+                  </div>
+
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>테마 설명</label>
                     <textarea className="review-textarea" style={{ height: '60px' }} value={theme.description}
@@ -690,23 +676,13 @@ function RegisterTab({ onComplete }) {
                     </div>
                     {theme.pricing.map((p, pi) => (
                       <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <input
-                          type="number"
-                          className="mypage-input"
-                          style={{ width: '70px' }}
-                          placeholder="인원"
-                          value={p.people}
-                          onChange={(e) => updatePricing(bi, ti, pi, 'people', Number(e.target.value))}
-                        />
+                        <input type="number" className="mypage-input" style={{ width: '70px' }}
+                          placeholder="인원" value={p.people}
+                          onChange={(e) => updatePricing(bi, ti, pi, 'people', Number(e.target.value))} />
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>명</span>
-                        <input
-                          type="number"
-                          className="mypage-input"
-                          style={{ width: '120px' }}
-                          placeholder="가격 (원)"
-                          value={p.price}
-                          onChange={(e) => updatePricing(bi, ti, pi, 'price', Number(e.target.value))}
-                        />
+                        <input type="number" className="mypage-input" style={{ width: '120px' }}
+                          placeholder="가격 (원)" value={p.price}
+                          onChange={(e) => updatePricing(bi, ti, pi, 'price', Number(e.target.value))} />
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>원</span>
                         {theme.pricing.length > 1 && (
                           <button className="mypage-btn small danger" onClick={() => removePricing(bi, ti, pi)}>✕</button>
@@ -722,12 +698,8 @@ function RegisterTab({ onComplete }) {
       </div>
 
       <div style={{ textAlign: 'right', marginTop: '16px' }}>
-        <button
-          className="mypage-btn primary"
-          style={{ padding: '12px 32px', fontSize: '1em' }}
-          onClick={handleRegisterStore}
-          disabled={loading}
-        >
+        <button className="mypage-btn primary" style={{ padding: '12px 32px', fontSize: '1em' }}
+          onClick={handleRegisterStore} disabled={loading}>
           {loading ? '등록 중...' : '🏪 사업자 등록 및 계정 생성'}
         </button>
       </div>
@@ -740,24 +712,17 @@ function RegisterTab({ onComplete }) {
 // =============================================
 function FeeTab({ stores, reservations }) {
   const thisMonth = new Date().toISOString().slice(0, 7);
-  const prevMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)
-    .toISOString().slice(0, 7);
-
-  const getThemeNames = (store) =>
-    store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
+  const prevMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7);
 
   const feeData = stores.map(store => {
-    const themeNames = getThemeNames(store);
+    const themeNames = store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
+    const themeCount = themeNames.length;
     const active = reservations.filter(r => themeNames.includes(r.productName) && !r.cancelled);
     const thisRevenue = active.filter(r => r.date?.startsWith(thisMonth)).reduce((s, r) => s + (r.price || 0), 0);
     const prevRevenue = active.filter(r => r.date?.startsWith(prevMonth)).reduce((s, r) => s + (r.price || 0), 0);
-    const thisFee = store.feeType === 'fixed'
-      ? (store.fixedFee || 0)
-      : Math.floor(thisRevenue * (store.discountRate || 0) / 100);
-    const prevFee = store.feeType === 'fixed'
-      ? (store.fixedFee || 0)
-      : Math.floor(prevRevenue * (store.discountRate || 0) / 100);
-    return { store, thisRevenue, prevRevenue, thisFee, prevFee };
+    const thisFee = calcFee(store, thisRevenue, themeCount);
+    const prevFee = calcFee(store, prevRevenue, themeCount);
+    return { store, thisRevenue, thisFee, prevFee, themeCount };
   });
 
   const totalThisFee = feeData.reduce((s, d) => s + d.thisFee, 0);
@@ -767,7 +732,7 @@ function FeeTab({ stores, reservations }) {
       <div className="admin-card fee-summary-card">
         <h3>💳 이번달 수수료 정산 ({thisMonth})</h3>
         <div className="fee-summary-list">
-          {feeData.map(({ store, thisRevenue, prevRevenue, thisFee, prevFee }) => {
+          {feeData.map(({ store, thisRevenue, thisFee, prevFee, themeCount }) => {
             const diff = thisFee - prevFee;
             return (
               <div key={store.id} className="fee-summary-row">
@@ -781,14 +746,9 @@ function FeeTab({ stores, reservations }) {
                 </div>
                 <div className="fee-summary-right">
                   <div className="fee-calc">
-                    <span>
-                      {store.feeType === 'fixed'
-                        ? `지정금액 ${(store.fixedFee || 0).toLocaleString()}원/월`
-                        : `이번달 ${thisRevenue.toLocaleString()}원 × ${store.discountRate}%`}
-                    </span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>
-                      전달 {prevFee.toLocaleString()}원
-                    </span>
+                    {store.feeType === 'fixed'
+                      ? <span>{(store.fixedFee || 0).toLocaleString()}원 × {themeCount}방</span>
+                      : <span>이번달 {thisRevenue.toLocaleString()}원 × {store.discountRate}%</span>}
                   </div>
                   <div className="fee-total">{thisFee.toLocaleString()}원</div>
                   {diff !== 0 && (
@@ -811,64 +771,122 @@ function FeeTab({ stores, reservations }) {
 }
 
 // =============================================
+// 계약 종료 탭
+// =============================================
+function ExpiredTab({ expiredStores }) {
+  return (
+    <div className="tab-section">
+      <div className="admin-card">
+        <h3>📁 계약 종료 히스토리</h3>
+        {expiredStores.length === 0 ? (
+          <p className="admin-empty">계약 종료된 매장이 없어요.</p>
+        ) : (
+          <div className="stores-table">
+            <div className="stores-table-header" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
+              <span>사업자명</span>
+              <span>매장명(지점)</span>
+              <span>계약 시작일</span>
+              <span>계약 종료일</span>
+            </div>
+            {expiredStores.map(store => (
+              <div key={store.id} className="stores-table-row"
+                style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr', opacity: 0.7 }}>
+                <span>{store.ownerName}</span>
+                <span style={{ fontSize: '0.85em' }}>
+                  {store.branches?.map(b => b.branchName).join(', ') || '-'}
+                </span>
+                <span>{store.contractStart}</span>
+                <span style={{ color: '#ff6b7a' }}>{store.contractEnd}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// =============================================
 // 매장 상세 모달
 // =============================================
 function StoreDetailModal({ store, reservations, onClose }) {
-  const themeNames = store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
-  const storeRecords = reservations.filter(r => themeNames.includes(r.productName));
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const prevMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7);
 
   return (
     <div className="admin-modal-overlay" onClick={onClose}>
-      <div
-        className="admin-modal store-detail-modal"
+      <div className="admin-modal store-detail-modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ overflowY: 'auto', maxHeight: '85vh' }}
-      >
+        style={{ overflowY: 'auto', maxHeight: '85vh' }}>
         <button className="admin-modal-close" onClick={onClose}>×</button>
         <h3>{store.ownerName} 매장 상세</h3>
 
         <div className="store-detail-info">
           {[
-            { label: '이메일',    value: store.email },
-            { label: '연락처',    value: store.contact },
-            { label: '은행',      value: `${store.bankName} ${store.bankAccount} (${store.bankHolder})` },
-            { label: '수수료율',  value: `${store.discountRate}%` },
-            { label: '계약기간',  value: `${store.contractStart} ~ ${store.contractEnd}` },
+            { label: '이메일',   value: store.email },
+            { label: '연락처',   value: store.contact },
+            { label: '은행',     value: `${store.bankName} ${store.bankAccount} (${store.bankHolder})` },
+            { label: '수수료',   value: store.feeType === 'fixed' ? `${(store.fixedFee || 0).toLocaleString()}원/방` : `${store.discountRate}%` },
+            { label: '계약기간', value: `${store.contractStart} ~ ${store.contractEnd}` },
           ].map(({ label, value }) => (
             <div key={label} className="store-info-row">
-              <span>{label}</span>
-              <strong>{value || '-'}</strong>
+              <span>{label}</span><strong>{value || '-'}</strong>
             </div>
           ))}
         </div>
 
         {store.branches?.map(branch => {
-          const branchRecords = storeRecords.filter(r => r.branch === branch.branchName);
-          const themeStats = {};
-          branchRecords.forEach(r => {
-            if (!themeStats[r.productName]) themeStats[r.productName] = { count: 0, revenue: 0, cancel: 0 };
-            if (r.cancelled) themeStats[r.productName].cancel++;
-            else { themeStats[r.productName].count++; themeStats[r.productName].revenue += r.price || 0; }
-          });
+          const themeNames = branch.themes?.map(t => t.name) || [];
+          const branchRecs = reservations.filter(r => themeNames.includes(r.productName));
+          const thisRevenue = branchRecs
+            .filter(r => !r.cancelled && r.date?.startsWith(thisMonth))
+            .reduce((s, r) => s + (r.price || 0), 0);
+          const prevRevenue = branchRecs
+            .filter(r => !r.cancelled && r.date?.startsWith(prevMonth))
+            .reduce((s, r) => s + (r.price || 0), 0);
+          const themeCount = themeNames.length;
+          const thisFee = calcFee(store, thisRevenue, themeCount);
 
           return (
-            <div key={branch.id} className="branch-section">
-              <div className="branch-header">
+            <div key={branch.id || branch.branchName} className="branch-section">
+              <div className="branch-header" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <span className="branch-name">🏪 {branch.branchName}</span>
-                <span>{branch.address}</span>
+                <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>{branch.address}</span>
               </div>
 
+              {/* 지점 매출 요약 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', padding: '10px 16px', background: 'var(--bg-secondary)', margin: '8px 0', borderRadius: '6px' }}>
+                <div>
+                  <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>전달 매출</div>
+                  <strong>{prevRevenue.toLocaleString()}원</strong>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>이번달 매출</div>
+                  <strong>{thisRevenue.toLocaleString()}원</strong>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>이번달 수수료</div>
+                  <strong style={{ color: 'var(--accent-gold)' }}>{thisFee.toLocaleString()}원</strong>
+                </div>
+              </div>
+
+              {/* 테마 목록 */}
               <div style={{ padding: '8px 16px' }}>
                 <strong style={{ fontSize: '0.9em', color: 'var(--text-muted)' }}>테마 목록</strong>
-                {branch.themes?.map(theme => (
-                  <div key={theme.id} className="theme-stats-row" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr' }}>
-                    <span>{theme.name}</span>
-                    <span>{theme.genre}</span>
-                    <span>{theme.difficulty}</span>
-                    <span>{theme.minPeople}~{theme.maxPeople}인</span>
-                    <span>{Number(theme.price).toLocaleString()}원</span>
+                <div className="theme-stats-table" style={{ marginTop: '8px' }}>
+                  <div className="theme-stats-header" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr' }}>
+                    <span>테마명</span><span>장르</span><span>난이도</span><span>인원</span><span>진행시간</span>
                   </div>
-                ))}
+                  {branch.themes?.map((theme, i) => (
+                    <div key={i} className="theme-stats-row" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr' }}>
+                      <span>{theme.name}</span>
+                      <span>{theme.genre}</span>
+                      <span>{theme.difficulty}</span>
+                      <span>{theme.minPeople}~{theme.maxPeople}인</span>
+                      <span>{theme.duration}분</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           );

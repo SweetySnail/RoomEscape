@@ -9,6 +9,17 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // 추후 활성화
+// import { storage } from '../firebase'; // 추후 활성화
+
+// 테마 이미지 업로드 (추후 활성화)
+// export const uploadThemeImage = async (file, storeId, themeName) => {
+//   const ext = file.name.split('.').pop();
+//   const path = `themes/${storeId}/${themeName}_${Date.now()}.${ext}`;
+//   const storageRef = ref(storage, path);
+//   await uploadBytes(storageRef, file);
+//   return await getDownloadURL(storageRef);
+// };
 
 // 매장 전체 목록 불러오기
 export const getAllStores = async () => {
@@ -16,14 +27,12 @@ export const getAllStores = async () => {
   const stores = [];
   for (const storeDoc of snapshot.docs) {
     const storeData = { id: storeDoc.id, ...storeDoc.data() };
-    // 지점 서브컬렉션 불러오기
     const branchSnapshot = await getDocs(
       collection(db, 'stores', storeDoc.id, 'branches')
     );
     storeData.branches = [];
     for (const branchDoc of branchSnapshot.docs) {
       const branchData = { id: branchDoc.id, ...branchDoc.data() };
-      // 테마 서브컬렉션 불러오기
       const themeSnapshot = await getDocs(
         collection(db, 'stores', storeDoc.id, 'branches', branchDoc.id, 'themes')
       );
@@ -39,7 +48,20 @@ export const getAllStores = async () => {
 export const getStore = async (storeId) => {
   const storeDoc = await getDoc(doc(db, 'stores', storeId));
   if (!storeDoc.exists()) return null;
-  return { id: storeDoc.id, ...storeDoc.data() };
+  const storeData = { id: storeDoc.id, ...storeDoc.data() };
+  const branchSnapshot = await getDocs(
+    collection(db, 'stores', storeId, 'branches')
+  );
+  storeData.branches = [];
+  for (const branchDoc of branchSnapshot.docs) {
+    const branchData = { id: branchDoc.id, ...branchDoc.data() };
+    const themeSnapshot = await getDocs(
+      collection(db, 'stores', storeId, 'branches', branchDoc.id, 'themes')
+    );
+    branchData.themes = themeSnapshot.docs.map(t => ({ id: t.id, ...t.data() }));
+    storeData.branches.push(branchData);
+  }
+  return storeData;
 };
 
 // 매장 등록
@@ -47,9 +69,9 @@ export const createStore = async (storeData) => {
   const { branches, ...rest } = storeData;
   const storeRef = await addDoc(collection(db, 'stores'), {
     ...rest,
+    status: 'active',
     createdAt: new Date().toISOString(),
   });
-  // 지점 + 테마 저장
   if (branches?.length) {
     for (const branch of branches) {
       const { themes, ...branchRest } = branch;
@@ -70,9 +92,17 @@ export const createStore = async (storeData) => {
   return storeRef.id;
 };
 
-// 매장 기본 정보 수정 (수수료율, 계약일 등)
+// 매장 기본 정보 수정
 export const updateStore = async (storeId, data) => {
   await updateDoc(doc(db, 'stores', storeId), data);
+};
+
+// 매장 계약 종료
+export const deleteStore = async (storeId) => {
+  await updateDoc(doc(db, 'stores', storeId), {
+    status: 'expired',
+    expiredAt: new Date().toISOString(),
+  });
 };
 
 // 지점 추가
