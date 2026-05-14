@@ -5,7 +5,6 @@ import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
 import ReviewModal from '../components/ReviewModal';
 import { useAuth } from '../hooks/useAuth';
-import { getMyReservations } from '../services/reservationService';
 import { getMyFavorites, removeFavorite } from '../services/favoriteService';
 import { updateNickname } from '../services/authService';
 import { getMyReservations, cancelReservation } from '../services/reservationService';
