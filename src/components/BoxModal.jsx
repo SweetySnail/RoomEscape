@@ -1,3 +1,4 @@
+// src/components/BoxModal.jsx
 import React, { useState, useEffect } from 'react';
 import '../styles/BoxModal.css';
 import { toggleFavorite } from '../utils/FavoriteUtils';
@@ -6,6 +7,35 @@ import { addReservation, getBookedTimes } from '../services/reservationService';
 import { spendPoints } from '../services/pointService';
 import { getReviewsByProduct } from '../services/reviewService';
 import { getUserData } from '../services/authService';
+
+// 난이도 숫자 변환
+const difficultyToNumber = (difficulty) => {
+  const map = { easy: 1, normal: 2, hard: 4, expert: 5 };
+  return map[difficulty] ?? (typeof difficulty === 'number' ? difficulty : 3);
+};
+
+// 인원별 가격 파싱 (pricing 배열 or priceTable 객체 둘 다 지원)
+const getPriceMap = (productData) => {
+  if (productData.pricing?.length > 0) {
+    const map = {};
+    productData.pricing.forEach(p => {
+      map[`${p.people}인`] = Number(p.price);
+    });
+    return map;
+  }
+  if (productData.priceTable) return productData.priceTable;
+  return {};
+};
+
+// 위치 텍스트 파싱
+const getLocation = (productData) => {
+  if (productData.address) return productData.address;
+  if (productData.location) return `${productData.location.city} ${productData.location.district}`;
+  return '-';
+};
+
+// 장르/테마 텍스트
+const getGenre = (productData) => productData.genre || productData.theme || '-';
 
 function BoxModal({ productData, onClose }) {
   const [selectedDate, setSelectedDate] = useState('');
@@ -19,58 +49,60 @@ function BoxModal({ productData, onClose }) {
   const [bookedTimes, setBookedTimes] = useState([]);
   const [guestEmail, setGuestEmail] = useState('');
 
-  const selectedPrice = selectedPeople ? productData?.priceTable[selectedPeople] : null;
+  const priceMap = getPriceMap(productData);
+  const selectedPrice = selectedPeople ? priceMap[selectedPeople] : null;
   const pointDiscount = usePoint ? Math.min(currentPoints, selectedPrice || 0) : 0;
   const finalPrice = (selectedPrice || 0) - pointDiscount;
+  const difficultyNum = difficultyToNumber(productData?.difficulty);
 
-  // 포인트 불러오기
+  // 운영 시간 파싱
+  const availableTimes = productData?.availableTimes?.length > 0
+    ? productData.availableTimes
+    : [];
+
   useEffect(() => {
-    const loadPoints = async () => {
-      const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || '{}');
-      if (!loggedInUser?.uid) return;
+    const load = async () => {
+      const user = JSON.parse(sessionStorage.getItem('loggedInUser') || '{}');
+      if (!user?.uid) return;
       try {
-        const userData = await getUserData(loggedInUser.uid);
+        const userData = await getUserData(user.uid);
         setCurrentPoints(userData?.points || 0);
-      } catch (error) {
-        console.error('포인트 불러오기 실패:', error);
+      } catch (e) {
+        console.error('포인트 불러오기 실패:', e);
       }
     };
-    loadPoints();
+    load();
   }, []);
 
-  // 리뷰 불러오기
   useEffect(() => {
-    const loadReviews = async () => {
+    const load = async () => {
       if (!productData?.id) return;
       try {
         const reviews = await getReviewsByProduct(productData.id);
         setUserReviews(reviews);
-      } catch (error) {
-        console.error('리뷰 불러오기 실패:', error);
+      } catch (e) {
+        console.error('리뷰 불러오기 실패:', e);
       }
     };
-    loadReviews();
+    load();
   }, [productData]);
 
-  // 즐겨찾기 초기 상태 불러오기
   useEffect(() => {
-    const loadFavoriteStatus = async () => {
-      const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
-      if (!loggedInUser?.uid || !productData?.id) return;
+    const load = async () => {
+      const user = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+      if (!user?.uid || !productData?.id) return;
       try {
-        const status = await checkIsFavorite(loggedInUser.uid, productData.id);
+        const status = await checkIsFavorite(user.uid, productData.id);
         setFavorited(status);
-      } catch (error) {
-        console.error('즐겨찾기 상태 확인 실패:', error);
+      } catch (e) {
+        console.error('즐겨찾기 확인 실패:', e);
       }
     };
-    loadFavoriteStatus();
+    load();
   }, [productData]);
 
-  // early return은 모든 Hook 이후에
   if (!productData) return null;
 
-  // 날짜 선택 시 예약된 시간 조회
   const handleDateSelect = async (dateValue) => {
     setSelectedDate(dateValue);
     setSelectedTime('');
@@ -78,63 +110,50 @@ function BoxModal({ productData, onClose }) {
     try {
       const booked = await getBookedTimes(productData.id, dateValue);
       setBookedTimes(booked);
-    } catch (error) {
-      console.error('예약 시간 조회 실패:', error);
+    } catch (e) {
       setBookedTimes([]);
     }
   };
 
-  // 오늘부터 14일치 날짜 생성
   const generateDates = () => {
-    const dates = [];
-    for (let i = 0; i < 14; i++) {
+    return Array.from({ length: 14 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() + i);
-      const formatted = date.toLocaleDateString('ko-KR', {
-        month: 'long', day: 'numeric', weekday: 'short',
-      });
-      const value = date.toISOString().slice(0, 10);
-      dates.push({ label: formatted, value });
-    }
-    return dates;
+      return {
+        label: date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }),
+        value: date.toISOString().slice(0, 10),
+      };
+    });
   };
-  const dates = generateDates();
 
-  // 결제 성공 처리
   const handlePaymentSuccess = async () => {
-    const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
-
+    const user = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
     try {
-      // 로그인한 경우만 포인트 차감
-      if (loggedInUser?.uid && usePoint && pointDiscount > 0) {
-        await spendPoints(loggedInUser.uid, pointDiscount, `${productData.title} 예약 결제`);
+      if (user?.uid && usePoint && pointDiscount > 0) {
+        await spendPoints(user.uid, pointDiscount, `${productData.title} 예약 결제`);
       }
-
-      const newRecord = {
-        uid: loggedInUser?.uid || 'guest',
+      await addReservation({
+        uid: user?.uid || 'guest',
         productId: productData.id,
         productName: productData.title,
         branch: productData.branch || '',
-        theme: productData.theme,
+        theme: getGenre(productData),
         date: selectedDate,
         time: selectedTime,
         people: selectedPeople,
         price: finalPrice,
         originalPrice: selectedPrice,
-        usedPoints: loggedInUser?.uid ? pointDiscount : 0,
+        usedPoints: user?.uid ? pointDiscount : 0,
         success: null,
         reviewed: false,
         cancelled: false,
         autoSuccess: false,
         escapeMinutes: null,
-        // 비로그인 시 연락처 저장
-        guestEmail: loggedInUser?.uid ? null : guestEmail,
-      };
-
-      await addReservation(newRecord);
+        guestEmail: user?.uid ? null : guestEmail,
+      });
       setStep('success');
-    } catch (error) {
-      console.error('예약 저장 실패:', error);
+    } catch (e) {
+      console.error('예약 저장 실패:', e);
       alert('예약 저장 중 오류가 발생했어요. 다시 시도해주세요.');
     }
   };
@@ -143,9 +162,17 @@ function BoxModal({ productData, onClose }) {
   const renderReservation = () => (
     <>
       <div className="modal-top">
-        <img src={productData.imageUrl} alt={productData.title} className="modal-image" />
-        <div className="modal-info">
+        {productData.imageUrl ? (
+          <img src={productData.imageUrl} alt={productData.title} className="modal-image" />
+        ) : (
+          <div className="modal-image" style={{
+            background: 'var(--bg-secondary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '4em',
+          }}>🔐</div>
+        )}
 
+        <div className="modal-info">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
             <h2 className="modal-title">{productData.title}</h2>
             <button
@@ -160,33 +187,46 @@ function BoxModal({ productData, onClose }) {
           </div>
 
           <div className="modal-badge-row">
-            <span className="modal-badge theme">{productData.theme}</span>
-            <span className="modal-badge genre">{productData.genre}</span>
+            <span className="modal-badge genre">{getGenre(productData)}</span>
+            {productData.branch && (
+              <span className="modal-badge theme">🏪 {productData.branch}</span>
+            )}
           </div>
 
           <div className="modal-rating">
-            ⭐ <strong>{productData.rating}</strong>
-            <span className="modal-review-count">({productData.reviewCount}개 리뷰)</span>
+            ⭐ <strong>{(productData.rating || 0).toFixed(1)}</strong>
+            <span className="modal-review-count">({productData.reviewCount || 0}개 리뷰)</span>
           </div>
 
           <div className="modal-difficulty">
             난이도&nbsp;
             {Array.from({ length: 5 }, (_, i) => (
-              <span key={i} style={{ color: i < productData.difficulty ? '#d4a843' : '#555' }}>
-                ★
-              </span>
+              <span key={i} style={{ color: i < difficultyNum ? '#d4a843' : '#555' }}>★</span>
             ))}
+            <span style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginLeft: '6px' }}>
+              ({productData.difficulty})
+            </span>
           </div>
+
+          {productData.duration && (
+            <div style={{ fontSize: '0.9em', color: 'var(--text-muted)', marginTop: '4px' }}>
+              ⏱ 진행시간: {productData.duration}분
+            </div>
+          )}
 
           <div className="modal-price-table">
             <h4>인원별 가격</h4>
             <div className="price-row-group">
-              {Object.entries(productData.priceTable ?? {}).map(([people, price]) => (
-                <div key={people} className="price-row">
-                  <span className="price-people">{people}</span>
-                  <span className="price-amount">{price.toLocaleString()}원</span>
-                </div>
-              ))}
+              {Object.keys(priceMap).length > 0 ? (
+                Object.entries(priceMap).map(([people, price]) => (
+                  <div key={people} className="price-row">
+                    <span className="price-people">{people}</span>
+                    <span className="price-amount">{Number(price).toLocaleString()}원</span>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>가격 정보가 없어요.</p>
+              )}
             </div>
           </div>
 
@@ -199,7 +239,7 @@ function BoxModal({ productData, onClose }) {
       <div className="modal-reservation">
         <h3>📅 날짜 선택</h3>
         <div className="date-scroll">
-          {dates.map((date) => (
+          {generateDates().map((date) => (
             <button
               key={date.value}
               className={`date-btn ${selectedDate === date.value ? 'selected' : ''}`}
@@ -213,29 +253,28 @@ function BoxModal({ productData, onClose }) {
         {selectedDate && (
           <>
             <h3>🕐 시간 선택</h3>
-            <div className="time-grid">
-              {productData.availableTimes.map((time) => {
-                const isBooked = bookedTimes.includes(time);
-                return (
-                  <button
-                    key={time}
-                    className={`time-btn ${selectedTime === time ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
-                    onClick={() => {
-                      if (isBooked) return;
-                      setSelectedTime(time);
-                      setSelectedPeople('');
-                    }}
-                    disabled={isBooked}
-                    title={isBooked ? '이미 예약된 시간이에요' : ''}
-                  >
-                    {time}
-                    {isBooked && (
-                      <span style={{ fontSize: '0.7em', display: 'block' }}>마감</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {availableTimes.length > 0 ? (
+              <div className="time-grid">
+                {availableTimes.map((time) => {
+                  const isBooked = bookedTimes.includes(time);
+                  return (
+                    <button
+                      key={time}
+                      className={`time-btn ${selectedTime === time ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
+                      onClick={() => { if (!isBooked) { setSelectedTime(time); setSelectedPeople(''); } }}
+                      disabled={isBooked}
+                    >
+                      {time}
+                      {isBooked && <span style={{ fontSize: '0.7em', display: 'block' }}>마감</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-muted)', fontSize: '0.9em' }}>
+                ⚠️ 아직 운영 시간이 설정되지 않았어요. 매장에 문의해주세요.
+              </div>
+            )}
           </>
         )}
 
@@ -243,14 +282,14 @@ function BoxModal({ productData, onClose }) {
           <>
             <h3>👥 인원 선택</h3>
             <div className="people-grid">
-              {Object.entries(productData.priceTable ?? {}).map(([people, price]) => (
+              {Object.entries(priceMap).map(([people, price]) => (
                 <button
                   key={people}
                   className={`people-btn ${selectedPeople === people ? 'selected' : ''}`}
                   onClick={() => setSelectedPeople(people)}
                 >
                   <span className="people-label">{people}</span>
-                  <span className="people-price">{price.toLocaleString()}원</span>
+                  <span className="people-price">{Number(price).toLocaleString()}원</span>
                 </button>
               ))}
             </div>
@@ -264,10 +303,7 @@ function BoxModal({ productData, onClose }) {
               <p>📅 {selectedDate} · {selectedTime}</p>
               <p>👥 {selectedPeople} · {selectedPrice?.toLocaleString()}원</p>
             </div>
-            <button
-              className="reserve-button"
-              onClick={() => setStep('payment')}
-            >
+            <button className="reserve-button" onClick={() => setStep('payment')}>
               결제하기
             </button>
           </div>
@@ -276,42 +312,38 @@ function BoxModal({ productData, onClose }) {
 
       <hr className="modal-divider" />
 
+      {/* 리뷰 */}
       <div className="modal-reviews">
         <h3>💬 최근 리뷰</h3>
         <div className="review-list">
-          {userReviews.map((review) => (
-            <div key={review.id} className="review-item">
-              <div className="review-header">
-                <span className="reviewer-name">{review.reviewer}</span>
-                <span className="review-rating">
-                  {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                </span>
-                <span className="review-date">{review.date}</span>
+          {userReviews.length > 0 ? (
+            userReviews.map((review) => (
+              <div key={review.id} className="review-item">
+                <div className="review-header">
+                  <span className="reviewer-name">{review.reviewer}</span>
+                  <span className="review-rating">
+                    {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                  </span>
+                  <span className="review-date">{review.date}</span>
+                </div>
+                <p className="review-comment">{review.comment}</p>
               </div>
-              <p className="review-comment">{review.comment}</p>
-            </div>
-          ))}
-
-          {userReviews.length === 0 && (productData.recentReviews ?? []).map((review) => (
-            <div key={review.id} className="review-item">
-              <div className="review-header">
-                <span className="reviewer-name">{review.reviewer}</span>
-                <span className="review-rating">
-                  {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                </span>
-                <span className="review-date">{review.date}</span>
+            ))
+          ) : (productData.recentReviews ?? []).length > 0 ? (
+            productData.recentReviews.map((review) => (
+              <div key={review.id} className="review-item">
+                <div className="review-header">
+                  <span className="reviewer-name">{review.reviewer}</span>
+                  <span className="review-rating">
+                    {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                  </span>
+                  <span className="review-date">{review.date}</span>
+                </div>
+                <p className="review-comment">{review.comment}</p>
               </div>
-              <p className="review-comment">{review.comment}</p>
-            </div>
-          ))}
-
-          {userReviews.length === 0 && (productData.recentReviews ?? []).length === 0 && (
-            <p style={{
-              color: 'var(--text-muted)',
-              fontSize: '0.9em',
-              textAlign: 'center',
-              padding: '16px 0'
-            }}>
+            ))
+          ) : (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9em', textAlign: 'center', padding: '16px 0' }}>
               아직 리뷰가 없어요. 첫 리뷰를 작성해보세요!
             </p>
           )}
@@ -322,45 +354,36 @@ function BoxModal({ productData, onClose }) {
 
       <div className="modal-location">
         <h3>📍 위치</h3>
-        <p>{productData.location.city} {productData.location.district}</p>
+        <p>{getLocation(productData)}</p>
       </div>
     </>
   );
 
   // ===== 결제 단계 =====
   const renderPayment = () => {
-    const loggedInUser = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
-
+    const user = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
     return (
       <div className="payment-container">
         <h2 className="payment-title">💳 결제</h2>
-
         <div className="payment-summary">
           <h3>예약 정보 확인</h3>
-          <div className="payment-summary-item">
-            <span>테마</span><strong>{productData.title}</strong>
-          </div>
-          <div className="payment-summary-item">
-            <span>날짜</span><strong>{selectedDate}</strong>
-          </div>
-          <div className="payment-summary-item">
-            <span>시간</span><strong>{selectedTime}</strong>
-          </div>
-          <div className="payment-summary-item">
-            <span>인원</span><strong>{selectedPeople}</strong>
-          </div>
-          <div className="payment-summary-item">
-            <span>기본 금액</span><strong>{selectedPrice?.toLocaleString()}원</strong>
-          </div>
+          {[
+            { label: '테마', value: productData.title },
+            { label: '날짜', value: selectedDate },
+            { label: '시간', value: selectedTime },
+            { label: '인원', value: selectedPeople },
+            { label: '기본 금액', value: `${selectedPrice?.toLocaleString()}원` },
+          ].map(({ label, value }) => (
+            <div key={label} className="payment-summary-item">
+              <span>{label}</span><strong>{value}</strong>
+            </div>
+          ))}
 
-          {/* 로그인한 경우만 포인트 표시 */}
-          {loggedInUser?.uid && (
+          {user?.uid && (
             <>
               <div className="payment-summary-item">
                 <span>보유 포인트</span>
-                <strong style={{ color: 'var(--accent-gold)' }}>
-                  💎 {currentPoints.toLocaleString()} P
-                </strong>
+                <strong style={{ color: 'var(--accent-gold)' }}>💎 {currentPoints.toLocaleString()} P</strong>
               </div>
               <div className="payment-summary-item">
                 <span>포인트 사용</span>
@@ -372,14 +395,11 @@ function BoxModal({ productData, onClose }) {
                     background: usePoint ? 'rgba(212,168,67,0.15)' : 'transparent',
                     color: usePoint ? 'var(--accent-gold)' : 'var(--text-secondary)',
                     cursor: currentPoints > 0 ? 'pointer' : 'not-allowed',
-                    fontSize: '0.9em',
-                    fontWeight: 'bold',
+                    fontSize: '0.9em', fontWeight: 'bold',
                   }}
                   onClick={() => currentPoints > 0 && setUsePoint(!usePoint)}
                 >
-                  {usePoint
-                    ? `✅ -${pointDiscount.toLocaleString()}P 사용중`
-                    : currentPoints > 0 ? '포인트 사용하기' : '포인트 없음'}
+                  {usePoint ? `✅ -${pointDiscount.toLocaleString()}P 사용중` : currentPoints > 0 ? '포인트 사용하기' : '포인트 없음'}
                 </button>
               </div>
             </>
@@ -391,8 +411,7 @@ function BoxModal({ productData, onClose }) {
           </div>
         </div>
 
-        {/* 비로그인 시 이메일 입력 */}
-        {!loggedInUser?.uid && (
+        {!user?.uid && (
           <div className="guest-email-section">
             <h3>📧 예약 확인 이메일</h3>
             <p style={{ fontSize: '0.85em', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
@@ -410,15 +429,12 @@ function BoxModal({ productData, onClose }) {
               <span
                 style={{ color: 'var(--accent-gold)', cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => window.location.href = '/login'}
-              >
-                로그인
-              </span>
+              >로그인</span>
               <span>하시면 포인트 적립 및 예약 관리가 가능해요!</span>
             </div>
           </div>
         )}
 
-        {/* 결제 수단 */}
         <div className="payment-method">
           <h3>결제 수단</h3>
           <div className="payment-method-grid">
@@ -448,33 +464,27 @@ function BoxModal({ productData, onClose }) {
       <div className="success-icon">🎉</div>
       <h2>예약 완료!</h2>
       <p>캘린더에 예약이 등록되었어요.</p>
-
       <div className="success-summary">
-        <div className="payment-summary-item">
-          <span>테마</span><strong>{productData.title}</strong>
-        </div>
-        <div className="payment-summary-item">
-          <span>날짜</span><strong>{selectedDate}</strong>
-        </div>
-        <div className="payment-summary-item">
-          <span>시간</span><strong>{selectedTime}</strong>
-        </div>
-        <div className="payment-summary-item">
-          <span>인원</span><strong>{selectedPeople}</strong>
-        </div>
+        {[
+          { label: '테마', value: productData.title },
+          { label: '날짜', value: selectedDate },
+          { label: '시간', value: selectedTime },
+          { label: '인원', value: selectedPeople },
+        ].map(({ label, value }) => (
+          <div key={label} className="payment-summary-item">
+            <span>{label}</span><strong>{value}</strong>
+          </div>
+        ))}
         {pointDiscount > 0 && (
           <div className="payment-summary-item">
             <span>포인트 할인</span>
-            <strong style={{ color: 'var(--accent-gold)' }}>
-              -{pointDiscount.toLocaleString()}P
-            </strong>
+            <strong style={{ color: 'var(--accent-gold)' }}>-{pointDiscount.toLocaleString()}P</strong>
           </div>
         )}
         <div className="payment-summary-item total">
           <span>결제 금액</span><strong>{finalPrice.toLocaleString()}원</strong>
         </div>
       </div>
-
       <div className="success-actions">
         <button className="confirm-payment-button" onClick={onClose}>확인</button>
       </div>

@@ -7,9 +7,17 @@ import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
 import { getAllReservations, updateReservationResult } from '../services/reservationService';
-import { getStore } from '../services/storeService';
+import { getStore, updateTheme } from '../services/storeService';
+import { updateProduct } from '../services/productService';
+import { getDocs, collection, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 import '../styles/Global.css';
 import '../styles/AdminPage.css';
+
+const ALL_TIMES = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00',
+];
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -37,14 +45,10 @@ function AdminPage() {
           getAllReservations(),
           loggedInUser.storeId ? getStore(loggedInUser.storeId) : null,
         ]);
-
-        // 본인 매장 테마명 기준으로 필터링
         const myThemeNames = storeData
           ? storeData.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || []
           : loggedInUser.managedStores || [];
-
-        const filtered = allReservations.filter(r => myThemeNames.includes(r.productName));
-        setRecords(filtered);
+        setRecords(allReservations.filter(r => myThemeNames.includes(r.productName)));
         setStore(storeData);
       } catch (error) {
         console.error('데이터 불러오기 실패:', error);
@@ -69,6 +73,7 @@ function AdminPage() {
   const tabs = [
     { id: 'dashboard',    label: '📊 대시보드' },
     { id: 'reservations', label: '📋 예약 관리' },
+    { id: 'schedule',     label: '🕐 운영 시간 설정' },
   ];
 
   return (
@@ -77,7 +82,6 @@ function AdminPage() {
       <BoxRight />
       <BoxMain>
         <div className="admin-content">
-
           <div className="admin-header">
             <div>
               <h1 className="admin-title">🏪 매장 관리자</h1>
@@ -114,10 +118,177 @@ function AdminPage() {
             {activeTab === 'reservations' && (
               <StoreReservations records={records} setRecords={setRecords} />
             )}
+            {activeTab === 'schedule' && (
+              <ScheduleTab store={store} setStore={setStore} loggedInUser={loggedInUser} />
+            )}
           </div>
-
         </div>
       </BoxMain>
+    </div>
+  );
+}
+
+// =============================================
+// 운영 시간 설정 탭
+// =============================================
+function ScheduleTab({ store, setStore, loggedInUser }) {
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState('');
+
+  // store에서 branch/theme 목록 구성
+  const branches = store?.branches || [];
+
+  // 로컬 상태로 시간 편집
+  const [localBranches, setLocalBranches] = useState(
+    branches.map(b => ({
+      ...b,
+      themes: b.themes?.map(t => ({
+        ...t,
+        availableTimes: t.availableTimes || [],
+      })) || [],
+    }))
+  );
+
+  const toggleTime = (bi, ti, time) => {
+    const updated = localBranches.map((b, bIdx) => {
+      if (bIdx !== bi) return b;
+      return {
+        ...b,
+        themes: b.themes.map((t, tIdx) => {
+          if (tIdx !== ti) return t;
+          const times = t.availableTimes || [];
+          return {
+            ...t,
+            availableTimes: times.includes(time)
+              ? times.filter(tm => tm !== time)
+              : [...times, time].sort(),
+          };
+        }),
+      };
+    });
+    setLocalBranches(updated);
+  };
+
+  const handleSave = async () => {
+    if (!store?.id) return;
+    setSaving(true);
+    setSavedMsg('');
+    try {
+      for (const branch of localBranches) {
+        for (const theme of branch.themes) {
+          // stores 서브컬렉션 업데이트
+          if (branch.id && theme.id) {
+            await updateTheme(store.id, branch.id, theme.id, {
+              availableTimes: theme.availableTimes,
+            });
+          }
+
+          // products 컬렉션도 동기화
+          const q = query(
+            collection(db, 'products'),
+            where('storeId', '==', store.id),
+            where('title', '==', theme.name)
+          );
+          const snap = await getDocs(q);
+          for (const docSnap of snap.docs) {
+            await updateProduct(docSnap.id, {
+              availableTimes: theme.availableTimes,
+            });
+          }
+        }
+      }
+
+      // store 상태 업데이트
+      setStore(prev => ({
+        ...prev,
+        branches: localBranches,
+      }));
+      setSavedMsg('✅ 저장되었어요!');
+    } catch (error) {
+      setSavedMsg('❌ 저장 실패: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (branches.length === 0) return (
+    <div className="tab-section">
+      <div className="admin-card">
+        <p className="admin-empty">등록된 지점 정보가 없어요. 총괄 관리자에게 문의해주세요.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="tab-section">
+      <div className="admin-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>🕐 테마별 운영 시간 설정</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {savedMsg && (
+              <span style={{ color: savedMsg.startsWith('✅') ? '#6fcf97' : '#ff6b7a', fontSize: '0.9em' }}>
+                {savedMsg}
+              </span>
+            )}
+            <button className="mypage-btn primary" onClick={handleSave} disabled={saving}>
+              {saving ? '저장 중...' : '💾 저장'}
+            </button>
+          </div>
+        </div>
+
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9em', marginBottom: '16px' }}>
+          예약 가능한 시간대를 선택해주세요. 선택된 시간만 고객에게 노출돼요.
+        </p>
+
+        {localBranches.map((branch, bi) => (
+          <div key={bi} style={{ marginBottom: '24px' }}>
+            <h4 style={{ color: 'var(--accent-gold)', marginBottom: '12px' }}>
+              🏪 {branch.branchName}
+            </h4>
+
+            {branch.themes?.map((theme, ti) => (
+              <div key={ti} style={{
+                background: 'var(--bg-secondary)',
+                borderRadius: '8px',
+                padding: '14px',
+                marginBottom: '12px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <strong>{theme.name}</strong>
+                  <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>
+                    {theme.availableTimes?.length || 0}개 시간 선택됨
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {ALL_TIMES.map(time => {
+                    const selected = theme.availableTimes?.includes(time);
+                    return (
+                      <button
+                        key={time}
+                        onClick={() => toggleTime(bi, ti, time)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: `1.5px solid ${selected ? 'var(--accent-gold)' : 'var(--border-subtle)'}`,
+                          background: selected ? 'rgba(212,168,67,0.15)' : 'transparent',
+                          color: selected ? 'var(--accent-gold)' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontWeight: selected ? 'bold' : 'normal',
+                          fontSize: '0.9em',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -139,7 +310,6 @@ function generatePDF({ store, loggedInUser, records, targetMonth }) {
   const discountRate = store?.discountRate || 0;
   const thisFee = Math.floor(thisRevenue * discountRate / 100);
 
-  // 테마별 집계
   const themeStats = {};
   monthRecords.forEach(r => {
     if (!themeStats[r.productName]) themeStats[r.productName] = { count: 0, revenue: 0 };
@@ -147,7 +317,6 @@ function generatePDF({ store, loggedInUser, records, targetMonth }) {
     themeStats[r.productName].revenue += r.price || 0;
   });
 
-  // 헤더
   doc.setFontSize(18);
   doc.text('EscapeHub - Monthly Report', 14, 20);
   doc.setFontSize(11);
@@ -155,14 +324,9 @@ function generatePDF({ store, loggedInUser, records, targetMonth }) {
   doc.text(`${month} 매출 리포트`, 14, 28);
   doc.text(`담당자: ${loggedInUser.nickname}`, 14, 35);
   doc.text(`출력일: ${new Date().toLocaleDateString('ko-KR')}`, 14, 42);
-
-  if (store) {
-    doc.text(`매장: ${store.ownerName} (수수료율 ${store.discountRate}%)`, 14, 49);
-  }
-
+  if (store) doc.text(`매장: ${store.ownerName}`, 14, 49);
   doc.setTextColor(0);
 
-  // 요약 테이블
   doc.setFontSize(13);
   doc.text('매출 요약', 14, 62);
   autoTable(doc, {
@@ -170,19 +334,18 @@ function generatePDF({ store, loggedInUser, records, targetMonth }) {
     head: [['항목', '금액']],
     body: [
       ['이번달 총 매출', `${thisRevenue.toLocaleString()}원`],
-      ['전달 총 매출',   `${prevRevenue.toLocaleString()}원`],
-      ['전달 대비',      prevRevenue > 0
+      ['전달 총 매출', `${prevRevenue.toLocaleString()}원`],
+      ['전달 대비', prevRevenue > 0
         ? `${thisRevenue >= prevRevenue ? '▲' : '▼'} ${Math.abs(Math.round((thisRevenue - prevRevenue) / prevRevenue * 100))}%`
         : '-'],
       ['이번달 예약 수', `${monthRecords.length}건`],
       [`플랫폼 수수료 (${discountRate}%)`, `${thisFee.toLocaleString()}원`],
-      ['정산 예정액',    `${(thisRevenue - thisFee).toLocaleString()}원`],
+      ['정산 예정액', `${(thisRevenue - thisFee).toLocaleString()}원`],
     ],
     theme: 'striped',
     headStyles: { fillColor: [212, 168, 67] },
   });
 
-  // 테마별 매출 테이블
   const afterSummary = doc.lastAutoTable.finalY + 12;
   doc.setFontSize(13);
   doc.text('테마별 매출', 14, afterSummary);
@@ -196,7 +359,6 @@ function generatePDF({ store, loggedInUser, records, targetMonth }) {
     headStyles: { fillColor: [212, 168, 67] },
   });
 
-  // 예약 상세 테이블
   const afterTheme = doc.lastAutoTable.finalY + 12;
   doc.setFontSize(13);
   doc.text('예약 상세 목록', 14, afterTheme);
@@ -206,10 +368,7 @@ function generatePDF({ store, loggedInUser, records, targetMonth }) {
     body: [...monthRecords]
       .sort((a, b) => a.date?.localeCompare(b.date))
       .map(r => [
-        r.date,
-        r.time,
-        r.productName,
-        `${r.people}명`,
+        r.date, r.time, r.productName, `${r.people}명`,
         `${(r.price || 0).toLocaleString()}원`,
         r.success === true ? '성공' : r.success === false ? '실패' : '미완료',
       ]),
@@ -242,7 +401,6 @@ function StoreDashboard({ records, store, loggedInUser }) {
   const diffRate = prevRevenue > 0
     ? Math.round(((thisRevenue - prevRevenue) / prevRevenue) * 100) : null;
 
-  // 일별 매출 (최근 30일)
   const dailyRevenue = {};
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
@@ -254,7 +412,6 @@ function StoreDashboard({ records, store, loggedInUser }) {
   });
   const maxDaily = Math.max(...Object.values(dailyRevenue), 1);
 
-  // 테마별 매출
   const productRevenue = activeRecords.reduce((acc, r) => {
     const name = r.productName || '기타';
     if (!acc[name]) acc[name] = { revenue: 0, count: 0 };
@@ -263,7 +420,6 @@ function StoreDashboard({ records, store, loggedInUser }) {
     return acc;
   }, {});
 
-  // 이번달 vs 전달 비교
   const allProductNames = [...new Set([
     ...thisRecords.map(r => r.productName),
     ...prevRecords.map(r => r.productName),
@@ -275,7 +431,6 @@ function StoreDashboard({ records, store, loggedInUser }) {
     return { name, curr, prev, pct };
   }).sort((a, b) => b.curr - a.curr);
 
-  // PDF용 월 선택 옵션 (최근 6개월)
   const monthOptions = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
@@ -284,7 +439,6 @@ function StoreDashboard({ records, store, loggedInUser }) {
 
   return (
     <div className="tab-section">
-
       {/* PDF 추출 */}
       <div className="admin-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         <h3 style={{ margin: 0 }}>📄 월별 리포트 PDF 추출</h3>
@@ -294,9 +448,7 @@ function StoreDashboard({ records, store, loggedInUser }) {
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
         >
-          {monthOptions.map(m => (
-            <option key={m} value={m}>{m}</option>
-          ))}
+          {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
         <button
           className="mypage-btn primary"
@@ -402,7 +554,6 @@ function StoreDashboard({ records, store, loggedInUser }) {
           ))}
         </div>
       </div>
-
     </div>
   );
 }
@@ -542,7 +693,8 @@ function StoreReservations({ records, setRecords }) {
                             onClick={() => handleResultUpdate(record.id, false, null)}
                           >🔴 실패</button>
                           {record.success !== null && (
-                            <button className="result-action-btn reset" onClick={() => handleResultUpdate(record.id, null, null)}>
+                            <button className="result-action-btn reset"
+                              onClick={() => handleResultUpdate(record.id, null, null)}>
                               초기화
                             </button>
                           )}

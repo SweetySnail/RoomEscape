@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getMyReservations } from '../services/reservationService';
 import { getMyFavorites, removeFavorite } from '../services/favoriteService';
 import { updateNickname } from '../services/authService';
+import { getMyReservations, cancelReservation } from '../services/reservationService';
 import '../styles/Global.css';
 import '../styles/MyPage.css';
 
@@ -444,6 +445,7 @@ function HistoryTab({ loggedInUser }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [reviewTarget, setReviewTarget] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
 
   useEffect(() => {
     const loadRecords = async () => {
@@ -484,6 +486,41 @@ function HistoryTab({ loggedInUser }) {
     setReviewTarget(null);
   };
 
+  const handleCancel = async (record) => {
+    // 예약일 기준 취소 가능 여부 확인 (당일 취소 불가)
+    const today = new Date().toISOString().slice(0, 10);
+    if (record.date <= today) {
+      alert('당일 또는 이미 지난 예약은 취소할 수 없어요.');
+      return;
+    }
+    if (!window.confirm(`${record.productName} 예약을 취소할까요?\n취소 시 환불은 결제 수단으로 3~5 영업일 내 처리돼요.`)) return;
+
+    setCancellingId(record.id);
+    try {
+      // 포인트 사용 내역이 있으면 복구
+      const { addPoints } = await import('../services/pointService');
+      if (record.usedPoints > 0 && loggedInUser?.uid) {
+        await addPoints(loggedInUser.uid, record.usedPoints, `${record.productName} 예약 취소 포인트 환불`);
+      }
+
+      await cancelReservation(record.id, {
+        cancelledAt: new Date().toISOString(),
+        refundAmount: record.price,
+        pointRefunded: record.usedPoints || 0,
+      });
+
+      setRecords(prev => prev.map(r =>
+        r.id === record.id ? { ...r, cancelled: true } : r
+      ));
+      alert('예약이 취소되었어요.');
+    } catch (error) {
+      console.error('취소 실패:', error);
+      alert('취소 중 오류가 발생했어요.');
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   if (loading) return <p className="empty-msg">불러오는 중...</p>;
 
   return (
@@ -492,11 +529,11 @@ function HistoryTab({ loggedInUser }) {
         <h3>나의 방탈출 통계</h3>
         <div className="history-stats">
           {[
-            { cls: '',        num: stats.total,   label: '총 예약' },
-            { cls: 'success', num: stats.success, label: '🟢 성공' },
-            { cls: 'fail',    num: stats.fail,    label: '🔴 실패' },
-            { cls: 'pending', num: stats.pending, label: '⏳ 미완료' },
-            { cls: 'rate',    num: `${successRate}%`, label: '성공률' },
+            { cls: '',        num: stats.total,        label: '총 예약' },
+            { cls: 'success', num: stats.success,      label: '🟢 성공' },
+            { cls: 'fail',    num: stats.fail,         label: '🔴 실패' },
+            { cls: 'pending', num: stats.pending,      label: '⏳ 미완료' },
+            { cls: 'rate',    num: `${successRate}%`,  label: '성공률' },
           ].map(s => (
             <div key={s.label} className={`history-stat-item ${s.cls}`}>
               <span className="history-stat-number">{s.num}</span>
@@ -532,41 +569,74 @@ function HistoryTab({ loggedInUser }) {
           <p className="empty-msg">해당하는 기록이 없어요.</p>
         ) : (
           <div className="history-list">
-            {[...filteredRecords].reverse().map(record => (
-              <div
-                key={record.id}
-                className={`history-item ${record.cancelled ? 'cancelled' : ''}`}
-              >
-                <div className="history-item-header">
-                  <strong>{record.productName}</strong>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {record.success === true  && <span className="result-badge success">🟢 성공</span>}
-                    {record.success === false && <span className="result-badge fail">🔴 실패</span>}
-                    {record.success === null && !record.cancelled &&
-                      <span className="result-badge pending">⏳ 미완료</span>}
-                    {record.cancelled && <span className="result-badge cancelled">취소됨</span>}
-                    {record.reviewed && <span className="result-badge reviewed">✍️ 리뷰완료</span>}
+            {[...filteredRecords].reverse().map(record => {
+              const today = new Date().toISOString().slice(0, 10);
+              const isCancellable = !record.cancelled && record.success === null && record.date > today;
+
+              return (
+                <div
+                  key={record.id}
+                  className={`history-item ${record.cancelled ? 'cancelled' : ''}`}
+                >
+                  <div className="history-item-header">
+                    <strong>{record.productName}</strong>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {record.success === true  && <span className="result-badge success">🟢 성공</span>}
+                      {record.success === false && <span className="result-badge fail">🔴 실패</span>}
+                      {record.success === null && !record.cancelled &&
+                        <span className="result-badge pending">⏳ 미완료</span>}
+                      {record.cancelled && <span className="result-badge cancelled">취소됨</span>}
+                      {record.reviewed && <span className="result-badge reviewed">✍️ 리뷰완료</span>}
+                    </div>
+                  </div>
+
+                  <div className="history-item-detail">
+                    <span>📅 {record.date}</span>
+                    <span>🕐 {record.time}</span>
+                    <span>👥 {record.people}</span>
+                    <span>🎭 {record.theme}</span>
+                    <span>💰 {record.price?.toLocaleString()}원</span>
+                    {record.usedPoints > 0 && (
+                      <span style={{ color: 'var(--accent-gold)' }}>
+                        💎 -{record.usedPoints.toLocaleString()}P 사용
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 취소 정보 */}
+                  {record.cancelled && record.cancelledAt && (
+                    <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginTop: '6px' }}>
+                      취소일: {record.cancelledAt.slice(0, 10)}
+                      {record.pointRefunded > 0 && ` · 포인트 ${record.pointRefunded.toLocaleString()}P 환불`}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    {/* 리뷰 버튼 */}
+                    {record.success !== null && !record.cancelled && !record.reviewed && (
+                      <button
+                        className="review-write-btn"
+                        onClick={() => setReviewTarget(record)}
+                      >
+                        ✍️ 리뷰 작성하고 100P 받기
+                      </button>
+                    )}
+
+                    {/* 취소 버튼 */}
+                    {isCancellable && (
+                      <button
+                        className="mypage-btn small danger"
+                        onClick={() => handleCancel(record)}
+                        disabled={cancellingId === record.id}
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        {cancellingId === record.id ? '취소 중...' : '예약 취소'}
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                <div className="history-item-detail">
-                  <span>📅 {record.date}</span>
-                  <span>🕐 {record.time}</span>
-                  <span>👥 {record.people}</span>
-                  <span>🎭 {record.theme}</span>
-                  <span>💰 {record.price?.toLocaleString()}원</span>
-                </div>
-
-                {record.success !== null && !record.cancelled && !record.reviewed && (
-                  <button
-                    className="review-write-btn"
-                    onClick={() => setReviewTarget(record)}
-                  >
-                    ✍️ 리뷰 작성하고 100P 받기
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
