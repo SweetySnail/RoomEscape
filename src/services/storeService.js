@@ -72,6 +72,7 @@ export const createStore = async (storeData) => {
     status: 'active',
     createdAt: new Date().toISOString(),
   });
+
   if (branches?.length) {
     for (const branch of branches) {
       const { themes, ...branchRest } = branch;
@@ -79,16 +80,42 @@ export const createStore = async (storeData) => {
         collection(db, 'stores', storeRef.id, 'branches'),
         branchRest
       );
+
       if (themes?.length) {
         for (const theme of themes) {
-          await addDoc(
+          // stores 서브컬렉션에 저장
+          const themeRef = await addDoc(
             collection(db, 'stores', storeRef.id, 'branches', branchRef.id, 'themes'),
             theme
           );
+
+          // products 컬렉션에 카드 자동 생성
+          await addDoc(collection(db, 'products'), {
+            storeId: storeRef.id,
+            branchId: branchRef.id,
+            themeId: themeRef.id,
+            title: theme.name,
+            genre: theme.genre,
+            difficulty: theme.difficulty,
+            minPeople: theme.minPeople,
+            maxPeople: theme.maxPeople,
+            duration: theme.duration,
+            description: theme.description,
+            pricing: theme.pricing || [],
+            imageUrl: theme.imageUrl || '',
+            branch: branch.branchName,
+            address: branch.address,
+            ownerName: rest.ownerName,
+            availableTimes: [],   // 추후 매장관리자가 설정
+            rating: 0,
+            reviewCount: 0,
+            createdAt: new Date().toISOString(),
+          });
         }
       }
     }
   }
+
   return storeRef.id;
 };
 
