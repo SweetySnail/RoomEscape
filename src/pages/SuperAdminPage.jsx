@@ -140,7 +140,6 @@ function DashboardTab({ stores, reservations }) {
   const thisReservations = activeReservations.filter(r => r.date?.startsWith(thisMonth));
 
   const totalRevenue = activeReservations.reduce((s, r) => s + (r.price || 0), 0);
-  const _thisRevenue = thisReservations.reduce((s, r) => s + (r.price || 0), 0);
 
   const totalFee = stores.reduce((sum, store) => {
     const storeThemeNames = store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
