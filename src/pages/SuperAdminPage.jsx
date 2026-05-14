@@ -221,7 +221,9 @@ function StoresTab({ stores, reservations, onUpdate }) {
     const totalRevenue = active.reduce((s, r) => s + (r.price || 0), 0);
     const thisRevenue = thisRecs.reduce((s, r) => s + (r.price || 0), 0);
     const prevRevenue = prevRecs.reduce((s, r) => s + (r.price || 0), 0);
-    const thisFee = Math.floor(thisRevenue * (store.discountRate || 0) / 100);
+    const thisFee = store.feeType === 'fixed'
+    ? (store.fixedFee || 0)
+    : Math.floor(thisRevenue * (store.discountRate || 0) / 100);
     return { totalRevenue, thisRevenue, prevRevenue, thisFee, cancelCount };
   };
 
@@ -359,6 +361,8 @@ function StoresTab({ stores, reservations, onUpdate }) {
 // =============================================
 // 사업자 등록 탭
 // =============================================
+const GENRE_OPTIONS = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
+
 function RegisterTab({ onComplete }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -371,7 +375,9 @@ function RegisterTab({ onComplete }) {
     bankName: '',
     bankAccount: '',
     bankHolder: '',
-    discountRate: 10,
+    feeType: 'rate',      // 'rate' | 'fixed'
+    discountRate: 10,     // 요율(%) 
+    fixedFee: '',         // 지정금액(원)
     contractStart: '',
     contractEnd: '',
   });
@@ -381,7 +387,16 @@ function RegisterTab({ onComplete }) {
   ]);
 
   function emptyTheme() {
-    return { name: '', genre: '', difficulty: 'normal', minPeople: 2, maxPeople: 6, price: '', duration: 60, description: '' };
+    return {
+      name: '',
+      genre: '공포',
+      difficulty: 'normal',
+      minPeople: 2,
+      maxPeople: 6,
+      duration: 60,
+      description: '',
+      pricing: [{ people: 2, price: '' }],  // 인원별 가격
+    };
   }
 
   const addBranch = () => setBranches([...branches, { branchName: '', address: '', themes: [emptyTheme()] }]);
@@ -397,7 +412,6 @@ function RegisterTab({ onComplete }) {
     updated[bi].themes = updated[bi].themes.filter((_, i) => i !== ti);
     setBranches(updated);
   };
-
   const updateBranch = (bi, field, value) => {
     const updated = [...branches];
     updated[bi][field] = value;
@@ -409,6 +423,25 @@ function RegisterTab({ onComplete }) {
     setBranches(updated);
   };
 
+  // 인원별 가격 추가/수정/삭제
+  const addPricing = (bi, ti) => {
+    const updated = [...branches];
+    const theme = updated[bi].themes[ti];
+    const lastPeople = theme.pricing[theme.pricing.length - 1]?.people || 1;
+    theme.pricing.push({ people: lastPeople + 1, price: '' });
+    setBranches(updated);
+  };
+  const updatePricing = (bi, ti, pi, field, value) => {
+    const updated = [...branches];
+    updated[bi].themes[ti].pricing[pi][field] = value;
+    setBranches(updated);
+  };
+  const removePricing = (bi, ti, pi) => {
+    const updated = [...branches];
+    updated[bi].themes[ti].pricing = updated[bi].themes[ti].pricing.filter((_, i) => i !== pi);
+    setBranches(updated);
+  };
+
   const handleRegisterStore = async () => {
     if (!storeForm.ownerName || !storeForm.email || !storeForm.contact) {
       alert('필수 항목을 입력해주세요.'); return;
@@ -416,17 +449,14 @@ function RegisterTab({ onComplete }) {
     setLoading(true);
     try {
       const storeId = await createStore({ ...storeForm, branches });
-
       const tempPassword = generateTempPassword();
       setGeneratedPassword(tempPassword);
-
       await createStoreAdminAccount({
         email: storeForm.email,
         password: tempPassword,
         nickname: storeForm.ownerName,
         storeId,
       });
-
       setStep(2);
     } catch (error) {
       alert('등록 실패: ' + error.message);
@@ -444,12 +474,7 @@ function RegisterTab({ onComplete }) {
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
             매장관리자 계정이 생성되었어요. 아래 임시 비밀번호를 사장님께 전달해주세요.
           </p>
-          <div style={{
-            background: 'var(--bg-secondary)',
-            borderRadius: '8px',
-            padding: '20px',
-            marginBottom: '24px',
-          }}>
+          <div style={{ background: 'var(--bg-secondary)', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
             <div style={{ marginBottom: '8px' }}>
               <span style={{ color: 'var(--text-muted)' }}>이메일: </span>
               <strong>{storeForm.email}</strong>
@@ -464,9 +489,7 @@ function RegisterTab({ onComplete }) {
           <p style={{ color: '#ff6b7a', fontSize: '0.9em', marginBottom: '24px' }}>
             ⚠️ 이 창을 닫으면 임시 비밀번호를 다시 볼 수 없어요. 반드시 메모해두세요!
           </p>
-          <button className="mypage-btn primary" onClick={onComplete}>
-            매장 목록으로 이동
-          </button>
+          <button className="mypage-btn primary" onClick={onComplete}>매장 목록으로 이동</button>
         </div>
       </div>
     );
@@ -496,33 +519,68 @@ function RegisterTab({ onComplete }) {
               />
             </div>
           ))}
-          <div className="input-row">
-            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>수수료율 (%)</label>
-            <input
-              type="number"
-              className="mypage-input"
-              style={{ width: '80px' }}
-              value={storeForm.discountRate}
-              onChange={(e) => setStoreForm({ ...storeForm, discountRate: Number(e.target.value) })}
-            />
+
+          {/* 수수료 방식 */}
+          <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ color: 'var(--text-muted)' }}>수수료 방식</label>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="feeType"
+                  value="rate"
+                  checked={storeForm.feeType === 'rate'}
+                  onChange={() => setStoreForm({ ...storeForm, feeType: 'rate' })}
+                />
+                요율 (%)
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="feeType"
+                  value="fixed"
+                  checked={storeForm.feeType === 'fixed'}
+                  onChange={() => setStoreForm({ ...storeForm, feeType: 'fixed' })}
+                />
+                지정금액 (원)
+              </label>
+            </div>
+            {storeForm.feeType === 'rate' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="number"
+                  className="mypage-input"
+                  style={{ width: '80px' }}
+                  value={storeForm.discountRate}
+                  onChange={(e) => setStoreForm({ ...storeForm, discountRate: Number(e.target.value) })}
+                />
+                <span style={{ color: 'var(--text-muted)' }}>%</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="number"
+                  className="mypage-input"
+                  style={{ width: '140px' }}
+                  placeholder="예) 50000"
+                  value={storeForm.fixedFee}
+                  onChange={(e) => setStoreForm({ ...storeForm, fixedFee: Number(e.target.value) })}
+                />
+                <span style={{ color: 'var(--text-muted)' }}>원 / 월</span>
+              </div>
+            )}
           </div>
+
+          {/* 계약기간 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계약 시작일</label>
-            <input
-              type="date"
-              className="mypage-input"
-              value={storeForm.contractStart}
-              onChange={(e) => setStoreForm({ ...storeForm, contractStart: e.target.value })}
-            />
+            <input type="date" className="mypage-input" value={storeForm.contractStart}
+              onChange={(e) => setStoreForm({ ...storeForm, contractStart: e.target.value })} />
           </div>
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계약 종료일</label>
-            <input
-              type="date"
-              className="mypage-input"
-              value={storeForm.contractEnd}
-              onChange={(e) => setStoreForm({ ...storeForm, contractEnd: e.target.value })}
-            />
+            <input type="date" className="mypage-input" value={storeForm.contractEnd}
+              onChange={(e) => setStoreForm({ ...storeForm, contractEnd: e.target.value })} />
           </div>
         </div>
       </div>
@@ -535,12 +593,7 @@ function RegisterTab({ onComplete }) {
         </div>
 
         {branches.map((branch, bi) => (
-          <div key={bi} style={{
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            padding: '16px',
-            marginTop: '16px',
-          }}>
+          <div key={bi} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', marginTop: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
               <strong>지점 {bi + 1}</strong>
               {branches.length > 1 && (
@@ -550,83 +603,116 @@ function RegisterTab({ onComplete }) {
             <div className="input-group-vertical" style={{ marginBottom: '16px' }}>
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>지점명</label>
-                <input
-                  type="text"
-                  className="mypage-input"
-                  value={branch.branchName}
-                  onChange={(e) => updateBranch(bi, 'branchName', e.target.value)}
-                />
+                <input type="text" className="mypage-input" value={branch.branchName}
+                  onChange={(e) => updateBranch(bi, 'branchName', e.target.value)} />
               </div>
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>주소</label>
-                <input
-                  type="text"
-                  className="mypage-input"
-                  value={branch.address}
-                  onChange={(e) => updateBranch(bi, 'address', e.target.value)}
-                />
+                <input type="text" className="mypage-input" value={branch.address}
+                  onChange={(e) => updateBranch(bi, 'address', e.target.value)} />
               </div>
             </div>
 
-            {/* 테마 목록 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>테마 목록</span>
               <button className="mypage-btn small" onClick={() => addTheme(bi)}>+ 테마 추가</button>
             </div>
 
             {branch.themes.map((theme, ti) => (
-              <div key={ti} style={{
-                background: 'var(--bg-secondary)',
-                borderRadius: '6px',
-                padding: '12px',
-                marginBottom: '8px',
-              }}>
+              <div key={ti} style={{ background: 'var(--bg-secondary)', borderRadius: '6px', padding: '12px', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>테마 {ti + 1}</span>
                   {branch.themes.length > 1 && (
                     <button className="mypage-btn small danger" onClick={() => removeTheme(bi, ti)}>삭제</button>
                   )}
                 </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  {[
-                    { label: '테마명', field: 'name', type: 'text' },
-                    { label: '장르', field: 'genre', type: 'text' },
-                    { label: '최소 인원', field: 'minPeople', type: 'number' },
-                    { label: '최대 인원', field: 'maxPeople', type: 'number' },
-                    { label: '가격 (원)', field: 'price', type: 'number' },
-                    { label: '진행시간 (분)', field: 'duration', type: 'number' },
-                  ].map(({ label, field, type }) => (
-                    <div key={field}>
-                      <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>{label}</label>
-                      <input
-                        type={type}
-                        className="mypage-input"
-                        value={theme[field]}
-                        onChange={(e) => updateTheme(bi, ti, field, e.target.value)}
-                      />
-                    </div>
-                  ))}
+                  {/* 테마명 */}
+                  <div>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>테마명</label>
+                    <input type="text" className="mypage-input" value={theme.name}
+                      onChange={(e) => updateTheme(bi, ti, 'name', e.target.value)} />
+                  </div>
+
+                  {/* 장르 선택 */}
+                  <div>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>장르</label>
+                    <select className="admin-input admin-select" value={theme.genre}
+                      onChange={(e) => updateTheme(bi, ti, 'genre', e.target.value)}>
+                      {GENRE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+
+                  {/* 난이도 */}
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>난이도</label>
-                    <select
-                      className="admin-input admin-select"
-                      value={theme.difficulty}
-                      onChange={(e) => updateTheme(bi, ti, 'difficulty', e.target.value)}
-                    >
+                    <select className="admin-input admin-select" value={theme.difficulty}
+                      onChange={(e) => updateTheme(bi, ti, 'difficulty', e.target.value)}>
                       <option value="easy">쉬움</option>
                       <option value="normal">보통</option>
                       <option value="hard">어려움</option>
                       <option value="expert">전문가</option>
                     </select>
                   </div>
+
+                  {/* 진행시간 */}
+                  <div>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>진행시간 (분)</label>
+                    <input type="number" className="mypage-input" value={theme.duration}
+                      onChange={(e) => updateTheme(bi, ti, 'duration', e.target.value)} />
+                  </div>
+
+                  {/* 최소/최대 인원 */}
+                  <div>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>최소 인원</label>
+                    <input type="number" className="mypage-input" value={theme.minPeople}
+                      onChange={(e) => updateTheme(bi, ti, 'minPeople', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>최대 인원</label>
+                    <input type="number" className="mypage-input" value={theme.maxPeople}
+                      onChange={(e) => updateTheme(bi, ti, 'maxPeople', e.target.value)} />
+                  </div>
+
+                  {/* 테마 설명 */}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>테마 설명</label>
-                    <textarea
-                      className="review-textarea"
-                      style={{ height: '60px' }}
-                      value={theme.description}
-                      onChange={(e) => updateTheme(bi, ti, 'description', e.target.value)}
-                    />
+                    <textarea className="review-textarea" style={{ height: '60px' }} value={theme.description}
+                      onChange={(e) => updateTheme(bi, ti, 'description', e.target.value)} />
+                  </div>
+
+                  {/* 인원별 가격 */}
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>인원별 가격</label>
+                      <button className="mypage-btn small" onClick={() => addPricing(bi, ti)}>+ 인원 추가</button>
+                    </div>
+                    {theme.pricing.map((p, pi) => (
+                      <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <input
+                          type="number"
+                          className="mypage-input"
+                          style={{ width: '70px' }}
+                          placeholder="인원"
+                          value={p.people}
+                          onChange={(e) => updatePricing(bi, ti, pi, 'people', Number(e.target.value))}
+                        />
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>명</span>
+                        <input
+                          type="number"
+                          className="mypage-input"
+                          style={{ width: '120px' }}
+                          placeholder="가격 (원)"
+                          value={p.price}
+                          onChange={(e) => updatePricing(bi, ti, pi, 'price', Number(e.target.value))}
+                        />
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>원</span>
+                        {theme.pricing.length > 1 && (
+                          <button className="mypage-btn small danger" onClick={() => removePricing(bi, ti, pi)}>✕</button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -665,8 +751,12 @@ function FeeTab({ stores, reservations }) {
     const active = reservations.filter(r => themeNames.includes(r.productName) && !r.cancelled);
     const thisRevenue = active.filter(r => r.date?.startsWith(thisMonth)).reduce((s, r) => s + (r.price || 0), 0);
     const prevRevenue = active.filter(r => r.date?.startsWith(prevMonth)).reduce((s, r) => s + (r.price || 0), 0);
-    const thisFee = Math.floor(thisRevenue * (store.discountRate || 0) / 100);
-    const prevFee = Math.floor(prevRevenue * (store.discountRate || 0) / 100);
+    const thisFee = store.feeType === 'fixed'
+      ? (store.fixedFee || 0)
+      : Math.floor(thisRevenue * (store.discountRate || 0) / 100);
+    const prevFee = store.feeType === 'fixed'
+      ? (store.fixedFee || 0)
+      : Math.floor(prevRevenue * (store.discountRate || 0) / 100);
     return { store, thisRevenue, prevRevenue, thisFee, prevFee };
   });
 
@@ -691,7 +781,11 @@ function FeeTab({ stores, reservations }) {
                 </div>
                 <div className="fee-summary-right">
                   <div className="fee-calc">
-                    <span>이번달 {thisRevenue.toLocaleString()}원 × {store.discountRate}%</span>
+                    <span>
+                      {store.feeType === 'fixed'
+                        ? `지정금액 ${(store.fixedFee || 0).toLocaleString()}원/월`
+                        : `이번달 ${thisRevenue.toLocaleString()}원 × ${store.discountRate}%`}
+                    </span>
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>
                       전달 {prevFee.toLocaleString()}원
                     </span>
