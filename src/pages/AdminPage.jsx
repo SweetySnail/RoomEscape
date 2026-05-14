@@ -1,27 +1,22 @@
+// src/pages/AdminPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
+import { getAllReservations, updateReservationResult } from '../services/reservationService';
+import { getStore } from '../services/storeService';
 import '../styles/Global.css';
 import '../styles/AdminPage.css';
-import {
-  getAllReservations,
-  updateReservationResult,
-} from '../services/reservationService';
-
-// 관리자 권한에 따라 데이터 필터링
-const filterByAdmin = (records, user) => {
-  if (!user) return [];
-  if (user.adminRole === 'super') return records;
-  return records.filter(r => user.managedStores?.includes(r.productName));
-};
 
 function AdminPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [records, setRecords] = useState([]);
+  const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,18 +31,28 @@ function AdminPage() {
 
   useEffect(() => {
     if (!loggedInUser) return;
-    const loadRecords = async () => {
+    const load = async () => {
       try {
-        const data = await getAllReservations();
-        const filtered = filterByAdmin(data, loggedInUser);
+        const [allReservations, storeData] = await Promise.all([
+          getAllReservations(),
+          loggedInUser.storeId ? getStore(loggedInUser.storeId) : null,
+        ]);
+
+        // 본인 매장 테마명 기준으로 필터링
+        const myThemeNames = storeData
+          ? storeData.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || []
+          : loggedInUser.managedStores || [];
+
+        const filtered = allReservations.filter(r => myThemeNames.includes(r.productName));
         setRecords(filtered);
+        setStore(storeData);
       } catch (error) {
-        console.error('예약 불러오기 실패:', error);
+        console.error('데이터 불러오기 실패:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadRecords();
+    load();
   }, [loggedInUser]);
 
   if (!loggedInUser || loading) return (
@@ -73,13 +78,13 @@ function AdminPage() {
       <BoxMain>
         <div className="admin-content">
 
-          {/* 헤더 */}
           <div className="admin-header">
             <div>
               <h1 className="admin-title">🏪 매장 관리자</h1>
               <p className="admin-subtitle">
-                관리 매장: {loggedInUser.managedStores?.slice(0, 3).join(', ')}
-                {loggedInUser.managedStores?.length > 3 && ` 외 ${loggedInUser.managedStores.length - 3}개`}
+                {store
+                  ? store.branches?.map(b => b.branchName).join(', ')
+                  : loggedInUser.managedStores?.slice(0, 3).join(', ')}
               </p>
             </div>
             <div className="admin-header-info">
@@ -90,7 +95,6 @@ function AdminPage() {
             </div>
           </div>
 
-          {/* 탭 */}
           <div className="admin-tabs">
             {tabs.map(tab => (
               <button
@@ -104,8 +108,12 @@ function AdminPage() {
           </div>
 
           <div className="admin-tab-content">
-            {activeTab === 'dashboard'    && <StoreDashboard records={records} />}
-            {activeTab === 'reservations' && <StoreReservations records={records} setRecords={setRecords} />}
+            {activeTab === 'dashboard' && (
+              <StoreDashboard records={records} store={store} loggedInUser={loggedInUser} />
+            )}
+            {activeTab === 'reservations' && (
+              <StoreReservations records={records} setRecords={setRecords} />
+            )}
           </div>
 
         </div>
@@ -115,14 +123,113 @@ function AdminPage() {
 }
 
 // =============================================
-// 매장 대시보드
+// PDF 생성 함수
 // =============================================
-function StoreDashboard({ records }) {
+function generatePDF({ store, loggedInUser, records, targetMonth }) {
+  const doc = new jsPDF();
+  const month = targetMonth || new Date().toISOString().slice(0, 7);
+  const monthRecords = records.filter(r => !r.cancelled && r.date?.startsWith(month));
+  const prevMonth = new Date(month + '-01');
+  prevMonth.setMonth(prevMonth.getMonth() - 1);
+  const prevMonthStr = prevMonth.toISOString().slice(0, 7);
+  const prevRecords = records.filter(r => !r.cancelled && r.date?.startsWith(prevMonthStr));
+
+  const thisRevenue = monthRecords.reduce((s, r) => s + (r.price || 0), 0);
+  const prevRevenue = prevRecords.reduce((s, r) => s + (r.price || 0), 0);
+  const discountRate = store?.discountRate || 0;
+  const thisFee = Math.floor(thisRevenue * discountRate / 100);
+
+  // 테마별 집계
+  const themeStats = {};
+  monthRecords.forEach(r => {
+    if (!themeStats[r.productName]) themeStats[r.productName] = { count: 0, revenue: 0 };
+    themeStats[r.productName].count++;
+    themeStats[r.productName].revenue += r.price || 0;
+  });
+
+  // 헤더
+  doc.setFontSize(18);
+  doc.text('EscapeHub - Monthly Report', 14, 20);
+  doc.setFontSize(11);
+  doc.setTextColor(120);
+  doc.text(`${month} 매출 리포트`, 14, 28);
+  doc.text(`담당자: ${loggedInUser.nickname}`, 14, 35);
+  doc.text(`출력일: ${new Date().toLocaleDateString('ko-KR')}`, 14, 42);
+
+  if (store) {
+    doc.text(`매장: ${store.ownerName} (수수료율 ${store.discountRate}%)`, 14, 49);
+  }
+
+  doc.setTextColor(0);
+
+  // 요약 테이블
+  doc.setFontSize(13);
+  doc.text('매출 요약', 14, 62);
+  autoTable(doc, {
+    startY: 66,
+    head: [['항목', '금액']],
+    body: [
+      ['이번달 총 매출', `${thisRevenue.toLocaleString()}원`],
+      ['전달 총 매출',   `${prevRevenue.toLocaleString()}원`],
+      ['전달 대비',      prevRevenue > 0
+        ? `${thisRevenue >= prevRevenue ? '▲' : '▼'} ${Math.abs(Math.round((thisRevenue - prevRevenue) / prevRevenue * 100))}%`
+        : '-'],
+      ['이번달 예약 수', `${monthRecords.length}건`],
+      [`플랫폼 수수료 (${discountRate}%)`, `${thisFee.toLocaleString()}원`],
+      ['정산 예정액',    `${(thisRevenue - thisFee).toLocaleString()}원`],
+    ],
+    theme: 'striped',
+    headStyles: { fillColor: [212, 168, 67] },
+  });
+
+  // 테마별 매출 테이블
+  const afterSummary = doc.lastAutoTable.finalY + 12;
+  doc.setFontSize(13);
+  doc.text('테마별 매출', 14, afterSummary);
+  autoTable(doc, {
+    startY: afterSummary + 4,
+    head: [['테마명', '예약 수', '매출']],
+    body: Object.entries(themeStats)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .map(([name, s]) => [name, `${s.count}건`, `${s.revenue.toLocaleString()}원`]),
+    theme: 'striped',
+    headStyles: { fillColor: [212, 168, 67] },
+  });
+
+  // 예약 상세 테이블
+  const afterTheme = doc.lastAutoTable.finalY + 12;
+  doc.setFontSize(13);
+  doc.text('예약 상세 목록', 14, afterTheme);
+  autoTable(doc, {
+    startY: afterTheme + 4,
+    head: [['날짜', '시간', '테마명', '인원', '가격', '결과']],
+    body: [...monthRecords]
+      .sort((a, b) => a.date?.localeCompare(b.date))
+      .map(r => [
+        r.date,
+        r.time,
+        r.productName,
+        `${r.people}명`,
+        `${(r.price || 0).toLocaleString()}원`,
+        r.success === true ? '성공' : r.success === false ? '실패' : '미완료',
+      ]),
+    theme: 'striped',
+    headStyles: { fillColor: [80, 80, 80] },
+    styles: { fontSize: 9 },
+  });
+
+  doc.save(`EscapeHub_${month}_리포트.pdf`);
+}
+
+// =============================================
+// 대시보드
+// =============================================
+function StoreDashboard({ records, store, loggedInUser }) {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const thisMonth = now.toISOString().slice(0, 7);
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    .toISOString().slice(0, 7);
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7);
+  const [selectedMonth, setSelectedMonth] = useState(thisMonth);
 
   const activeRecords = records.filter(r => !r.cancelled);
   const todayRecords  = activeRecords.filter(r => r.date === today);
@@ -140,16 +247,14 @@ function StoreDashboard({ records }) {
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    dailyRevenue[key] = 0;
+    dailyRevenue[d.toISOString().slice(0, 10)] = 0;
   }
   activeRecords.forEach(r => {
-    if (dailyRevenue[r.date] !== undefined) {
-      dailyRevenue[r.date] += r.price || 0;
-    }
+    if (dailyRevenue[r.date] !== undefined) dailyRevenue[r.date] += r.price || 0;
   });
+  const maxDaily = Math.max(...Object.values(dailyRevenue), 1);
 
-  // 방별 매출
+  // 테마별 매출
   const productRevenue = activeRecords.reduce((acc, r) => {
     const name = r.productName || '기타';
     if (!acc[name]) acc[name] = { revenue: 0, count: 0 };
@@ -158,24 +263,48 @@ function StoreDashboard({ records }) {
     return acc;
   }, {});
 
-  // 이번달 vs 전달 방별 비교
-  const compareByProduct = () => {
-    const all = [...new Set([
-      ...thisRecords.map(r => r.productName),
-      ...prevRecords.map(r => r.productName),
-    ])];
-    return all.map(name => {
-      const curr = thisRecords.filter(r => r.productName === name).reduce((s, r) => s + (r.price || 0), 0);
-      const prev = prevRecords.filter(r => r.productName === name).reduce((s, r) => s + (r.price || 0), 0);
-      const pct = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : null;
-      return { name, curr, prev, pct };
-    }).sort((a, b) => b.curr - a.curr);
-  };
+  // 이번달 vs 전달 비교
+  const allProductNames = [...new Set([
+    ...thisRecords.map(r => r.productName),
+    ...prevRecords.map(r => r.productName),
+  ])];
+  const compareData = allProductNames.map(name => {
+    const curr = thisRecords.filter(r => r.productName === name).reduce((s, r) => s + (r.price || 0), 0);
+    const prev = prevRecords.filter(r => r.productName === name).reduce((s, r) => s + (r.price || 0), 0);
+    const pct = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : null;
+    return { name, curr, prev, pct };
+  }).sort((a, b) => b.curr - a.curr);
 
-  const maxDaily = Math.max(...Object.values(dailyRevenue), 1);
+  // PDF용 월 선택 옵션 (최근 6개월)
+  const monthOptions = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    return d.toISOString().slice(0, 7);
+  });
 
   return (
     <div className="tab-section">
+
+      {/* PDF 추출 */}
+      <div className="admin-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <h3 style={{ margin: 0 }}>📄 월별 리포트 PDF 추출</h3>
+        <select
+          className="admin-input admin-select"
+          style={{ width: 'auto' }}
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+        >
+          {monthOptions.map(m => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+        <button
+          className="mypage-btn primary"
+          onClick={() => generatePDF({ store, loggedInUser, records, targetMonth: selectedMonth })}
+        >
+          PDF 다운로드
+        </button>
+      </div>
 
       {/* 핵심 지표 */}
       <div className="admin-card">
@@ -194,16 +323,10 @@ function StoreDashboard({ records }) {
             </div>
           ))}
         </div>
-
-        {/* 전달 비교 */}
         <div className="month-compare-banner">
           <span>전달 대비</span>
-          <strong style={{
-            color: diffRate === null ? 'var(--text-muted)'
-              : diffRate >= 0 ? '#6fcf97' : '#ff6b7a'
-          }}>
-            {diffRate === null ? '데이터 없음'
-              : diffRate >= 0 ? `▲ ${diffRate}%` : `▼ ${Math.abs(diffRate)}%`}
+          <strong style={{ color: diffRate === null ? 'var(--text-muted)' : diffRate >= 0 ? '#6fcf97' : '#ff6b7a' }}>
+            {diffRate === null ? '데이터 없음' : diffRate >= 0 ? `▲ ${diffRate}%` : `▼ ${Math.abs(diffRate)}%`}
           </strong>
           <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>
             (전달: {prevRevenue.toLocaleString()}원)
@@ -211,7 +334,7 @@ function StoreDashboard({ records }) {
         </div>
       </div>
 
-      {/* 일별 매출 바 차트 */}
+      {/* 일별 매출 차트 */}
       <div className="admin-card">
         <h3>일별 매출 (최근 30일)</h3>
         <div className="daily-chart">
@@ -234,17 +357,15 @@ function StoreDashboard({ records }) {
         </div>
       </div>
 
-      {/* 방별 매출 */}
+      {/* 테마별 누적 매출 */}
       <div className="admin-card">
-        <h3>방별 누적 매출</h3>
+        <h3>테마별 누적 매출</h3>
         {Object.keys(productRevenue).length === 0 ? (
           <p className="admin-empty">데이터가 없어요.</p>
         ) : (
           <div className="theme-stats-table">
             <div className="theme-stats-header" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
-              <span>방탈출명</span>
-              <span>예약 수</span>
-              <span>매출</span>
+              <span>테마명</span><span>예약 수</span><span>매출</span>
             </div>
             {Object.entries(productRevenue)
               .sort((a, b) => b[1].revenue - a[1].revenue)
@@ -259,17 +380,17 @@ function StoreDashboard({ records }) {
         )}
       </div>
 
-      {/* 이번달 vs 전달 방별 비교 */}
+      {/* 이번달 vs 전달 비교 */}
       <div className="admin-card">
-        <h3>이번달 vs 전달 방별 비교</h3>
+        <h3>이번달 vs 전달 테마별 비교</h3>
         <div className="compare-table">
           <div className="compare-header">
-            <span>방탈출명</span>
+            <span>테마명</span>
             <span>{prevMonth}</span>
             <span>{thisMonth}</span>
             <span>증감</span>
           </div>
-          {compareByProduct().map(({ name, curr, prev, pct }) => (
+          {compareData.map(({ name, curr, prev, pct }) => (
             <div key={name} className="compare-row">
               <span>{name}</span>
               <span>{prev.toLocaleString()}원</span>
@@ -312,7 +433,6 @@ function StoreReservations({ records, setRecords }) {
     }
   }, [setRecords]);
 
-  // 30분 자동 성공
   useEffect(() => {
     const refs = timerRefs.current;
     const now = Date.now();
@@ -335,8 +455,7 @@ function StoreReservations({ records, setRecords }) {
       filter === 'success'   ? r.success === true :
       filter === 'fail'      ? r.success === false :
       filter === 'cancelled' ? r.cancelled : true;
-    const matchSearch = searchKeyword
-      ? r.productName?.includes(searchKeyword) : true;
+    const matchSearch = searchKeyword ? r.productName?.includes(searchKeyword) : true;
     return matchFilter && matchSearch;
   });
 
@@ -364,7 +483,7 @@ function StoreReservations({ records, setRecords }) {
           <input
             type="text"
             className="admin-search"
-            placeholder="방탈출명으로 검색..."
+            placeholder="테마명으로 검색..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
           />
@@ -377,26 +496,17 @@ function StoreReservations({ records, setRecords }) {
         ) : (
           <div className="reservations-list">
             {[...filteredRecords].map(record => (
-              <div
-                key={record.id}
-                className={`reservation-item ${record.cancelled ? 'cancelled' : ''}`}
-              >
+              <div key={record.id} className={`reservation-item ${record.cancelled ? 'cancelled' : ''}`}>
                 <div className="reservation-item-top">
                   <div className="reservation-item-info">
                     <strong>{record.productName}</strong>
                     <div className="reservation-badges">
-                      {record.success === true && !record.autoSuccess &&
-                        <span className="admin-badge success">🟢 성공</span>}
-                      {record.success === true && record.autoSuccess &&
-                        <span className="admin-badge auto">🟢 자동성공</span>}
-                      {record.success === false &&
-                        <span className="admin-badge fail">🔴 실패</span>}
-                      {record.success === null && !record.cancelled &&
-                        <span className="admin-badge pending">⏳ 미완료</span>}
-                      {record.cancelled &&
-                        <span className="admin-badge cancelled">❌ 취소</span>}
-                      {record.reviewed &&
-                        <span className="admin-badge reviewed">✍️ 리뷰완료</span>}
+                      {record.success === true && !record.autoSuccess && <span className="admin-badge success">🟢 성공</span>}
+                      {record.success === true && record.autoSuccess  && <span className="admin-badge auto">🟢 자동성공</span>}
+                      {record.success === false                        && <span className="admin-badge fail">🔴 실패</span>}
+                      {record.success === null && !record.cancelled    && <span className="admin-badge pending">⏳ 미완료</span>}
+                      {record.cancelled                                && <span className="admin-badge cancelled">❌ 취소</span>}
+                      {record.reviewed                                 && <span className="admin-badge reviewed">✍️ 리뷰완료</span>}
                     </div>
                   </div>
 
@@ -413,46 +523,26 @@ function StoreReservations({ records, setRecords }) {
                             min={1} max={60}
                             style={{ width: '120px' }}
                           />
-                          <button
-                            className="result-action-btn success"
-                            onClick={() => {
-                              handleResultUpdate(record.id, true, parseInt(escapeMinutes) || null);
-                              setTimeInputId(null);
-                              setEscapeMinutes('');
-                            }}
-                          >
-                            ✅ 확인
-                          </button>
-                          <button
-                            className="result-action-btn reset"
-                            onClick={() => { setTimeInputId(null); setEscapeMinutes(''); }}
-                          >
-                            취소
-                          </button>
+                          <button className="result-action-btn success" onClick={() => {
+                            handleResultUpdate(record.id, true, parseInt(escapeMinutes) || null);
+                            setTimeInputId(null); setEscapeMinutes('');
+                          }}>✅ 확인</button>
+                          <button className="result-action-btn reset" onClick={() => {
+                            setTimeInputId(null); setEscapeMinutes('');
+                          }}>취소</button>
                         </div>
                       ) : (
                         <>
                           <button
                             className={`result-action-btn success ${record.success === true ? 'active' : ''}`}
-                            onClick={() => {
-                              if (record.success === true) return;
-                              setTimeInputId(record.id);
-                              setEscapeMinutes('');
-                            }}
-                          >
-                            🟢 성공
-                          </button>
+                            onClick={() => { if (record.success === true) return; setTimeInputId(record.id); setEscapeMinutes(''); }}
+                          >🟢 성공</button>
                           <button
                             className={`result-action-btn fail ${record.success === false ? 'active' : ''}`}
                             onClick={() => handleResultUpdate(record.id, false, null)}
-                          >
-                            🔴 실패
-                          </button>
+                          >🔴 실패</button>
                           {record.success !== null && (
-                            <button
-                              className="result-action-btn reset"
-                              onClick={() => handleResultUpdate(record.id, null, null)}
-                            >
+                            <button className="result-action-btn reset" onClick={() => handleResultUpdate(record.id, null, null)}>
                               초기화
                             </button>
                           )}
@@ -495,8 +585,7 @@ function AutoTimer({ createdAt, onExpire }) {
 
   useEffect(() => {
     const update = () => {
-      const createdTime = new Date(createdAt).getTime();
-      const rem = Math.max(0, 30 * 60 * 1000 - (Date.now() - createdTime));
+      const rem = Math.max(0, 30 * 60 * 1000 - (Date.now() - new Date(createdAt).getTime()));
       if (rem === 0) { onExpire(); return; }
       const mins = Math.floor(rem / 60000);
       const secs = Math.floor((rem % 60000) / 1000);
