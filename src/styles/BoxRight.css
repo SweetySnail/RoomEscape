@@ -29,7 +29,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 72px;          /* 64 → 72px */
     background-color: rgba(12, 12, 18, 0.98);
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--border-subtle);
@@ -43,7 +43,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
     background: none;
     border: none;
     cursor: pointer;
@@ -52,8 +52,16 @@
     padding: 0;
   }
   .bottom-tab-btn.active { color: var(--accent-gold); }
-  .bottom-tab-icon { font-size: 1.3em; line-height: 1; }
-  .bottom-tab-label { font-size: 0.62em; font-weight: 500; }
+  .bottom-tab-btn:active { opacity: 0.7; }
+
+  .bottom-tab-icon {
+    font-size: 1.6em;      /* 1.3 → 1.6em */
+    line-height: 1;
+  }
+  .bottom-tab-label {
+    font-size: 0.72em;     /* 0.62 → 0.72em */
+    font-weight: 600;
+  }
 
   .main-page-wrapper { margin-bottom: 80px; }
 }

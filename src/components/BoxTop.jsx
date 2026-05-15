@@ -53,7 +53,7 @@ function BoxTop() {
      <header className="fixed-header-container">
       <div className="header-content-wrapper">
         <div className="logo-section">
-          <h1 onClick={() => handleNavigate('/')} style={{ cursor: 'pointer', margin: 0, fontSize: '2.8em', color: '#6f00ff' }}>
+          <h1 onClick={() => handleNavigate('/')} className="logo-title">
             Escape Room
           </h1>
         </div>

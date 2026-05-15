@@ -29,8 +29,16 @@ function EventPage() {
     return '종료';
   };
 
+  // 이벤트 종료 후 3개월(90일) 지난 것 필터링
+  const THREE_MONTHS_AGO = new Date();
+  THREE_MONTHS_AGO.setDate(THREE_MONTHS_AGO.getDate() - 90);
+
   const activeEvents = eventsData.filter(e => isActive(e));
-  const endedEvents = eventsData.filter(e => !isActive(e));
+  const endedEvents = eventsData.filter(e => {
+    if (isActive(e)) return false;
+    const end = new Date(e.endDate);
+    return end >= THREE_MONTHS_AGO; // 종료된 지 90일 이내만 표시
+  });
 
   return (
     <div className="page-container">

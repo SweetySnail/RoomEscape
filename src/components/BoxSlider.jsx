@@ -3,7 +3,7 @@ import '../styles/Global.css';
 import '../styles/BoxSlider.css';
 import { getAllProducts } from '../services/productService';
 
-function BoxSlider({ title, sortBy, handleBoxClick }) {
+function BoxSlider({ title, sortBy, handleBoxClick, interval = 3000 }) {
   const itemsPerPage = 5;
   const itemWidth = 150 + (10 * 2);
   const trackRef = useRef(null);
@@ -24,7 +24,7 @@ function BoxSlider({ title, sortBy, handleBoxClick }) {
     };
     load();
   }, []);
-
+  
   const sortedProducts = [...products]
     .sort((a, b) => {
       if (sortBy === 'rating') return b.rating - a.rating;
@@ -58,7 +58,7 @@ function BoxSlider({ title, sortBy, handleBoxClick }) {
         }
         return nextIndex;
       });
-    }, 3000);
+    }, interval);
     return () => clearInterval(interval);
   }, [clonedProducts.length, sortedProducts.length, itemWidth, itemsPerPage]);
 

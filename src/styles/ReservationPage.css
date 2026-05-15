@@ -21,7 +21,6 @@
   color: var(--text-muted) !important;
 }
 
-/* 카드 */
 .search-result-item {
   background-color: var(--bg-card) !important;
   border-color: var(--border-subtle) !important;
@@ -43,7 +42,6 @@
   background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold)) !important;
 }
 
-/* 검색창 */
 .search-input-wrapper {
   background: var(--bg-card) !important;
   border-color: var(--border-subtle) !important;
@@ -86,6 +84,7 @@
   color: #0a0a0f !important;
 }
 
+/* ===== 레이아웃 ===== */
 .reservation-page-content {
   display: flex;
   flex-direction: column;
@@ -110,6 +109,143 @@
 }
 .section-title { font-size: 2.2em; }
 .section-subtitle { font-size: 1.6em; }
+
+/* ===== 키워드 검색 섹션 ===== */
+.search-keyword-section {
+  width: 100%;
+  max-width: 700px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  transition: border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.search-input-wrapper:focus-within {
+  border-color: #6f00ff;
+  box-shadow: 0 2px 12px rgba(111,0,255,0.15);
+}
+
+.search-icon { padding: 0 12px; font-size: 1.1em; }
+
+.search-keyword-input {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  outline: none;
+  font-size: 1em;
+  color: #333;
+  background: transparent;
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  padding: 0 10px;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1em;
+  transition: color 0.2s;
+}
+.search-clear-btn:hover { color: #333; }
+
+.search-submit-btn {
+  padding: 14px 22px;
+  background: #6f00ff;
+  color: white;
+  border: none;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.search-submit-btn:hover { background: #5a00d8; }
+
+/* 드롭다운 */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% - 12px + 56px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid #eee;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.dropdown-section {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.dropdown-section:last-child { border-bottom: none; }
+
+.dropdown-label {
+  font-size: 0.78em;
+  color: #aaa;
+  padding: 6px 16px 4px;
+  margin: 0;
+  font-weight: bold;
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.dropdown-item:hover { background: #f5f0ff; }
+
+.dropdown-item-title { font-size: 0.95em; color: #333; }
+.dropdown-item-sub   { font-size: 0.82em; color: #aaa; }
+.dropdown-item-delete {
+  font-size: 0.85em;
+  color: #ccc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.dropdown-item-delete:hover { color: #dc3545; }
+
+.search-active-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9em;
+  color: #6f00ff;
+}
+.search-active-tag button {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.85em;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.search-active-tag button:hover {
+  border-color: #6f00ff;
+  color: #6f00ff;
+}
 
 /* ===== 필터 섹션 ===== */
 .filter-selection-section {
@@ -198,27 +334,17 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
 .search-result-item:hover {
   border-color: #6f00ff;
   transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(111, 0, 255, 0.15);
-}
-
-/* 카드 이미지 */
-.search-result-item .product-image {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 0;
-  display: block;
+  box-shadow: 0 6px 12px rgba(111,0,255,0.15);
 }
 
 .search-result-item .image-wrapper {
   position: relative;
   width: 100%;
   border-radius: 10px 10px 0 0;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .search-result-item .product-image {
@@ -229,7 +355,6 @@
   display: block;
 }
 
-/* 카드 텍스트 영역 */
 .card-body {
   padding: 14px;
   display: flex;
@@ -237,20 +362,17 @@
   gap: 6px;
   flex: 1;
 }
-
 .card-body strong {
   font-size: 1.1em;
   color: #333;
   margin-bottom: 2px;
 }
-
 .card-body span {
   font-size: 0.88em;
   color: #777;
   line-height: 1.5;
 }
 
-/* 예약 버튼 - 카드 최하단 */
 .reserve-button {
   background-color: #6f00ff;
   color: white;
@@ -264,43 +386,7 @@
   transition: background-color 0.2s ease;
   margin-top: auto;
 }
-
-.reserve-button:hover {
-  background-color: #5a00d8;
-}
-
-.no-results-message {
-  text-align: center;
-  color: #888;
-  font-style: italic;
-  margin-top: 30px;
-  width: 100%;
-}
-
-/* ===== 모바일 반응형 ===== */
-@media (max-width: 768px) {
-  .reservation-page-content {
-    padding: 20px;
-    gap: 30px;
-    max-width: 100%;
-  }
-  .section-title { font-size: 1.8em; }
-  .filter-options {
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-  .filter-group {
-    width: 90%;
-    min-width: unset;
-  }
-  .search-results-grid {
-    grid-template-columns: 1fr;
-  }
-  .search-result-item {
-    min-height: unset;
-  }
-}
+.reserve-button:hover { background-color: #5a00d8; }
 
 .card-favorite-btn {
   position: absolute;
@@ -323,155 +409,7 @@
 .card-favorite-btn:hover { transform: scale(1.15); }
 .card-favorite-btn.active { background: #fff8e1; }
 
-/* ===== 키워드 검색 섹션 ===== */
-.search-keyword-section {
-  width: 100%;
-  max-width: 700px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 검색 입력창 */
-.search-input-wrapper {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  border: 2px solid #ddd;
-  border-radius: 12px;
-  overflow: hidden;
-  background: white;
-  transition: border-color 0.2s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.search-input-wrapper:focus-within {
-  border-color: #6f00ff;
-  box-shadow: 0 2px 12px rgba(111,0,255,0.15);
-}
-
-.search-icon {
-  padding: 0 12px;
-  font-size: 1.1em;
-}
-
-.search-keyword-input {
-  flex: 1;
-  padding: 14px 8px;
-  border: none;
-  outline: none;
-  font-size: 1em;
-  color: #333;
-  background: transparent;
-}
-
-.search-clear-btn {
-  background: none;
-  border: none;
-  padding: 0 10px;
-  color: #aaa;
-  cursor: pointer;
-  font-size: 1em;
-  transition: color 0.2s;
-}
-.search-clear-btn:hover { color: #333; }
-
-.search-submit-btn {
-  padding: 14px 22px;
-  background: #6f00ff;
-  color: white;
-  border: none;
-  font-size: 1em;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.search-submit-btn:hover { background: #5a00d8; }
-
-/* 드롭다운 */
-.search-dropdown {
-  position: absolute;
-  top: calc(100% - 12px + 56px);
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1.5px solid #eee;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  z-index: 100;
-  overflow: hidden;
-}
-
-.dropdown-section {
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-.dropdown-section:last-child { border-bottom: none; }
-
-.dropdown-label {
-  font-size: 0.78em;
-  color: #aaa;
-  padding: 6px 16px 4px;
-  margin: 0;
-  font-weight: bold;
-}
-
-.dropdown-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s;
-}
-.dropdown-item:hover { background: #f5f0ff; }
-
-.dropdown-item-title {
-  font-size: 0.95em;
-  color: #333;
-}
-.dropdown-item-sub {
-  font-size: 0.82em;
-  color: #aaa;
-}
-.dropdown-item-delete {
-  font-size: 0.85em;
-  color: #ccc;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: color 0.2s;
-}
-.dropdown-item-delete:hover { color: #dc3545; }
-
-/* 현재 검색어 태그 */
-.search-active-tag {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.9em;
-  color: #6f00ff;
-}
-.search-active-tag button {
-  background: none;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  padding: 3px 10px;
-  font-size: 0.85em;
-  color: #888;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.search-active-tag button:hover {
-  border-color: #6f00ff;
-  color: #6f00ff;
-}
-
-/* 결과 없음 */
+/* ===== 결과 없음 ===== */
 .no-results-container {
   display: flex;
   flex-direction: column;
@@ -480,11 +418,7 @@
   padding: 50px 0;
 }
 .no-results-emoji { font-size: 3em; margin: 0; }
-.no-results-message {
-  color: #888;
-  font-size: 1em;
-  margin: 0;
-}
+.no-results-message { color: #888; font-size: 1em; margin: 0; }
 .no-results-reset-btn {
   padding: 8px 20px;
   border: 1.5px solid #6f00ff;
@@ -501,10 +435,74 @@
   color: white;
 }
 
-/* 필터 섹션 - 타이틀 제거 후 심플하게 */
-.filter-selection-section {
-  width: 100%;
-  padding-top: 0;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+/* ===== 모바일 반응형 ===== */
+@media (max-width: 768px) {
+  .reservation-page-content {
+    padding: 12px;
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .section-title {
+    font-size: 1.4em;
+    margin-bottom: 10px;
+  }
+  .section-subtitle { font-size: 1.1em; }
+
+  /* 검색창 */
+  .search-keyword-section {
+    max-width: 100%;
+    gap: 8px;
+  }
+  .search-keyword-input {
+    font-size: 0.9em;
+    padding: 10px 6px;
+  }
+  .search-submit-btn {
+    padding: 10px 14px;
+    font-size: 0.9em;
+  }
+
+  /* 필터 2열 그리드 */
+  .filter-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .filter-group {
+    width: 100%;
+    min-width: unset;
+    gap: 4px;
+  }
+  .filter-label { font-size: 0.85em; }
+  .filter-select {
+    padding: 7px 8px;
+    font-size: 0.88em;
+  }
+  .filter-selection-section { padding-bottom: 12px; }
+
+  /* 카드 2열 */
+  .search-results-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .search-result-item {
+    min-height: unset;
+    border-radius: 8px;
+  }
+  .search-result-item .product-image {
+    height: 110px;
+  }
+  .card-body {
+    padding: 8px;
+    gap: 3px;
+  }
+  .card-body strong { font-size: 0.88em; }
+  .card-body span   { font-size: 0.75em; }
+  .reserve-button {
+    padding: 8px 10px;
+    font-size: 0.82em;
+  }
 }

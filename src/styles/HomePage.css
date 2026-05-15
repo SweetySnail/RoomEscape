@@ -18,3 +18,19 @@
   font-size: 0.95em;
   padding: 10px 20px;
 }
+
+.logo-title {
+  cursor: pointer;
+  margin: 0;
+  font-size: 2.8em;
+  color: #6f00ff;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+  .logo-title {
+    font-size: 1.6em;
+  }
+}

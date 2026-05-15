@@ -6,7 +6,6 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import ReservationPage from './pages/ReservationPage';
 import CalendarPage from './pages/CalendarPage';
-import ListPage from './pages/ListPage';
 import EventPage from './pages/EventPage';
 import MyPage from './pages/MyPage';
 import AdminPage from './pages/AdminPage';
@@ -57,19 +56,12 @@ function App() {
             <MyPage />
           </ProtectedRoute>
         } />
-        <Route path="/list" element={
-          <ProtectedRoute allowedRoles={['user']}>
-            <ListPage />
-          </ProtectedRoute>
-        } />
-
         {/* 매장 관리자 전용 */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['store']}>
             <AdminPage />
           </ProtectedRoute>
         } />
-
         {/* 총괄 관리자 전용 */}
         <Route path="/super-admin" element={
           <ProtectedRoute allowedRoles={['super']}>

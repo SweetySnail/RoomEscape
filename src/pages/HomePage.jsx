@@ -20,16 +20,16 @@ function HomePage() {
         <BoxSlider
           title="월간 인기 Top5"
           sortBy="rating"
-          handleBoxClick={(product) => setSelectedProduct(product)}
+          handleBoxClick={(p) => setSelectedProduct(p)} interval={3000}
         />
         <BoxSlider
           title="인기 예약 Top5"
           sortBy="reviewCount"
-          handleBoxClick={(product) => setSelectedProduct(product)}
+          handleBoxClick={(p) => setSelectedProduct(p)} interval={4500}
         />
         <BoxSlider
           title="테마 Top5"
-          handleBoxClick={(product) => setSelectedProduct(product)}
+          handleBoxClick={(p) => setSelectedProduct(p)} interval={6000}
         />
       </BoxMain>
 
