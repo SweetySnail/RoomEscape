@@ -410,14 +410,20 @@ function FavoriteTab() {
           <div className="favorite-grid">
             {themes.map(theme => (
               <div key={theme.id} className="favorite-card">
-                {theme.imageUrl && (
+                {theme.imageUrl ? (
                   <img src={theme.imageUrl} alt={theme.title} className="favorite-img" />
+                ) : (
+                  <div className="favorite-img" style={{
+                    background: 'var(--bg-secondary)',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: '2em',
+                  }}>🔐</div>
                 )}
                 <div className="favorite-info">
                   <strong>{theme.title}</strong>
-                  <span>{theme.theme}</span>
+                  <span>{theme.genre}</span>
                   <span>⭐ {theme.rating} ({theme.reviewCount} 리뷰)</span>
-                  <span>{theme.location?.city} {theme.location?.district}</span>
+                  <span>{theme.address || theme.branch}</span>
                   {theme.branch && <span>🏪 {theme.branch}</span>}
                 </div>
                 <button

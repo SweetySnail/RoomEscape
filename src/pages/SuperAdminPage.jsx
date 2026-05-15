@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
-import { getAllStores, updateStore, createStore } from '../services/storeService';
+import { getAllStores, updateStore, createStore, addBranch, addTheme, updateTheme, deleteTheme } from '../services/storeService';
 import { createStoreAdminAccount } from '../services/authService';
 import { getAllReservations } from '../services/reservationService';
+import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase';
 import '../styles/Global.css';
 import '../styles/AdminPage.css';
 import '../styles/SuperAdminPage.css';
@@ -22,6 +24,14 @@ const BANK_OPTIONS = ['국민은행', '신한은행', '우리은행', '하나은
 const calcFee = (store, revenue, themeCount = 0) => {
   if (store.feeType === 'fixed') return (store.fixedFee || 0) * themeCount;
   return Math.floor(revenue * (store.discountRate || 0) / 100);
+};
+
+const dDayLabel = (contractEnd) => {
+  if (!contractEnd) return '-';
+  const diff = Math.ceil((new Date(contractEnd) - new Date()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return '만료';
+  if (diff === 0) return 'D-DAY';
+  return `D-${diff}`;
 };
 
 function SuperAdminPage() {
@@ -128,10 +138,12 @@ function SuperAdminPage() {
 }
 
 // =============================================
-// 대시보드 탭
+// 대시보드 탭 — 드릴다운 지원
 // =============================================
 function DashboardTab({ stores, reservations }) {
   const thisMonth = new Date().toISOString().slice(0, 7);
+  const [drilldown, setDrilldown] = useState(null); // 'owners' | 'branches'
+
   const activeReservations = reservations.filter(r => !r.cancelled);
   const thisReservations = activeReservations.filter(r => r.date?.startsWith(thisMonth));
   const totalRevenue = activeReservations.reduce((s, r) => s + (r.price || 0), 0);
@@ -149,45 +161,130 @@ function DashboardTab({ stores, reservations }) {
   const today = new Date();
   const soonExpiring = stores.filter(store => {
     if (!store.contractEnd) return false;
-    const end = new Date(store.contractEnd);
-    const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
-    return diffDays >= 0 && diffDays <= 30;
+    const diff = Math.ceil((new Date(store.contractEnd) - today) / (1000 * 60 * 60 * 24));
+    return diff >= 0 && diff <= 30;
   });
+
+  const stats = [
+    { icon: '🏢', label: '계약 사업자 수',    value: `${stores.length}개`,              key: 'owners' },
+    { icon: '🏪', label: '계약 지점 수',      value: `${totalBranches}개`,              key: 'branches' },
+    { icon: '💰', label: '전체 누적 매출',    value: `${totalRevenue.toLocaleString()}원`, key: null },
+    { icon: '📅', label: '이번달 예약 수',    value: `${thisReservations.length}건`,    key: null },
+    { icon: '💎', label: '이번달 플랫폼 수익', value: `${totalFee.toLocaleString()}원`,  key: null },
+  ];
 
   return (
     <div className="tab-section">
       <div className="admin-card">
         <h3>핵심 지표</h3>
         <div className="dashboard-stats">
-          {[
-            { icon: '🏢', label: '계약 사업자 수',    value: `${stores.length}개` },
-            { icon: '🏪', label: '계약 지점 수',      value: `${totalBranches}개` },
-            { icon: '💰', label: '전체 누적 매출',    value: `${totalRevenue.toLocaleString()}원` },
-            { icon: '📅', label: '이번달 예약 수',    value: `${thisReservations.length}건` },
-            { icon: '💎', label: '이번달 플랫폼 수익', value: `${totalFee.toLocaleString()}원` },
-          ].map(s => (
-            <div key={s.label} className="dashboard-stat-item">
+          {stats.map(s => (
+            <div
+              key={s.label}
+              className="dashboard-stat-item"
+              onClick={() => s.key && setDrilldown(drilldown === s.key ? null : s.key)}
+              style={{
+                cursor: s.key ? 'pointer' : 'default',
+                border: drilldown === s.key ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                borderRadius: '8px',
+                transition: 'border 0.2s',
+              }}
+            >
               <span className="dashboard-stat-icon">{s.icon}</span>
               <span className="dashboard-stat-value">{s.value}</span>
               <span className="dashboard-stat-label">{s.label}</span>
+              {s.key && <span style={{ fontSize: '0.7em', color: 'var(--accent-gold)' }}>클릭해서 상세보기</span>}
             </div>
           ))}
         </div>
       </div>
 
+      {/* 계약 사업자 드릴다운 */}
+      {drilldown === 'owners' && (
+        <div className="admin-card">
+          <h3>🏢 계약 사업자 상세</h3>
+          <div className="stores-table">
+            <div className="stores-table-header" style={{ gridTemplateColumns: '1.5fr 1fr 2fr 1fr 1fr 1fr' }}>
+              <span>사업자명</span>
+              <span>운영 점포 수</span>
+              <span>운영 점포명</span>
+              <span>계약 시작일</span>
+              <span>계약 종료일</span>
+              <span>D-DAY</span>
+            </div>
+            {stores.map(store => {
+              const ddLabel = dDayLabel(store.contractEnd);
+              const isUrgent = ddLabel !== '-' && ddLabel !== '만료' && parseInt(ddLabel.replace('D-', '')) <= 30;
+              return (
+                <div key={store.id} className="stores-table-row"
+                  style={{ gridTemplateColumns: '1.5fr 1fr 2fr 1fr 1fr 1fr' }}>
+                  <span>{store.ownerName}</span>
+                  <span>{store.branches?.length || 0}개</span>
+                  <span style={{ fontSize: '0.85em' }}>
+                    {store.branches?.map(b => b.branchName).join(', ') || '-'}
+                  </span>
+                  <span>{store.contractStart || '-'}</span>
+                  <span>{store.contractEnd || '-'}</span>
+                  <span style={{ color: isUrgent ? '#ff6b7a' : 'var(--text-primary)', fontWeight: isUrgent ? 'bold' : 'normal' }}>
+                    {ddLabel}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 계약 지점 드릴다운 */}
+      {drilldown === 'branches' && (
+        <div className="admin-card">
+          <h3>🏪 계약 지점 상세</h3>
+          <div className="stores-table">
+            <div className="stores-table-header" style={{ gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr' }}>
+              <span>운영 점포명</span>
+              <span>사업자명</span>
+              <span>계약 시작일</span>
+              <span>계약 종료일</span>
+              <span>D-DAY</span>
+              <span>이번달 매출</span>
+            </div>
+            {stores.flatMap(store =>
+              (store.branches || []).map(branch => {
+                const themeNames = branch.themes?.map(t => t.name) || [];
+                const thisRevenue = thisReservations
+                  .filter(r => themeNames.includes(r.productName))
+                  .reduce((s, r) => s + (r.price || 0), 0);
+                const ddLabel = dDayLabel(store.contractEnd);
+                const isUrgent = ddLabel !== '-' && ddLabel !== '만료' && parseInt(ddLabel.replace('D-', '')) <= 30;
+                return (
+                  <div key={`${store.id}_${branch.id}`} className="stores-table-row"
+                    style={{ gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr' }}>
+                    <span>{branch.branchName}</span>
+                    <span>{store.ownerName}</span>
+                    <span>{store.contractStart || '-'}</span>
+                    <span>{store.contractEnd || '-'}</span>
+                    <span style={{ color: isUrgent ? '#ff6b7a' : 'var(--text-primary)', fontWeight: isUrgent ? 'bold' : 'normal' }}>
+                      {ddLabel}
+                    </span>
+                    <span>{thisRevenue.toLocaleString()}원</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
       {soonExpiring.length > 0 && (
         <div className="admin-card" style={{ borderLeft: '4px solid #ff6b7a' }}>
           <h3>⚠️ 계약 만료 임박 (30일 이내)</h3>
-          {soonExpiring.map(store => {
-            const diffDays = Math.ceil((new Date(store.contractEnd) - today) / (1000 * 60 * 60 * 24));
-            return (
-              <div key={store.id} className="compare-row">
-                <span>{store.ownerName}</span>
-                <span>{store.contractEnd} 만료</span>
-                <span style={{ color: '#ff6b7a', fontWeight: 'bold' }}>D-{diffDays}</span>
-              </div>
-            );
-          })}
+          {soonExpiring.map(store => (
+            <div key={store.id} className="compare-row">
+              <span>{store.ownerName}</span>
+              <span>{store.contractEnd} 만료</span>
+              <span style={{ color: '#ff6b7a', fontWeight: 'bold' }}>{dDayLabel(store.contractEnd)}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -220,29 +317,10 @@ function StoresTab({ stores, reservations, onUpdate }) {
 
   const filteredStores = stores.filter(s => filterOwner === '전체' || s.ownerName === filterOwner);
 
-  const handleSaveEdit = async () => {
-    try {
-      await updateStore(editingStore.id, {
-        feeType: editingStore.feeType,
-        discountRate: Number(editingStore.discountRate),
-        fixedFee: Number(editingStore.fixedFee),
-        contractEnd: editingStore.contractEnd,
-      });
-      alert('저장되었어요!');
-      setEditingStore(null);
-      onUpdate();
-    } catch (error) {
-      alert('저장 실패: ' + error.message);
-    }
-  };
-
   const handleExpire = async (store) => {
     if (!window.confirm(`${store.ownerName} 매장의 계약을 종료할까요?`)) return;
     try {
-      await updateStore(store.id, {
-        status: 'expired',
-        expiredAt: new Date().toISOString(),
-      });
+      await updateStore(store.id, { status: 'expired', expiredAt: new Date().toISOString() });
       alert('계약이 종료되었어요.');
       setEditingStore(null);
       onUpdate();
@@ -263,12 +341,8 @@ function StoresTab({ stores, reservations, onUpdate }) {
           <h3 style={{ margin: 0 }}>🏪 매장별 현황</h3>
           <div className="store-filter-group">
             <label>사업자명 필터</label>
-            <select
-              className="admin-input admin-select"
-              style={{ width: 'auto', marginLeft: '8px' }}
-              value={filterOwner}
-              onChange={(e) => setFilterOwner(e.target.value)}
-            >
+            <select className="admin-input admin-select" style={{ width: 'auto', marginLeft: '8px' }}
+              value={filterOwner} onChange={(e) => setFilterOwner(e.target.value)}>
               <option value="전체">전체</option>
               {stores.map(s => <option key={s.id} value={s.ownerName}>{s.ownerName}</option>)}
             </select>
@@ -277,75 +351,28 @@ function StoresTab({ stores, reservations, onUpdate }) {
 
         <div className="stores-table">
           <div className="stores-table-header" style={{ gridTemplateColumns: '1.2fr 1fr 0.7fr 1fr 1fr 1fr 1.2fr 1fr 1fr' }}>
-            <span>사업자명</span>
-            <span>매장명(지점)</span>
-            <span>테마 수</span>
-            <span>계약일</span>
-            <span>지난달 매출</span>
-            <span>이번달 매출</span>
-            <span>수수료 방식</span>
-            <span>이번달 수수료</span>
-            <span>관리</span>
+            <span>사업자명</span><span>매장명(지점)</span><span>테마 수</span>
+            <span>계약일</span><span>지난달 매출</span><span>이번달 매출</span>
+            <span>수수료 방식</span><span>이번달 수수료</span><span>관리</span>
           </div>
 
           {filteredStores.map(store => {
             const stats = getStoreStats(store);
-            const isEditing = editingStore?.id === store.id;
             const branchNames = store.branches?.map(b => b.branchName).join(', ') || '-';
-
             return (
               <div key={store.id} className="stores-table-row"
                 style={{ gridTemplateColumns: '1.2fr 1fr 0.7fr 1fr 1fr 1fr 1.2fr 1fr 1fr' }}>
                 <span>{store.ownerName}</span>
                 <span style={{ fontSize: '0.85em' }}>{branchNames}</span>
                 <span>{stats.themeCount}개</span>
-                <span style={{ fontSize: '0.85em' }}>
-                  {store.contractStart}<br/>~ {store.contractEnd}
-                </span>
+                <span style={{ fontSize: '0.85em' }}>{store.contractStart}<br/>~ {store.contractEnd}</span>
                 <span>{stats.prevRevenue.toLocaleString()}원</span>
                 <span>{stats.thisRevenue.toLocaleString()}원</span>
-
-                {isEditing ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <select className="admin-input admin-select" style={{ fontSize: '0.8em' }}
-                      value={editingStore.feeType}
-                      onChange={(e) => setEditingStore({ ...editingStore, feeType: e.target.value })}>
-                      <option value="rate">요율(%)</option>
-                      <option value="fixed">지정금액</option>
-                    </select>
-                    {editingStore.feeType === 'rate' ? (
-                      <input type="number" className="admin-input" style={{ width: '60px' }}
-                        value={editingStore.discountRate}
-                        onChange={(e) => setEditingStore({ ...editingStore, discountRate: e.target.value })} />
-                    ) : (
-                      <input type="number" className="admin-input" style={{ width: '90px' }}
-                        placeholder="원/방"
-                        value={editingStore.fixedFee || ''}
-                        onChange={(e) => setEditingStore({ ...editingStore, fixedFee: e.target.value })} />
-                    )}
-                  </div>
-                ) : (
-                  <span className="fee-rate" style={{ fontSize: '0.85em' }}>{feeTypeLabel(store)}</span>
-                )}
-
+                <span className="fee-rate" style={{ fontSize: '0.85em' }}>{feeTypeLabel(store)}</span>
                 <span className="fee-amount">{stats.thisFee.toLocaleString()}원</span>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {isEditing ? (
-                    <>
-                      <input type="date" className="admin-input"
-                        value={editingStore.contractEnd || ''}
-                        onChange={(e) => setEditingStore({ ...editingStore, contractEnd: e.target.value })} />
-                      <button className="result-action-btn success" onClick={handleSaveEdit}>저장</button>
-                      <button className="result-action-btn reset" onClick={() => setEditingStore(null)}>취소</button>
-                      <button className="result-action-btn fail" onClick={() => handleExpire(store)}>계약종료</button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="detail-btn" onClick={() => setSelectedStore(store)}>상세</button>
-                      <button className="detail-btn" onClick={() => setEditingStore({ ...store })}>수정</button>
-                    </>
-                  )}
+                  <button className="detail-btn" onClick={() => setSelectedStore(store)}>상세</button>
+                  <button className="detail-btn" onClick={() => setEditingStore(store)}>수정</button>
                 </div>
               </div>
             );
@@ -354,12 +381,285 @@ function StoresTab({ stores, reservations, onUpdate }) {
       </div>
 
       {selectedStore && (
-        <StoreDetailModal
-          store={selectedStore}
-          reservations={reservations}
-          onClose={() => setSelectedStore(null)}
+        <StoreDetailModal store={selectedStore} reservations={reservations} onClose={() => setSelectedStore(null)} />
+      )}
+
+      {editingStore && (
+        <StoreEditModal
+          store={editingStore}
+          onClose={() => setEditingStore(null)}
+          onSave={() => { setEditingStore(null); onUpdate(); }}
+          onExpire={handleExpire}
         />
       )}
+    </div>
+  );
+}
+
+// =============================================
+// 매장 수정 모달
+// =============================================
+function StoreEditModal({ store, onClose, onSave, onExpire }) {
+  const [form, setForm] = useState({
+    feeType: store.feeType || 'rate',
+    discountRate: store.discountRate || 10,
+    fixedFee: store.fixedFee || '',
+    contractStart: store.contractStart || '',
+    contractEnd: store.contractEnd || '',
+  });
+  const [branches, setBranches] = useState(
+    (store.branches || []).map(b => ({
+      ...b,
+      themes: (b.themes || []).map(t => ({ ...t })),
+    }))
+  );
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveBasic = async () => {
+    setSaving(true);
+    try {
+      await updateStore(store.id, {
+        feeType: form.feeType,
+        discountRate: Number(form.discountRate),
+        fixedFee: Number(form.fixedFee),
+        contractStart: form.contractStart,
+        contractEnd: form.contractEnd,
+      });
+      alert('저장되었어요!');
+      onSave();
+    } catch (e) {
+      alert('저장 실패: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddBranch = async () => {
+    const branchName = window.prompt('새 지점명을 입력해주세요:');
+    if (!branchName?.trim()) return;
+    const address = window.prompt('주소를 입력해주세요:') || '';
+    try {
+      await addBranch(store.id, { branchName: branchName.trim(), address, themes: [] });
+      alert('지점이 추가됐어요. 새로고침 후 테마를 추가해주세요.');
+      onSave();
+    } catch (e) {
+      alert('실패: ' + e.message);
+    }
+  };
+
+  const handleDeleteBranch = async (branchId, branchName) => {
+    if (!window.confirm(`"${branchName}" 지점을 삭제할까요? 해당 지점의 테마도 모두 삭제돼요.`)) return;
+    try {
+      await deleteDoc(doc(db, 'stores', store.id, 'branches', branchId));
+      setBranches(prev => prev.filter(b => b.id !== branchId));
+      alert('삭제됐어요.');
+    } catch (e) {
+      alert('실패: ' + e.message);
+    }
+  };
+
+  const handleAddTheme = async (branchId, bi) => {
+    const themeName = window.prompt('새 테마명을 입력해주세요:');
+    if (!themeName?.trim()) return;
+    const newTheme = {
+      name: themeName.trim(), genre: '공포', difficulty: 'normal',
+      minPeople: 2, maxPeople: 6, duration: 60, description: '',
+      imageUrl: '', pricing: [], availableTimes: [],
+    };
+    try {
+      const themeId = await addTheme(store.id, branchId, newTheme);
+      setBranches(prev => prev.map((b, idx) =>
+        idx === bi ? { ...b, themes: [...b.themes, { id: themeId, ...newTheme }] } : b
+      ));
+    } catch (e) {
+      alert('실패: ' + e.message);
+    }
+  };
+
+  const handleDeleteTheme = async (branchId, themeId, themeName, bi, ti) => {
+    if (!window.confirm(`"${themeName}" 테마를 삭제할까요?`)) return;
+    try {
+      await deleteTheme(store.id, branchId, themeId);
+      setBranches(prev => prev.map((b, idx) =>
+        idx === bi ? { ...b, themes: b.themes.filter((_, tIdx) => tIdx !== ti) } : b
+      ));
+    } catch (e) {
+      alert('실패: ' + e.message);
+    }
+  };
+
+  const handleUpdateThemeContract = async (branchId, themeId, field, value, bi, ti) => {
+    const updated = [...branches];
+    updated[bi].themes[ti][field] = value;
+    setBranches(updated);
+    try {
+      await updateTheme(store.id, branchId, themeId, { [field]: value });
+    } catch (e) {
+      alert('저장 실패: ' + e.message);
+    }
+  };
+
+  return (
+    <div className="admin-modal-overlay" onClick={onClose}>
+      <div className="admin-modal store-detail-modal"
+        onClick={e => e.stopPropagation()}
+        style={{ overflowY: 'auto', maxHeight: '90vh', width: '700px' }}>
+        <button className="admin-modal-close" onClick={onClose}>×</button>
+        <h3>✏️ {store.ownerName} 매장 수정</h3>
+
+        {/* 기본 계약 정보 */}
+        <div style={{ background: 'var(--bg-secondary)', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+          <h4 style={{ marginBottom: '12px' }}>계약 정보</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div>
+              <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>계약 시작일</label>
+              <input type="date" className="admin-input" value={form.contractStart}
+                onChange={e => setForm({ ...form, contractStart: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>계약 종료일</label>
+              <input type="date" className="admin-input" value={form.contractEnd}
+                onChange={e => setForm({ ...form, contractEnd: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>수수료 방식</label>
+              <select className="admin-input admin-select" value={form.feeType}
+                onChange={e => setForm({ ...form, feeType: e.target.value })}>
+                <option value="rate">요율(%)</option>
+                <option value="fixed">지정금액(원/방)</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>
+                {form.feeType === 'rate' ? '수수료율 (%)' : '방당 지정금액 (원)'}
+              </label>
+              {form.feeType === 'rate' ? (
+                <input type="number" className="admin-input" value={form.discountRate}
+                  onChange={e => setForm({ ...form, discountRate: e.target.value })} />
+              ) : (
+                <input type="number" className="admin-input" value={form.fixedFee}
+                  onChange={e => setForm({ ...form, fixedFee: e.target.value })} />
+              )}
+            </div>
+          </div>
+          <button className="mypage-btn primary" style={{ marginTop: '12px' }}
+            onClick={handleSaveBasic} disabled={saving}>
+            {saving ? '저장 중...' : '💾 계약 정보 저장'}
+          </button>
+        </div>
+
+        {/* 지점 및 테마 관리 */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h4>지점 및 테마 관리</h4>
+            <button className="mypage-btn primary" onClick={handleAddBranch}>+ 지점 추가</button>
+          </div>
+
+          {branches.map((branch, bi) => (
+            <div key={branch.id || bi} style={{
+              border: '1px solid var(--border-color)', borderRadius: '8px',
+              padding: '14px', marginBottom: '12px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <strong>🏪 {branch.branchName}</strong>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button className="mypage-btn small" onClick={() => handleAddTheme(branch.id, bi)}>
+                    + 테마 추가
+                  </button>
+                  <button className="mypage-btn small danger"
+                    onClick={() => handleDeleteBranch(branch.id, branch.branchName)}>
+                    지점 삭제
+                  </button>
+                </div>
+              </div>
+
+              {branch.themes?.length === 0 && (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>등록된 테마가 없어요.</p>
+              )}
+
+              {branch.themes?.map((theme, ti) => (
+                <div key={theme.id || ti} style={{
+                  background: 'var(--bg-secondary)', borderRadius: '6px',
+                  padding: '10px', marginBottom: '8px',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontWeight: 'bold' }}>🔐 {theme.name}</span>
+                    <button className="mypage-btn small danger"
+                      onClick={() => handleDeleteTheme(branch.id, theme.id, theme.name, bi, ti)}>
+                      테마 삭제
+                    </button>
+                  </div>
+
+                  {/* 방별 계약일 설정 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>
+                        방 계약 시작일
+                      </label>
+                      <input type="date" className="admin-input"
+                        value={theme.contractStart || form.contractStart}
+                        onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'contractStart', e.target.value, bi, ti)} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>
+                        방 계약 종료일
+                      </label>
+                      <input type="date" className="admin-input"
+                        value={theme.contractEnd || form.contractEnd}
+                        onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'contractEnd', e.target.value, bi, ti)} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>장르</label>
+                      <select className="admin-input admin-select"
+                        value={theme.genre || '공포'}
+                        onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'genre', e.target.value, bi, ti)}>
+                        {GENRE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>난이도</label>
+                      <select className="admin-input admin-select"
+                        value={theme.difficulty || 'normal'}
+                        onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'difficulty', e.target.value, bi, ti)}>
+                        <option value="easy">쉬움</option>
+                        <option value="normal">보통</option>
+                        <option value="hard">어려움</option>
+                        <option value="expert">전문가</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>진행시간 (분)</label>
+                      <input type="number" className="admin-input"
+                        value={theme.duration || 60}
+                        onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'duration', e.target.value, bi, ti)} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>최소/최대 인원</label>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <input type="number" className="admin-input" style={{ width: '55px' }}
+                          value={theme.minPeople || 2}
+                          onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'minPeople', Number(e.target.value), bi, ti)} />
+                        <span style={{ color: 'var(--text-muted)' }}>~</span>
+                        <input type="number" className="admin-input" style={{ width: '55px' }}
+                          value={theme.maxPeople || 6}
+                          onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'maxPeople', Number(e.target.value), bi, ti)} />
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>명</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* 계약 종료 버튼 */}
+        <div style={{ textAlign: 'right', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+          <button className="result-action-btn fail" onClick={() => onExpire(store)}>
+            🚫 계약 종료 처리
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -385,45 +685,34 @@ function RegisterTab({ onComplete }) {
   const [generatedPassword, setGeneratedPassword] = useState('');
 
   const [storeForm, setStoreForm] = useState({
-    ownerName: '',
-    email: '',
-    contact: '',
-    bankName: BANK_OPTIONS[0],
-    bankAccount: '',
-    bankHolder: '',
-    feeType: 'rate',
-    discountRate: 10,
-    fixedFee: '',
-    contractStart: '',
-    contractEnd: '',
+    ownerName: '', email: '', contact: '',
+    bankName: BANK_OPTIONS[0], bankAccount: '', bankHolder: '',
+    feeType: 'rate', discountRate: 10, fixedFee: '',
+    contractStart: '', contractEnd: '',
   });
 
   const [branches, setBranches] = useState([
     { branchName: '', address: '', themes: [emptyTheme()] }
   ]);
 
-  const addBranch = () => setBranches([...branches, { branchName: '', address: '', themes: [emptyTheme()] }]);
-  const removeBranch = (bi) => setBranches(branches.filter((_, i) => i !== bi));
-  const addTheme = (bi) => { const u = [...branches]; u[bi].themes.push(emptyTheme()); setBranches(u); };
-  const removeTheme = (bi, ti) => { const u = [...branches]; u[bi].themes = u[bi].themes.filter((_, i) => i !== ti); setBranches(u); };
-  const updateBranch = (bi, field, value) => { const u = [...branches]; u[bi][field] = value; setBranches(u); };
+  const addBranchLocal = () => setBranches([...branches, { branchName: '', address: '', themes: [emptyTheme()] }]);
+  const removeBranchLocal = (bi) => setBranches(branches.filter((_, i) => i !== bi));
+  const addThemeLocal = (bi) => { const u = [...branches]; u[bi].themes.push(emptyTheme()); setBranches(u); };
+  const removeThemeLocal = (bi, ti) => { const u = [...branches]; u[bi].themes = u[bi].themes.filter((_, i) => i !== ti); setBranches(u); };
+  const updateBranchLocal = (bi, field, value) => { const u = [...branches]; u[bi][field] = value; setBranches(u); };
 
-  const updateTheme = (bi, ti, field, value) => {
+  const updateThemeLocal = (bi, ti, field, value) => {
     const u = [...branches];
     u[bi].themes[ti][field] = value;
-
     if (field === 'minPeople' || field === 'maxPeople') {
       const theme = u[bi].themes[ti];
       const min = Number(field === 'minPeople' ? value : theme.minPeople);
       const max = Number(field === 'maxPeople' ? value : theme.maxPeople);
       if (min > 0 && max >= min) {
-        u[bi].themes[ti].pricing = Array.from(
-          { length: max - min + 1 },
-          (_, i) => {
-            const existing = theme.pricing?.find(p => p.people === min + i);
-            return { people: min + i, price: existing?.price || '' };
-          }
-        );
+        u[bi].themes[ti].pricing = Array.from({ length: max - min + 1 }, (_, i) => {
+          const existing = theme.pricing?.find(p => p.people === min + i);
+          return { people: min + i, price: existing?.price || '' };
+        });
       }
     }
     setBranches(u);
@@ -437,7 +726,7 @@ function RegisterTab({ onComplete }) {
     setBranches(u);
   };
 
-  const updatePricing = (bi, ti, pi, field, value) => {
+  const updatePricingLocal = (bi, ti, pi, field, value) => {
     const u = [...branches]; u[bi].themes[ti].pricing[pi][field] = value; setBranches(u);
   };
 
@@ -454,15 +743,12 @@ function RegisterTab({ onComplete }) {
           return { ...rest, imageUrl: '' };
         }),
       }));
-
       const storeId = await createStore({ ...storeForm, branches: branchesClean });
       const tempPassword = generateTempPassword();
       setGeneratedPassword(tempPassword);
       await createStoreAdminAccount({
-        email: storeForm.email,
-        password: tempPassword,
-        nickname: storeForm.ownerName,
-        storeId,
+        email: storeForm.email, password: tempPassword,
+        nickname: storeForm.ownerName, storeId,
       });
       setStep(2);
     } catch (error) {
@@ -519,7 +805,6 @@ function RegisterTab({ onComplete }) {
             </div>
           ))}
 
-          {/* 은행명 → 예금주 → 계좌번호 순서 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>은행명</label>
             <select className="admin-input admin-select" value={storeForm.bankName}
@@ -538,7 +823,6 @@ function RegisterTab({ onComplete }) {
               onChange={(e) => setStoreForm({ ...storeForm, bankAccount: e.target.value })} />
           </div>
 
-          {/* 수수료 방식 */}
           <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
             <label style={{ color: 'var(--text-muted)' }}>수수료 방식</label>
             <div style={{ display: 'flex', gap: '16px' }}>
@@ -564,8 +848,7 @@ function RegisterTab({ onComplete }) {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="number" className="mypage-input" style={{ width: '140px' }}
-                  placeholder="방 1개당 금액"
-                  value={storeForm.fixedFee}
+                  placeholder="방 1개당 금액" value={storeForm.fixedFee}
                   onChange={(e) => setStoreForm({ ...storeForm, fixedFee: Number(e.target.value) })} />
                 <span style={{ color: 'var(--text-muted)' }}>원 × 방 개수</span>
               </div>
@@ -585,11 +868,10 @@ function RegisterTab({ onComplete }) {
         </div>
       </div>
 
-      {/* 지점 + 테마 */}
       <div className="admin-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3>🏪 지점 및 테마 정보</h3>
-          <button className="mypage-btn primary" onClick={addBranch}>+ 지점 추가</button>
+          <button className="mypage-btn primary" onClick={addBranchLocal}>+ 지점 추가</button>
         </div>
 
         {branches.map((branch, bi) => (
@@ -597,25 +879,25 @@ function RegisterTab({ onComplete }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
               <strong>지점 {bi + 1}</strong>
               {branches.length > 1 && (
-                <button className="mypage-btn small danger" onClick={() => removeBranch(bi)}>삭제</button>
+                <button className="mypage-btn small danger" onClick={() => removeBranchLocal(bi)}>삭제</button>
               )}
             </div>
             <div className="input-group-vertical" style={{ marginBottom: '16px' }}>
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>지점명</label>
                 <input type="text" className="mypage-input" value={branch.branchName}
-                  onChange={(e) => updateBranch(bi, 'branchName', e.target.value)} />
+                  onChange={(e) => updateBranchLocal(bi, 'branchName', e.target.value)} />
               </div>
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>주소</label>
                 <input type="text" className="mypage-input" value={branch.address}
-                  onChange={(e) => updateBranch(bi, 'address', e.target.value)} />
+                  onChange={(e) => updateBranchLocal(bi, 'address', e.target.value)} />
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>테마 목록</span>
-              <button className="mypage-btn small" onClick={() => addTheme(bi)}>+ 테마 추가</button>
+              <button className="mypage-btn small" onClick={() => addThemeLocal(bi)}>+ 테마 추가</button>
             </div>
 
             {branch.themes.map((theme, ti) => (
@@ -623,7 +905,7 @@ function RegisterTab({ onComplete }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>테마 {ti + 1}</span>
                   {branch.themes.length > 1 && (
-                    <button className="mypage-btn small danger" onClick={() => removeTheme(bi, ti)}>삭제</button>
+                    <button className="mypage-btn small danger" onClick={() => removeThemeLocal(bi, ti)}>삭제</button>
                   )}
                 </div>
 
@@ -631,19 +913,19 @@ function RegisterTab({ onComplete }) {
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>테마명</label>
                     <input type="text" className="mypage-input" value={theme.name}
-                      onChange={(e) => updateTheme(bi, ti, 'name', e.target.value)} />
+                      onChange={(e) => updateThemeLocal(bi, ti, 'name', e.target.value)} />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>장르</label>
                     <select className="admin-input admin-select" value={theme.genre}
-                      onChange={(e) => updateTheme(bi, ti, 'genre', e.target.value)}>
+                      onChange={(e) => updateThemeLocal(bi, ti, 'genre', e.target.value)}>
                       {GENRE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>난이도</label>
                     <select className="admin-input admin-select" value={theme.difficulty}
-                      onChange={(e) => updateTheme(bi, ti, 'difficulty', e.target.value)}>
+                      onChange={(e) => updateThemeLocal(bi, ti, 'difficulty', e.target.value)}>
                       <option value="easy">쉬움</option>
                       <option value="normal">보통</option>
                       <option value="hard">어려움</option>
@@ -653,20 +935,19 @@ function RegisterTab({ onComplete }) {
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>진행시간 (분)</label>
                     <input type="number" className="mypage-input" value={theme.duration}
-                      onChange={(e) => updateTheme(bi, ti, 'duration', e.target.value)} />
+                      onChange={(e) => updateThemeLocal(bi, ti, 'duration', e.target.value)} />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>최소 인원</label>
                     <input type="number" className="mypage-input" value={theme.minPeople}
-                      onChange={(e) => updateTheme(bi, ti, 'minPeople', e.target.value)} />
+                      onChange={(e) => updateThemeLocal(bi, ti, 'minPeople', e.target.value)} />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>최대 인원</label>
                     <input type="number" className="mypage-input" value={theme.maxPeople}
-                      onChange={(e) => updateTheme(bi, ti, 'maxPeople', e.target.value)} />
+                      onChange={(e) => updateThemeLocal(bi, ti, 'maxPeople', e.target.value)} />
                   </div>
 
-                  {/* 이미지 업로드 UI (기능 추후 활성화) */}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>
                       테마 이미지 <span style={{ color: '#ff6b7a', fontSize: '0.85em' }}>(업로드 기능 준비 중)</span>
@@ -683,25 +964,21 @@ function RegisterTab({ onComplete }) {
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>테마 설명</label>
                     <textarea className="review-textarea" style={{ height: '60px' }} value={theme.description}
-                      onChange={(e) => updateTheme(bi, ti, 'description', e.target.value)} />
+                      onChange={(e) => updateThemeLocal(bi, ti, 'description', e.target.value)} />
                   </div>
 
-                  {/* 인원별 가격 — 최소/최대 인원 기반 자동 생성 */}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                       인원별 가격
                     </label>
                     {theme.pricing.map((p, pi) => (
                       <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <span style={{
-                          minWidth: '40px', textAlign: 'center',
-                          color: 'var(--accent-gold)', fontWeight: 'bold', fontSize: '0.9em'
-                        }}>
+                        <span style={{ minWidth: '40px', textAlign: 'center', color: 'var(--accent-gold)', fontWeight: 'bold', fontSize: '0.9em' }}>
                           {p.people}명
                         </span>
                         <input type="number" className="mypage-input" style={{ width: '130px' }}
                           placeholder="가격 (원)" value={p.price}
-                          onChange={(e) => updatePricing(bi, ti, pi, 'price', Number(e.target.value))} />
+                          onChange={(e) => updatePricingLocal(bi, ti, pi, 'price', Number(e.target.value))} />
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>원</span>
                       </div>
                     ))}
@@ -799,18 +1076,13 @@ function ExpiredTab({ expiredStores }) {
         ) : (
           <div className="stores-table">
             <div className="stores-table-header" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
-              <span>사업자명</span>
-              <span>매장명(지점)</span>
-              <span>계약 시작일</span>
-              <span>계약 종료일</span>
+              <span>사업자명</span><span>매장명(지점)</span><span>계약 시작일</span><span>계약 종료일</span>
             </div>
             {expiredStores.map(store => (
               <div key={store.id} className="stores-table-row"
                 style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr', opacity: 0.7 }}>
                 <span>{store.ownerName}</span>
-                <span style={{ fontSize: '0.85em' }}>
-                  {store.branches?.map(b => b.branchName).join(', ') || '-'}
-                </span>
+                <span style={{ fontSize: '0.85em' }}>{store.branches?.map(b => b.branchName).join(', ') || '-'}</span>
                 <span>{store.contractStart}</span>
                 <span style={{ color: '#ff6b7a' }}>{store.contractEnd}</span>
               </div>
@@ -854,14 +1126,9 @@ function StoreDetailModal({ store, reservations, onClose }) {
         {store.branches?.map(branch => {
           const themeNames = branch.themes?.map(t => t.name) || [];
           const branchRecs = reservations.filter(r => themeNames.includes(r.productName));
-          const thisRevenue = branchRecs
-            .filter(r => !r.cancelled && r.date?.startsWith(thisMonth))
-            .reduce((s, r) => s + (r.price || 0), 0);
-          const prevRevenue = branchRecs
-            .filter(r => !r.cancelled && r.date?.startsWith(prevMonth))
-            .reduce((s, r) => s + (r.price || 0), 0);
-          const themeCount = themeNames.length;
-          const thisFee = calcFee(store, thisRevenue, themeCount);
+          const thisRevenue = branchRecs.filter(r => !r.cancelled && r.date?.startsWith(thisMonth)).reduce((s, r) => s + (r.price || 0), 0);
+          const prevRevenue = branchRecs.filter(r => !r.cancelled && r.date?.startsWith(prevMonth)).reduce((s, r) => s + (r.price || 0), 0);
+          const thisFee = calcFee(store, thisRevenue, themeNames.length);
 
           return (
             <div key={branch.id || branch.branchName} className="branch-section">
@@ -869,22 +1136,11 @@ function StoreDetailModal({ store, reservations, onClose }) {
                 <span className="branch-name">🏪 {branch.branchName}</span>
                 <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>{branch.address}</span>
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', padding: '10px 16px', background: 'var(--bg-secondary)', margin: '8px 0', borderRadius: '6px' }}>
-                <div>
-                  <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>전달 매출</div>
-                  <strong>{prevRevenue.toLocaleString()}원</strong>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>이번달 매출</div>
-                  <strong>{thisRevenue.toLocaleString()}원</strong>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>이번달 수수료</div>
-                  <strong style={{ color: 'var(--accent-gold)' }}>{thisFee.toLocaleString()}원</strong>
-                </div>
+                <div><div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>전달 매출</div><strong>{prevRevenue.toLocaleString()}원</strong></div>
+                <div><div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>이번달 매출</div><strong>{thisRevenue.toLocaleString()}원</strong></div>
+                <div><div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>이번달 수수료</div><strong style={{ color: 'var(--accent-gold)' }}>{thisFee.toLocaleString()}원</strong></div>
               </div>
-
               <div style={{ padding: '8px 16px' }}>
                 <strong style={{ fontSize: '0.9em', color: 'var(--text-muted)' }}>테마 목록</strong>
                 <div className="theme-stats-table" style={{ marginTop: '8px' }}>
