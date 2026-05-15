@@ -449,6 +449,8 @@
   justify-content: center;
   background: var(--bg-secondary);
   font-size: 3em;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .card-body {
@@ -604,5 +606,15 @@
     width: 26px;
     height: 26px;
     font-size: 0.85em;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-result-item .product-image,
+  .product-image-placeholder {
+    height: 100px;
+    width: 100%;
+    left: 0;
+    position: relative;
   }
 }

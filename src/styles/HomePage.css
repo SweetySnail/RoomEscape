@@ -3,10 +3,16 @@
   cursor: pointer;
   margin: 0;
   font-size: 2.2em;
-  color: #6f00ff;
+  color: var(--accent-gold);
   font-family: 'Cinzel', serif;
   font-weight: 700;
   letter-spacing: 0.05em;
+  text-shadow: 0 0 30px var(--accent-glow);
+  transition: text-shadow 0.3s ease;
+}
+
+.logo-title:hover {
+  text-shadow: 0 0 40px rgba(212, 168, 67, 0.5);
 }
 
 @media (max-width: 768px) {

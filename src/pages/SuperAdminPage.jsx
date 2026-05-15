@@ -20,6 +20,20 @@ const generateTempPassword = () => {
 
 const GENRE_OPTIONS = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
 const BANK_OPTIONS = ['국민은행', '신한은행', '우리은행', '하나은행', 'IBK기업은행', 'NH농협은행', '카카오뱅크', '토스뱅크', '케이뱅크', '새마을금고', '수협은행', '부산은행', '대구은행', '광주은행', '전북은행', '경남은행', '제주은행'];
+const CITIES = ['서울', '경기', '인천', '부산', '대구', '광주', '대전', '울산', '세종', '제주'];
+
+const DISTRICTS = {
+  서울: ['강남구','강동구','강북구','강서구','관악구','광진구','구로구','금천구','노원구','도봉구','동대문구','동작구','마포구','서대문구','서초구','성동구','성북구','송파구','양천구','영등포구','용산구','은평구','종로구','중구','중랑구'],
+  경기: ['수원시','성남시','고양시','용인시','부천시','안산시','안양시','남양주시','화성시','평택시','의정부시','파주시','광명시','김포시','군포시','광주시','이천시','양주시','오산시','구리시','안성시','포천시','의왕시','하남시','여주시','동두천시','과천시','가평군','양평군','연천군'],
+  인천: ['중구','동구','미추홀구','연수구','남동구','부평구','계양구','서구','강화군','옹진군'],
+  부산: ['중구','서구','동구','영도구','부산진구','동래구','남구','북구','해운대구','사하구','금정구','강서구','연제구','수영구','사상구','기장군'],
+  대구: ['중구','동구','서구','남구','북구','수성구','달서구','달성군'],
+  광주: ['동구','서구','남구','북구','광산구'],
+  대전: ['동구','중구','서구','유성구','대덕구'],
+  울산: ['중구','남구','동구','북구','울주군'],
+  세종: ['세종시'],
+  제주: ['제주시','서귀포시'],
+};
 
 const calcFee = (store, revenue, themeCount = 0) => {
   if (store.feeType === 'fixed') return (store.fixedFee || 0) * themeCount;
@@ -426,12 +440,13 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
     contractEnd: store.contractEnd || '',
   });
   const [branches, setBranches] = useState(
-    (store.branches || []).map(b => ({
-      ...b,
-      themes: (b.themes || []).map(t => ({ ...t })),
-    }))
+    (store.branches || []).map(b => ({ ...b, themes: (b.themes || []).map(t => ({ ...t })) }))
   );
   const [saving, setSaving] = useState(false);
+
+  // 신규 지점 추가용 임시 상태
+  const [newBranch, setNewBranch] = useState({ branchName: '', city: '', district: '', addressDetail: '' });
+  const [showAddBranch, setShowAddBranch] = useState(false);
 
   const handleSaveBasic = async () => {
     setSaving(true);
@@ -453,12 +468,14 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
   };
 
   const handleAddBranch = async () => {
-    const branchName = window.prompt('새 지점명을 입력해주세요:');
-    if (!branchName?.trim()) return;
-    const address = window.prompt('주소를 입력해주세요:') || '';
+    if (!newBranch.branchName?.trim()) { alert('지점명을 입력해주세요.'); return; }
+    if (!newBranch.city || !newBranch.district) { alert('시/도와 구/군을 선택해주세요.'); return; }
+    const address = `${newBranch.city} ${newBranch.district}${newBranch.addressDetail ? ' ' + newBranch.addressDetail : ''}`;
     try {
-      await addBranch(store.id, { branchName: branchName.trim(), address, themes: [] });
-      alert('지점이 추가됐어요. 새로고침 후 테마를 추가해주세요.');
+      await addBranch(store.id, { branchName: newBranch.branchName.trim(), address, city: newBranch.city, district: newBranch.district, themes: [] });
+      alert('지점이 추가됐어요.');
+      setNewBranch({ branchName: '', city: '', district: '', addressDetail: '' });
+      setShowAddBranch(false);
       onSave();
     } catch (e) {
       alert('실패: ' + e.message);
@@ -466,11 +483,10 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
   };
 
   const handleDeleteBranch = async (branchId, branchName) => {
-    if (!window.confirm(`"${branchName}" 지점을 삭제할까요? 해당 지점의 테마도 모두 삭제돼요.`)) return;
+    if (!window.confirm(`"${branchName}" 지점을 삭제할까요?`)) return;
     try {
       await deleteDoc(doc(db, 'stores', store.id, 'branches', branchId));
       setBranches(prev => prev.filter(b => b.id !== branchId));
-      alert('삭제됐어요.');
     } catch (e) {
       alert('실패: ' + e.message);
     }
@@ -570,8 +586,54 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <h4>지점 및 테마 관리</h4>
-            <button className="mypage-btn primary" onClick={handleAddBranch}>+ 지점 추가</button>
+            <button className="mypage-btn primary" onClick={() => setShowAddBranch(!showAddBranch)}>
+              {showAddBranch ? '취소' : '+ 지점 추가'}
+            </button>
           </div>
+
+          {/* 지점 추가 폼 */}
+          {showAddBranch && (
+            <div style={{ background: 'var(--bg-secondary)', borderRadius: '8px', padding: '14px', marginBottom: '12px', border: '1px solid var(--accent-gold)' }}>
+              <h5 style={{ marginBottom: '10px', color: 'var(--accent-gold)' }}>새 지점 추가</h5>
+              <div className="input-group-vertical">
+                <div className="input-row">
+                  <label style={{ minWidth: '80px', color: 'var(--text-muted)', fontSize: '0.85em' }}>지점명 *</label>
+                  <input type="text" className="mypage-input"
+                    value={newBranch.branchName}
+                    onChange={e => setNewBranch({ ...newBranch, branchName: e.target.value })} />
+                </div>
+                <div className="input-row">
+                  <label style={{ minWidth: '80px', color: 'var(--text-muted)', fontSize: '0.85em' }}>시/도 *</label>
+                  <select className="admin-input admin-select"
+                    value={newBranch.city}
+                    onChange={e => setNewBranch({ ...newBranch, city: e.target.value, district: '' })}>
+                    <option value="">선택해주세요</option>
+                    {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="input-row">
+                  <label style={{ minWidth: '80px', color: 'var(--text-muted)', fontSize: '0.85em' }}>구/군 *</label>
+                  <select className="admin-input admin-select"
+                    value={newBranch.district}
+                    disabled={!newBranch.city}
+                    onChange={e => setNewBranch({ ...newBranch, district: e.target.value })}>
+                    <option value="">선택해주세요</option>
+                    {(DISTRICTS[newBranch.city] || []).map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="input-row">
+                  <label style={{ minWidth: '80px', color: 'var(--text-muted)', fontSize: '0.85em' }}>상세 주소</label>
+                  <input type="text" className="mypage-input"
+                    placeholder="건물명, 층수 등 (선택)"
+                    value={newBranch.addressDetail}
+                    onChange={e => setNewBranch({ ...newBranch, addressDetail: e.target.value })} />
+                </div>
+              </div>
+              <button className="mypage-btn primary" style={{ marginTop: '10px' }} onClick={handleAddBranch}>
+                지점 등록
+              </button>
+            </div>
+          )}
 
           {branches.map((branch, bi) => (
             <div key={branch.id || bi} style={{
@@ -579,7 +641,12 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
               padding: '14px', marginBottom: '12px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <strong>🏪 {branch.branchName}</strong>
+                <div>
+                  <strong>🏪 {branch.branchName}</strong>
+                  <span style={{ fontSize: '0.8em', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                    {branch.address || `${branch.city || ''} ${branch.district || ''}`.trim()}
+                  </span>
+                </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button className="mypage-btn small" onClick={() => handleAddTheme(branch.id, bi)}>
                     + 테마 추가
@@ -608,20 +675,15 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
                     </button>
                   </div>
 
-                  {/* 방별 계약일 설정 */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <div>
-                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>
-                        방 계약 시작일
-                      </label>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>방 계약 시작일</label>
                       <input type="date" className="admin-input"
                         value={theme.contractStart || form.contractStart}
                         onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'contractStart', e.target.value, bi, ti)} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>
-                        방 계약 종료일
-                      </label>
+                      <label style={{ fontSize: '0.75em', color: 'var(--text-muted)', display: 'block' }}>방 계약 종료일</label>
                       <input type="date" className="admin-input"
                         value={theme.contractEnd || form.contractEnd}
                         onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'contractEnd', e.target.value, bi, ti)} />
@@ -679,7 +741,7 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
         </div>
       </div>
     </div>
-  );
+ );
 }
 
 // =============================================
@@ -710,47 +772,97 @@ function RegisterTab({ onComplete }) {
   });
 
   const [branches, setBranches] = useState([
-    { branchName: '', address: '', themes: [emptyTheme()] }
+    { branchName: '', city: '', district: '', addressDetail: '', address: '', themes: [emptyTheme()] }
   ]);
 
-  const addBranchLocal = () => setBranches([...branches, { branchName: '', address: '', themes: [emptyTheme()] }]);
-  const removeBranchLocal = (bi) => setBranches(branches.filter((_, i) => i !== bi));
-  const addThemeLocal = (bi) => { const u = [...branches]; u[bi].themes.push(emptyTheme()); setBranches(u); };
-  const removeThemeLocal = (bi, ti) => { const u = [...branches]; u[bi].themes = u[bi].themes.filter((_, i) => i !== ti); setBranches(u); };
-  const updateBranchLocal = (bi, field, value) => { const u = [...branches]; u[bi][field] = value; setBranches(u); };
+  const addBranchLocal = () => setBranches(prev => [
+    ...prev,
+    { branchName: '', city: '', district: '', addressDetail: '', address: '', themes: [emptyTheme()] }
+  ]);
+
+  const removeBranchLocal = (bi) => setBranches(prev => prev.filter((_, i) => i !== bi));
+
+  const addThemeLocal = (bi) => {
+    setBranches(prev => {
+      const u = [...prev];
+      u[bi] = { ...u[bi], themes: [...u[bi].themes, emptyTheme()] };
+      return u;
+    });
+  };
+
+  const removeThemeLocal = (bi, ti) => {
+    setBranches(prev => {
+      const u = [...prev];
+      u[bi] = { ...u[bi], themes: u[bi].themes.filter((_, i) => i !== ti) };
+      return u;
+    });
+  };
+
+  const updateBranchLocal = (bi, field, value) => {
+    setBranches(prev => {
+      const u = [...prev];
+      u[bi] = { ...u[bi], [field]: value };
+      return u;
+    });
+  };
 
   const updateThemeLocal = (bi, ti, field, value) => {
-    const u = [...branches];
-    u[bi].themes[ti][field] = value;
-    if (field === 'minPeople' || field === 'maxPeople') {
-      const theme = u[bi].themes[ti];
-      const min = Number(field === 'minPeople' ? value : theme.minPeople);
-      const max = Number(field === 'maxPeople' ? value : theme.maxPeople);
-      if (min > 0 && max >= min) {
-        u[bi].themes[ti].pricing = Array.from({ length: max - min + 1 }, (_, i) => {
-          const existing = theme.pricing?.find(p => p.people === min + i);
-          return { people: min + i, price: existing?.price || '' };
-        });
+    setBranches(prev => {
+      const u = [...prev];
+      const themes = [...u[bi].themes];
+      themes[ti] = { ...themes[ti], [field]: value };
+
+      if (field === 'minPeople' || field === 'maxPeople') {
+        const min = Number(field === 'minPeople' ? value : themes[ti].minPeople);
+        const max = Number(field === 'maxPeople' ? value : themes[ti].maxPeople);
+        if (min > 0 && max >= min) {
+          themes[ti].pricing = Array.from({ length: max - min + 1 }, (_, i) => {
+            const existing = themes[ti].pricing?.find(p => p.people === min + i);
+            return { people: min + i, price: existing?.price || '' };
+          });
+        }
       }
-    }
-    setBranches(u);
+
+      u[bi] = { ...u[bi], themes };
+      return u;
+    });
   };
 
   const handleImageChange = (bi, ti, file) => {
     if (!file) return;
-    const u = [...branches];
-    u[bi].themes[ti].imageFile = file;
-    u[bi].themes[ti].imagePreview = URL.createObjectURL(file);
-    setBranches(u);
+    setBranches(prev => {
+      const u = [...prev];
+      const themes = [...u[bi].themes];
+      themes[ti] = {
+        ...themes[ti],
+        imageFile: file,
+        imagePreview: URL.createObjectURL(file),
+      };
+      u[bi] = { ...u[bi], themes };
+      return u;
+    });
   };
 
   const updatePricingLocal = (bi, ti, pi, field, value) => {
-    const u = [...branches]; u[bi].themes[ti].pricing[pi][field] = value; setBranches(u);
+    setBranches(prev => {
+      const u = [...prev];
+      const themes = [...u[bi].themes];
+      const pricing = [...themes[ti].pricing];
+      pricing[pi] = { ...pricing[pi], [field]: value };
+      themes[ti] = { ...themes[ti], pricing };
+      u[bi] = { ...u[bi], themes };
+      return u;
+    });
   };
 
   const handleRegisterStore = async () => {
     if (!storeForm.ownerName || !storeForm.email || !storeForm.contact) {
       alert('필수 항목을 입력해주세요.'); return;
+    }
+    for (const branch of branches) {
+      if (!branch.city || !branch.district) {
+        alert('모든 지점의 시/도와 구/군을 선택해주세요.'); return;
+      }
     }
     setLoading(true);
     try {
@@ -765,8 +877,10 @@ function RegisterTab({ onComplete }) {
       const tempPassword = generateTempPassword();
       setGeneratedPassword(tempPassword);
       await createStoreAdminAccount({
-        email: storeForm.email, password: tempPassword,
-        nickname: storeForm.ownerName, storeId,
+        email: storeForm.email,
+        password: tempPassword,
+        nickname: storeForm.ownerName,
+        storeId,
       });
       setStep(2);
     } catch (error) {
@@ -808,6 +922,7 @@ function RegisterTab({ onComplete }) {
 
   return (
     <div className="tab-section">
+      {/* 기본 정보 */}
       <div className="admin-card">
         <h3>📋 사업자 기본 정보</h3>
         <div className="input-group-vertical">
@@ -823,6 +938,7 @@ function RegisterTab({ onComplete }) {
             </div>
           ))}
 
+          {/* 은행명 → 예금주 → 계좌번호 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>은행명</label>
             <select className="admin-input admin-select" value={storeForm.bankName}
@@ -841,6 +957,7 @@ function RegisterTab({ onComplete }) {
               onChange={(e) => setStoreForm({ ...storeForm, bankAccount: e.target.value })} />
           </div>
 
+          {/* 수수료 방식 */}
           <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
             <label style={{ color: 'var(--text-muted)' }}>수수료 방식</label>
             <div style={{ display: 'flex', gap: '16px' }}>
@@ -886,6 +1003,7 @@ function RegisterTab({ onComplete }) {
         </div>
       </div>
 
+      {/* 지점 + 테마 */}
       <div className="admin-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3>🏪 지점 및 테마 정보</h3>
@@ -900,19 +1018,61 @@ function RegisterTab({ onComplete }) {
                 <button className="mypage-btn small danger" onClick={() => removeBranchLocal(bi)}>삭제</button>
               )}
             </div>
+
             <div className="input-group-vertical" style={{ marginBottom: '16px' }}>
+              {/* 지점명 */}
               <div className="input-row">
-                <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>지점명</label>
+                <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>지점명 *</label>
                 <input type="text" className="mypage-input" value={branch.branchName}
                   onChange={(e) => updateBranchLocal(bi, 'branchName', e.target.value)} />
               </div>
+
+              {/* 시/도 선택 */}
               <div className="input-row">
-                <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>주소</label>
-                <input type="text" className="mypage-input" value={branch.address}
-                  onChange={(e) => updateBranchLocal(bi, 'address', e.target.value)} />
+                <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>시/도 *</label>
+                <select className="admin-input admin-select"
+                  value={branch.city || ''}
+                  onChange={(e) => {
+                    updateBranchLocal(bi, 'city', e.target.value);
+                    updateBranchLocal(bi, 'district', '');
+                    updateBranchLocal(bi, 'address', e.target.value);
+                  }}>
+                  <option value="">선택해주세요</option>
+                  {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* 구/군 선택 */}
+              <div className="input-row">
+                <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>구/군 *</label>
+                <select className="admin-input admin-select"
+                  value={branch.district || ''}
+                  disabled={!branch.city}
+                  onChange={(e) => {
+                    updateBranchLocal(bi, 'district', e.target.value);
+                    updateBranchLocal(bi, 'address', `${branch.city} ${e.target.value}`);
+                  }}>
+                  <option value="">선택해주세요</option>
+                  {(DISTRICTS[branch.city] || []).map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              {/* 상세 주소 */}
+              <div className="input-row">
+                <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>상세 주소</label>
+                <input type="text" className="mypage-input"
+                  placeholder="건물명, 층수 등 (선택)"
+                  value={branch.addressDetail || ''}
+                  onChange={(e) => {
+                    updateBranchLocal(bi, 'addressDetail', e.target.value);
+                    updateBranchLocal(bi, 'address',
+                      `${branch.city || ''} ${branch.district || ''} ${e.target.value}`.trim()
+                    );
+                  }} />
               </div>
             </div>
 
+            {/* 테마 목록 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.9em' }}>테마 목록</span>
               <button className="mypage-btn small" onClick={() => addThemeLocal(bi)}>+ 테마 추가</button>
@@ -966,6 +1126,7 @@ function RegisterTab({ onComplete }) {
                       onChange={(e) => updateThemeLocal(bi, ti, 'maxPeople', e.target.value)} />
                   </div>
 
+                  {/* 이미지 업로드 (추후 활성화) */}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>
                       테마 이미지 <span style={{ color: '#ff6b7a', fontSize: '0.85em' }}>(업로드 기능 준비 중)</span>
@@ -979,12 +1140,14 @@ function RegisterTab({ onComplete }) {
                     )}
                   </div>
 
+                  {/* 테마 설명 */}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>테마 설명</label>
                     <textarea className="review-textarea" style={{ height: '60px' }} value={theme.description}
                       onChange={(e) => updateThemeLocal(bi, ti, 'description', e.target.value)} />
                   </div>
 
+                  {/* 인원별 가격 */}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
                       인원별 가격
