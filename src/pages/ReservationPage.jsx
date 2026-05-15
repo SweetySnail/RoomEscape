@@ -13,7 +13,6 @@ import { toggleFavorite } from '../utils/FavoriteUtils';
 import { checkIsFavorite } from '../services/favoriteService';
 
 const GENRE_OPTIONS = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
-const TIME_OPTIONS = ['선택 안함', ...Array.from({ length: 15 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`)];
 
 // ===== 카드 컴포넌트 =====
 function ProductCard({ product, onClick }) {
@@ -33,7 +32,6 @@ function ProductCard({ product, onClick }) {
     load();
   }, [product.id]);
 
-  // 최소 가격 표시
   const minPrice = product.pricing?.length > 0
     ? Math.min(...product.pricing.map(p => Number(p.price) || 0))
     : null;
@@ -44,11 +42,7 @@ function ProductCard({ product, onClick }) {
         {product.imageUrl ? (
           <img src={product.imageUrl} alt={product.title} className="product-image" />
         ) : (
-          <div className="product-image" style={{
-            background: 'var(--bg-secondary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '3em',
-          }}>🔐</div>
+          <div className="product-image product-image-placeholder">🔐</div>
         )}
         <button
           className={`card-favorite-btn ${favorited ? 'active' : ''}`}
@@ -64,11 +58,10 @@ function ProductCard({ product, onClick }) {
       <div className="card-body">
         <strong>{product.title}</strong>
         <span>⭐ {product.rating?.toFixed(1) || '0.0'} ({product.reviewCount || 0} 리뷰)</span>
-        <span>장르: {product.genre}</span>
-        <span>난이도: {product.difficulty}</span>
-        <span>위치: {product.address || product.branch}</span>
+        <span>🎭 {product.genre}</span>
+        <span>📍 {product.address || product.branch}</span>
         {minPrice !== null && (
-          <span>{product.minPeople}인 시작가: {minPrice.toLocaleString()}원~</span>
+          <span>💰 {product.minPeople}인~ {minPrice.toLocaleString()}원</span>
         )}
       </div>
       <button
@@ -77,6 +70,32 @@ function ProductCard({ product, onClick }) {
       >
         예약하기
       </button>
+    </div>
+  );
+}
+
+// ===== 태그 칩 컴포넌트 =====
+function ChipGroup({ label, options, selected, onSelect, emoji }) {
+  return (
+    <div className="chip-group">
+      <span className="chip-group-label">{emoji} {label}</span>
+      <div className="chip-list">
+        <button
+          className={`chip ${selected === '전체' || !selected ? 'active' : ''}`}
+          onClick={() => onSelect('전체')}
+        >
+          전체
+        </button>
+        {options.map(opt => (
+          <button
+            key={opt}
+            className={`chip ${selected === opt ? 'active' : ''}`}
+            onClick={() => onSelect(opt === selected ? '전체' : opt)}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -94,10 +113,9 @@ function ReservationPage() {
     JSON.parse(localStorage.getItem('recentSearches') || '[]')
   );
 
-  const [selectedCity, setSelectedCity] = useState('선택 안함');
-  const [selectedDistrict, setSelectedDistrict] = useState('선택 안함');
-  const [selectedGenre, setSelectedGenre] = useState('선택 안함');
-  const [selectedTime, setSelectedTime] = useState('선택 안함');
+  const [selectedCity, setSelectedCity] = useState('전체');
+  const [selectedGenre, setSelectedGenre] = useState('전체');
+  const [showFilters, setShowFilters] = useState(false);
 
   const searchRef = React.useRef(null);
 
@@ -125,6 +143,11 @@ function ReservationPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 도시 목록 동적 생성
+  const cities = [...new Set(
+    allProducts.map(p => p.address?.split(' ')[0]).filter(Boolean)
+  )].sort();
+
   // 필터링
   const searchResults = allProducts.filter(p => {
     const keyword = searchKeyword.toLowerCase();
@@ -133,20 +156,17 @@ function ReservationPage() {
       p.genre?.toLowerCase().includes(keyword) ||
       p.branch?.toLowerCase().includes(keyword) ||
       p.address?.toLowerCase().includes(keyword);
-
-    const matchCity = selectedCity === '선택 안함' || p.address?.includes(selectedCity);
-    const matchDistrict = selectedDistrict === '선택 안함' || p.address?.includes(selectedDistrict);
-    const matchGenre = selectedGenre === '선택 안함' || p.genre === selectedGenre;
-    const matchTime = selectedTime === '선택 안함' ||
-      (p.availableTimes && p.availableTimes.includes(selectedTime));
-
-    return matchKeyword && matchCity && matchDistrict && matchGenre && matchTime;
+    const matchCity = selectedCity === '전체' || p.address?.includes(selectedCity);
+    const matchGenre = selectedGenre === '전체' || p.genre === selectedGenre;
+    return matchKeyword && matchCity && matchGenre;
   });
 
   const suggestions = inputValue.trim()
     ? allProducts
-        .filter(p => p.title?.toLowerCase().includes(inputValue.toLowerCase()) ||
-          p.genre?.toLowerCase().includes(inputValue.toLowerCase()))
+        .filter(p =>
+          p.title?.toLowerCase().includes(inputValue.toLowerCase()) ||
+          p.genre?.toLowerCase().includes(inputValue.toLowerCase())
+        )
         .slice(0, 5)
     : [];
 
@@ -167,22 +187,7 @@ function ReservationPage() {
     setShowSuggestions(false);
   };
 
-  // 도시 목록 동적 생성
-  const cities = ['선택 안함', ...new Set(
-    allProducts.map(p => p.address?.split(' ')[0]).filter(Boolean)
-  )];
-
-  // 구/군 목록 동적 생성
-  const districts = selectedCity === '선택 안함'
-    ? ['선택 안함']
-    : ['선택 안함', ...new Set(
-        allProducts
-          .filter(p => p.address?.includes(selectedCity))
-          .map(p => p.address?.split(' ')[1])
-          .filter(Boolean)
-      )];
-
-  const genres = ['선택 안함', ...GENRE_OPTIONS];
+  const activeFilterCount = [selectedCity, selectedGenre].filter(v => v !== '전체').length;
 
   return (
     <div className="page-container">
@@ -194,24 +199,36 @@ function ReservationPage() {
           {/* 검색창 */}
           <section className="search-keyword-section" ref={searchRef}>
             <h2 className="section-title">방탈출 검색</h2>
-            <div className="search-input-wrapper">
-              <span className="search-icon">🔍</span>
-              <input
-                type="text"
-                className="search-keyword-input"
-                placeholder="테마명, 지역, 장르로 검색해보세요"
-                value={inputValue}
-                onChange={(e) => { setInputValue(e.target.value); setShowSuggestions(true); }}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(inputValue); }}
-                onFocus={() => setShowSuggestions(true)}
-              />
-              {inputValue && (
-                <button className="search-clear-btn" onClick={handleClearSearch}>✕</button>
-              )}
-              <button className="search-submit-btn" onClick={() => handleSearch(inputValue)}>검색</button>
+
+            <div className="search-bar-row">
+              <div className="search-input-wrapper">
+                <span className="search-icon">🔍</span>
+                <input
+                  type="text"
+                  className="search-keyword-input"
+                  placeholder="테마명, 지역, 장르로 검색"
+                  value={inputValue}
+                  onChange={(e) => { setInputValue(e.target.value); setShowSuggestions(true); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(inputValue); }}
+                  onFocus={() => setShowSuggestions(true)}
+                />
+                {inputValue && (
+                  <button className="search-clear-btn" onClick={handleClearSearch}>✕</button>
+                )}
+                <button className="search-submit-btn" onClick={() => handleSearch(inputValue)}>검색</button>
+              </div>
+
+              {/* 필터 토글 버튼 */}
+              <button
+                className={`filter-toggle-btn ${activeFilterCount > 0 ? 'has-filter' : ''}`}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                🎛 필터{activeFilterCount > 0 && <span className="filter-badge">{activeFilterCount}</span>}
+              </button>
             </div>
 
-            {showSuggestions && (
+            {/* 자동완성 드롭다운 */}
+            {showSuggestions && (suggestions.length > 0 || (recentSearches.length > 0 && !inputValue.trim())) && (
               <div className="search-dropdown">
                 {suggestions.length > 0 && (
                   <div className="dropdown-section">
@@ -253,25 +270,51 @@ function ReservationPage() {
             )}
           </section>
 
-          {/* 필터 */}
-          <section className="filter-selection-section">
-            <div className="filter-options">
-              {[
-                { label: '시/도', value: selectedCity, onChange: (v) => { setSelectedCity(v); setSelectedDistrict('선택 안함'); }, options: cities },
-                { label: '구/군', value: selectedDistrict, onChange: (v) => setSelectedDistrict(v), options: districts, disabled: selectedCity === '선택 안함' },
-                { label: '장르', value: selectedGenre, onChange: (v) => setSelectedGenre(v), options: genres },
-                { label: '시간', value: selectedTime, onChange: (v) => setSelectedTime(v), options: TIME_OPTIONS },
-              ].map(({ label, value, onChange, options, disabled }) => (
-                <div key={label} className="filter-group">
-                  <label className="filter-label">{label}</label>
-                  <select className="filter-select" value={value}
-                    onChange={(e) => onChange(e.target.value)} disabled={disabled}>
-                    {options.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              ))}
+          {/* 태그 칩 필터 */}
+          {showFilters && (
+            <section className="chip-filter-section">
+              <div className="chip-filter-header">
+                <span>필터</span>
+                <button className="chip-reset-btn"
+                  onClick={() => { setSelectedCity('전체'); setSelectedGenre('전체'); }}>
+                  초기화
+                </button>
+              </div>
+
+              <ChipGroup
+                label="지역"
+                emoji="📍"
+                options={cities}
+                selected={selectedCity}
+                onSelect={setSelectedCity}
+              />
+              <ChipGroup
+                label="장르"
+                emoji="🎭"
+                options={GENRE_OPTIONS}
+                selected={selectedGenre}
+                onSelect={setSelectedGenre}
+              />
+            </section>
+          )}
+
+          {/* 활성 필터 태그 표시 */}
+          {activeFilterCount > 0 && (
+            <div className="active-chips-row">
+              {selectedCity !== '전체' && (
+                <span className="active-chip">
+                  📍 {selectedCity}
+                  <button onClick={() => setSelectedCity('전체')}>✕</button>
+                </span>
+              )}
+              {selectedGenre !== '전체' && (
+                <span className="active-chip">
+                  🎭 {selectedGenre}
+                  <button onClick={() => setSelectedGenre('전체')}>✕</button>
+                </span>
+              )}
             </div>
-          </section>
+          )}
 
           {/* 검색 결과 */}
           <section className="search-results-section">

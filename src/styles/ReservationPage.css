@@ -8,18 +8,7 @@
 .section-title { color: var(--accent-gold) !important; font-family: 'Cinzel', serif; }
 .section-subtitle { color: var(--text-primary) !important; }
 
-.filter-selection-section { border-color: var(--border-subtle) !important; }
 .filter-label { color: var(--text-secondary) !important; }
-.filter-select {
-  background-color: var(--bg-secondary) !important;
-  border-color: var(--border-subtle) !important;
-  color: var(--text-primary) !important;
-}
-.filter-select:focus { border-color: var(--accent-gold) !important; }
-.filter-select:disabled {
-  background-color: var(--bg-primary) !important;
-  color: var(--text-muted) !important;
-}
 
 .search-result-item {
   background-color: var(--bg-card) !important;
@@ -88,29 +77,26 @@
 .reservation-page-content {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 24px;
   width: 100%;
   max-width: 1200px;
   padding: 40px;
   box-sizing: border-box;
-  background-color: #ffffff;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
   align-items: center;
 }
 
 /* ===== 섹션 타이틀 ===== */
 .section-title,
 .section-subtitle {
-  color: #333;
   text-align: center;
   width: 100%;
-  margin-bottom: 25px;
+  margin-bottom: 16px;
 }
 .section-title { font-size: 2.2em; }
-.section-subtitle { font-size: 1.6em; }
+.section-subtitle { font-size: 1.4em; }
 
-/* ===== 키워드 검색 섹션 ===== */
+/* ===== 검색 섹션 ===== */
 .search-keyword-section {
   width: 100%;
   max-width: 700px;
@@ -118,7 +104,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+}
+
+/* 검색바 + 필터 버튼 행 */
+.search-bar-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  align-items: center;
+}
+.search-bar-row .search-input-wrapper {
+  flex: 1;
 }
 
 .search-input-wrapper {
@@ -141,7 +138,7 @@
 
 .search-keyword-input {
   flex: 1;
-  padding: 14px 8px;
+  padding: 13px 8px;
   border: none;
   outline: none;
   font-size: 1em;
@@ -161,7 +158,7 @@
 .search-clear-btn:hover { color: #333; }
 
 .search-submit-btn {
-  padding: 14px 22px;
+  padding: 13px 20px;
   background: #6f00ff;
   color: white;
   border: none;
@@ -169,13 +166,53 @@
   font-weight: bold;
   cursor: pointer;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 .search-submit-btn:hover { background: #5a00d8; }
+
+/* 필터 토글 버튼 */
+.filter-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9em;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.filter-toggle-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+.filter-toggle-btn.has-filter {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  background: rgba(212, 168, 67, 0.1);
+}
+
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  color: #0a0a0f;
+  font-size: 0.75em;
+  font-weight: 700;
+  margin-left: 2px;
+}
 
 /* 드롭다운 */
 .search-dropdown {
   position: absolute;
-  top: calc(100% - 12px + 56px);
+  top: calc(56px + 10px);
   left: 0;
   right: 0;
   background: white;
@@ -231,6 +268,7 @@
   gap: 10px;
   font-size: 0.9em;
   color: #6f00ff;
+  width: 100%;
 }
 .search-active-tag button {
   background: none;
@@ -247,92 +285,144 @@
   color: #6f00ff;
 }
 
-/* ===== 필터 섹션 ===== */
-.filter-selection-section {
+/* ===== 칩 필터 섹션 ===== */
+.chip-filter-section {
   width: 100%;
-  max-width: 900px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 14px;
 }
 
-.filter-options {
+.chip-filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95em;
+}
+
+.chip-reset-btn {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.82em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.chip-reset-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+/* 칩 그룹 */
+.chip-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chip-group-label {
+  font-size: 0.82em;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.chip-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  width: 100%;
-  margin-top: 20px;
+  gap: 6px;
 }
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  min-width: 180px;
-}
-
-.filter-label {
-  font-size: 1.1em;
-  color: #333;
-  font-weight: bold;
-}
-
-.filter-select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1.05em;
-  background-color: white;
+.chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.88em;
   cursor: pointer;
-  appearance: none;
-  background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23212121%22%20d%3D%22M7%209.5L4%206.5l3-3z%22%2F%3E%3C%2Fsvg%3E');
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 10px;
+  transition: all 0.18s;
+  white-space: nowrap;
 }
-.filter-select:focus {
-  outline: none;
-  border-color: #6f00ff;
+.chip:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
 }
-.filter-select:disabled {
-  background-color: #f5f5f5;
-  color: #aaa;
-  cursor: not-allowed;
+.chip.active {
+  background: rgba(212, 168, 67, 0.15);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  font-weight: 600;
 }
+
+/* 활성 필터 태그 */
+.active-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.active-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 12px;
+  border-radius: 20px;
+  background: rgba(212, 168, 67, 0.15);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+  font-size: 0.85em;
+  font-weight: 500;
+}
+.active-chip button {
+  background: none;
+  border: none;
+  color: var(--accent-gold);
+  cursor: pointer;
+  font-size: 0.85em;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.active-chip button:hover { opacity: 1; }
 
 /* ===== 검색 결과 ===== */
 .search-results-section {
   width: 100%;
-  padding-top: 20px;
+  padding-top: 8px;
 }
 
 .search-results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 25px;
-  justify-items: center;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 16px;
 }
 
 /* ===== 카드 ===== */
 .search-result-item {
   width: 100%;
-  min-height: 350px;
+  min-height: 320px;
   padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   border: 2px solid #eee;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   background-color: white;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 .search-result-item:hover {
   border-color: #6f00ff;
@@ -343,44 +433,51 @@
 .search-result-item .image-wrapper {
   position: relative;
   width: 100%;
-  border-radius: 10px 10px 0 0;
   overflow: hidden;
 }
-
 .search-result-item .product-image {
   width: 100%;
-  height: 180px;
+  height: 160px;
   object-fit: cover;
-  border-radius: 0;
   display: block;
+}
+.product-image-placeholder {
+  width: 100%;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  font-size: 3em;
 }
 
 .card-body {
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   flex: 1;
 }
 .card-body strong {
-  font-size: 1.1em;
+  font-size: 1em;
   color: #333;
   margin-bottom: 2px;
+  line-height: 1.3;
 }
 .card-body span {
-  font-size: 0.88em;
+  font-size: 0.83em;
   color: #777;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .reserve-button {
   background-color: #6f00ff;
   color: white;
   border: none;
-  padding: 12px 15px;
+  padding: 11px 15px;
   border-radius: 0 0 10px 10px;
   cursor: pointer;
-  font-size: 1em;
+  font-size: 0.95em;
   font-weight: bold;
   width: 100%;
   transition: background-color 0.2s ease;
@@ -418,7 +515,7 @@
   padding: 50px 0;
 }
 .no-results-emoji { font-size: 3em; margin: 0; }
-.no-results-message { color: #888; font-size: 1em; margin: 0; }
+.no-results-message { color: #888; font-size: 1em; margin: 0; text-align: center; }
 .no-results-reset-btn {
   padding: 8px 20px;
   border: 1.5px solid #6f00ff;
@@ -439,15 +536,15 @@
 @media (max-width: 768px) {
   .reservation-page-content {
     padding: 12px;
-    gap: 16px;
+    gap: 14px;
     max-width: 100%;
   }
 
   .section-title {
     font-size: 1.4em;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
-  .section-subtitle { font-size: 1.1em; }
+  .section-subtitle { font-size: 1.05em; }
 
   /* 검색창 */
   .search-keyword-section {
@@ -459,50 +556,53 @@
     padding: 10px 6px;
   }
   .search-submit-btn {
-    padding: 10px 14px;
-    font-size: 0.9em;
+    padding: 10px 12px;
+    font-size: 0.85em;
+  }
+  .filter-toggle-btn {
+    padding: 8px 10px;
+    font-size: 0.82em;
   }
 
-  /* 필터 2열 그리드 */
-  .filter-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 10px;
+  /* 칩 필터 */
+  .chip-filter-section {
+    padding: 12px;
+    gap: 10px;
   }
-  .filter-group {
-    width: 100%;
-    min-width: unset;
-    gap: 4px;
+  .chip {
+    padding: 4px 10px;
+    font-size: 0.8em;
   }
-  .filter-label { font-size: 0.85em; }
-  .filter-select {
-    padding: 7px 8px;
-    font-size: 0.88em;
-  }
-  .filter-selection-section { padding-bottom: 12px; }
+  .chip-list { gap: 5px; }
 
   /* 카드 2열 */
   .search-results-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 12px;
+    gap: 8px;
+    margin-top: 10px;
   }
   .search-result-item {
     min-height: unset;
     border-radius: 8px;
+    border-width: 1.5px;
   }
-  .search-result-item .product-image {
-    height: 110px;
+  .search-result-item .product-image,
+  .product-image-placeholder {
+    height: 100px;
   }
   .card-body {
     padding: 8px;
     gap: 3px;
   }
-  .card-body strong { font-size: 0.88em; }
-  .card-body span   { font-size: 0.75em; }
+  .card-body strong { font-size: 0.85em; }
+  .card-body span   { font-size: 0.72em; }
   .reserve-button {
-    padding: 8px 10px;
-    font-size: 0.82em;
+    padding: 7px 8px;
+    font-size: 0.8em;
+  }
+  .card-favorite-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 0.85em;
   }
 }
