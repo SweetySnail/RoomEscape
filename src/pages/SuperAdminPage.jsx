@@ -7,7 +7,7 @@ import BoxMain from '../components/BoxMain';
 import { getAllStores, updateStore, createStore, addBranch, addTheme, updateTheme, deleteTheme } from '../services/storeService';
 import { createStoreAdminAccount } from '../services/authService';
 import { getAllReservations } from '../services/reservationService';
-import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import '../styles/Global.css';
 import '../styles/AdminPage.css';
