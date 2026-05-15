@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
-import { getAllStores, updateStore, createStore, addBranch, addTheme, updateTheme, deleteTheme } from '../services/storeService';
+import { getAllStores, updateStore, createStore, addBranch, addTheme, updateTheme, deleteTheme, checkAndExpireStores } from '../services/storeService';
 import { createStoreAdminAccount } from '../services/authService';
 import { getAllReservations } from '../services/reservationService';
 import { deleteDoc, doc } from 'firebase/firestore';
@@ -57,6 +57,9 @@ function SuperAdminPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      // 만료된 매장 자동 처리 먼저 실행
+      await checkAndExpireStores();
+
       const [storeList, reservationList] = await Promise.all([
         getAllStores(),
         getAllReservations(),
@@ -159,11 +162,17 @@ function DashboardTab({ stores, reservations }) {
   }, 0);
 
   const today = new Date();
-  const soonExpiring = stores.filter(store => {
-    if (!store.contractEnd) return false;
-    const diff = Math.ceil((new Date(store.contractEnd) - today) / (1000 * 60 * 60 * 24));
-    return diff >= 0 && diff <= 30;
-  });
+  const soonExpiring = stores
+    .filter(store => {
+      if (!store.contractEnd) return false;
+      const diff = Math.ceil((new Date(store.contractEnd) - today) / (1000 * 60 * 60 * 24));
+      return diff >= 0 && diff <= 30;
+    })
+    .sort((a, b) => {
+      const diffA = Math.ceil((new Date(a.contractEnd) - today) / (1000 * 60 * 60 * 24));
+      const diffB = Math.ceil((new Date(b.contractEnd) - today) / (1000 * 60 * 60 * 24));
+      return diffA - diffB;
+    });
 
   const stats = [
     { icon: '🏢', label: '계약 사업자 수',    value: `${stores.length}개`,              key: 'owners' },
@@ -315,7 +324,16 @@ function StoresTab({ stores, reservations, onUpdate }) {
     return { thisRevenue, prevRevenue, thisFee, prevFee, themeCount };
   };
 
-  const filteredStores = stores.filter(s => filterOwner === '전체' || s.ownerName === filterOwner);
+  // D-Day 적게 남은 순으로 정렬
+  const filteredStores = stores
+    .filter(s => filterOwner === '전체' || s.ownerName === filterOwner)
+    .sort((a, b) => {
+      const getDiff = (contractEnd) => {
+        if (!contractEnd) return 9999;
+        return Math.ceil((new Date(contractEnd) - new Date()) / (1000 * 60 * 60 * 24));
+      };
+      return getDiff(a.contractEnd) - getDiff(b.contractEnd);
+    });
 
   const handleExpire = async (store) => {
     if (!window.confirm(`${store.ownerName} 매장의 계약을 종료할까요?`)) return;

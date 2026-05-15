@@ -7,6 +7,8 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+  query,
+  where,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 // import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // 추후 활성화
@@ -109,6 +111,7 @@ export const createStore = async (storeData) => {
             availableTimes: [],   // 추후 매장관리자가 설정
             rating: 0,
             reviewCount: 0,
+            active: true,
             createdAt: new Date().toISOString(),
           });
         }
@@ -173,3 +176,30 @@ export const deleteTheme = async (storeId, branchId, themeId) => {
     doc(db, 'stores', storeId, 'branches', branchId, 'themes', themeId)
   );
 };
+
+// 계약 만료된 매장 자동 처리
+export const checkAndExpireStores = async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const snapshot = await getDocs(collection(db, 'stores'));
+
+  for (const storeDoc of snapshot.docs) {
+    const store = storeDoc.data();
+    if (store.status === 'expired') continue;
+    if (!store.contractEnd) continue;
+    if (store.contractEnd >= today) continue;
+
+    // 계약 종료일이 지난 매장 자동 만료 처리
+    await updateDoc(doc(db, 'stores', storeDoc.id), {
+      status: 'expired',
+      expiredAt: new Date().toISOString(),
+    });
+
+    // 해당 매장의 products 비활성화
+    const productsSnap = await getDocs(
+      query(collection(db, 'products'), where('storeId', '==', storeDoc.id))
+    );
+    for (const productDoc of productsSnap.docs) {
+      await updateDoc(doc(db, 'products', productDoc.id), { active: false });
+    }
+  }
+};  

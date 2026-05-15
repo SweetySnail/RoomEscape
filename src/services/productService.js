@@ -12,11 +12,12 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// 전체 상품 목록 불러오기
+// 전체 상품 목록 불러오기 (active인 것만)
 export const getAllProducts = async () => {
-  const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const snapshot = await getDocs(collection(db, 'products'));
+  return snapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .filter(p => p.active !== false); // active가 false인 것 제외
 };
 
 // 상품 단건 불러오기
