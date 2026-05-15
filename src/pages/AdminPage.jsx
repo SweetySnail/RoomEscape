@@ -131,38 +131,132 @@ function AdminPage() {
 // =============================================
 // 운영 시간 설정 탭
 // =============================================
-function ScheduleTab({ store, setStore, loggedInUser }) {
+function ScheduleTab({ store, setStore }) {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
 
-  // store에서 branch/theme 목록 구성
   const branches = store?.branches || [];
 
-  // 로컬 상태로 시간 편집
   const [localBranches, setLocalBranches] = useState(
     branches.map(b => ({
       ...b,
       themes: b.themes?.map(t => ({
         ...t,
+        scheduleType: t.scheduleType || 'auto',
+        startTime: t.startTime || '09:00',
+        endTime: t.endTime || '22:00',
+        intervalMinutes: t.intervalMinutes || 60,
+        blockedSlots: t.blockedSlots || [], // 예외 시간 [{start, end}]
         availableTimes: t.availableTimes || [],
       })) || [],
     }))
   );
 
-  const toggleTime = (bi, ti, time) => {
+  // 시작+종료+간격으로 시간 슬롯 자동 생성
+  const generateSlots = (startTime, endTime, intervalMinutes, blockedSlots = []) => {
+    const slots = [];
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    const startTotal = startH * 60 + startM;
+    const endTotal = endH * 60 + endM;
+
+    for (let t = startTotal; t < endTotal; t += intervalMinutes) {
+      const h = Math.floor(t / 60).toString().padStart(2, '0');
+      const m = (t % 60).toString().padStart(2, '0');
+      const timeStr = `${h}:${m}`;
+
+      // 예외 시간 체크
+      const isBlocked = blockedSlots.some(slot => {
+        const [bsh, bsm] = slot.start.split(':').map(Number);
+        const [beh, bem] = slot.end.split(':').map(Number);
+        const bStart = bsh * 60 + bsm;
+        const bEnd = beh * 60 + bem;
+        return t >= bStart && t < bEnd;
+      });
+
+      if (!isBlocked) slots.push(timeStr);
+    }
+    return slots;
+  };
+
+  const updateThemeSchedule = (bi, ti, field, value) => {
     const updated = localBranches.map((b, bIdx) => {
       if (bIdx !== bi) return b;
       return {
         ...b,
         themes: b.themes.map((t, tIdx) => {
           if (tIdx !== ti) return t;
-          const times = t.availableTimes || [];
-          return {
-            ...t,
-            availableTimes: times.includes(time)
-              ? times.filter(tm => tm !== time)
-              : [...times, time].sort(),
-          };
+          const newTheme = { ...t, [field]: value };
+          // 자동으로 availableTimes 재계산
+          newTheme.availableTimes = generateSlots(
+            newTheme.startTime,
+            newTheme.endTime,
+            Number(newTheme.intervalMinutes),
+            newTheme.blockedSlots,
+          );
+          return newTheme;
+        }),
+      };
+    });
+    setLocalBranches(updated);
+  };
+
+  const addBlockedSlot = (bi, ti) => {
+    const updated = localBranches.map((b, bIdx) => {
+      if (bIdx !== bi) return b;
+      return {
+        ...b,
+        themes: b.themes.map((t, tIdx) => {
+          if (tIdx !== ti) return t;
+          const newBlocked = [...(t.blockedSlots || []), { start: '12:00', end: '13:00' }];
+          const newTheme = { ...t, blockedSlots: newBlocked };
+          newTheme.availableTimes = generateSlots(
+            newTheme.startTime, newTheme.endTime,
+            Number(newTheme.intervalMinutes), newBlocked
+          );
+          return newTheme;
+        }),
+      };
+    });
+    setLocalBranches(updated);
+  };
+
+  const updateBlockedSlot = (bi, ti, si, field, value) => {
+    const updated = localBranches.map((b, bIdx) => {
+      if (bIdx !== bi) return b;
+      return {
+        ...b,
+        themes: b.themes.map((t, tIdx) => {
+          if (tIdx !== ti) return t;
+          const newBlocked = t.blockedSlots.map((slot, sIdx) =>
+            sIdx === si ? { ...slot, [field]: value } : slot
+          );
+          const newTheme = { ...t, blockedSlots: newBlocked };
+          newTheme.availableTimes = generateSlots(
+            newTheme.startTime, newTheme.endTime,
+            Number(newTheme.intervalMinutes), newBlocked
+          );
+          return newTheme;
+        }),
+      };
+    });
+    setLocalBranches(updated);
+  };
+
+  const removeBlockedSlot = (bi, ti, si) => {
+    const updated = localBranches.map((b, bIdx) => {
+      if (bIdx !== bi) return b;
+      return {
+        ...b,
+        themes: b.themes.map((t, tIdx) => {
+          if (tIdx !== ti) return t;
+          const newBlocked = t.blockedSlots.filter((_, sIdx) => sIdx !== si);
+          const newTheme = { ...t, blockedSlots: newBlocked };
+          newTheme.availableTimes = generateSlots(
+            newTheme.startTime, newTheme.endTime,
+            Number(newTheme.intervalMinutes), newBlocked
+          );
+          return newTheme;
         }),
       };
     });
@@ -176,14 +270,16 @@ function ScheduleTab({ store, setStore, loggedInUser }) {
     try {
       for (const branch of localBranches) {
         for (const theme of branch.themes) {
-          // stores 서브컬렉션 업데이트
           if (branch.id && theme.id) {
             await updateTheme(store.id, branch.id, theme.id, {
               availableTimes: theme.availableTimes,
+              startTime: theme.startTime,
+              endTime: theme.endTime,
+              intervalMinutes: Number(theme.intervalMinutes),
+              blockedSlots: theme.blockedSlots || [],
             });
           }
 
-          // products 컬렉션도 동기화
           const q = query(
             collection(db, 'products'),
             where('storeId', '==', store.id),
@@ -193,16 +289,16 @@ function ScheduleTab({ store, setStore, loggedInUser }) {
           for (const docSnap of snap.docs) {
             await updateProduct(docSnap.id, {
               availableTimes: theme.availableTimes,
+              startTime: theme.startTime,
+              endTime: theme.endTime,
+              intervalMinutes: Number(theme.intervalMinutes),
+              blockedSlots: theme.blockedSlots || [],
             });
           }
         }
       }
 
-      // store 상태 업데이트
-      setStore(prev => ({
-        ...prev,
-        branches: localBranches,
-      }));
+      setStore(prev => ({ ...prev, branches: localBranches }));
       setSavedMsg('✅ 저장되었어요!');
     } catch (error) {
       setSavedMsg('❌ 저장 실패: ' + error.message);
@@ -237,55 +333,130 @@ function ScheduleTab({ store, setStore, loggedInUser }) {
         </div>
 
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9em', marginBottom: '16px' }}>
-          예약 가능한 시간대를 선택해주세요. 선택된 시간만 고객에게 노출돼요.
+          시작/종료 시간과 진행 간격을 설정하면 예약 가능한 시간이 자동으로 생성돼요.
         </p>
 
         {localBranches.map((branch, bi) => (
-          <div key={bi} style={{ marginBottom: '24px' }}>
+          <div key={bi} style={{ marginBottom: '28px' }}>
             <h4 style={{ color: 'var(--accent-gold)', marginBottom: '12px' }}>
               🏪 {branch.branchName}
             </h4>
 
-            {branch.themes?.map((theme, ti) => (
-              <div key={ti} style={{
-                background: 'var(--bg-secondary)',
-                borderRadius: '8px',
-                padding: '14px',
-                marginBottom: '12px',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <strong>{theme.name}</strong>
-                  <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>
-                    {theme.availableTimes?.length || 0}개 시간 선택됨
-                  </span>
-                </div>
+            {branch.themes?.map((theme, ti) => {
+              const preview = theme.availableTimes || [];
+              return (
+                <div key={ti} style={{
+                  background: 'var(--bg-secondary)',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '16px',
+                }}>
+                  <strong style={{ display: 'block', marginBottom: '12px' }}>
+                    🔐 {theme.name}
+                  </strong>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {ALL_TIMES.map(time => {
-                    const selected = theme.availableTimes?.includes(time);
-                    return (
-                      <button
-                        key={time}
-                        onClick={() => toggleTime(bi, ti, time)}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          border: `1.5px solid ${selected ? 'var(--accent-gold)' : 'var(--border-subtle)'}`,
-                          background: selected ? 'rgba(212,168,67,0.15)' : 'transparent',
-                          color: selected ? 'var(--accent-gold)' : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          fontWeight: selected ? 'bold' : 'normal',
-                          fontSize: '0.9em',
-                          transition: 'all 0.15s',
-                        }}
-                      >
-                        {time}
+                  {/* 시작/종료/간격 설정 */}
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                        시작 시간
+                      </label>
+                      <input
+                        type="time"
+                        className="admin-input"
+                        value={theme.startTime}
+                        onChange={(e) => updateThemeSchedule(bi, ti, 'startTime', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                        종료 시간
+                      </label>
+                      <input
+                        type="time"
+                        className="admin-input"
+                        value={theme.endTime}
+                        onChange={(e) => updateThemeSchedule(bi, ti, 'endTime', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                        진행 간격 (분)
+                      </label>
+                      <input
+                        type="number"
+                        className="admin-input"
+                        style={{ width: '80px' }}
+                        value={theme.intervalMinutes}
+                        min={30} max={180} step={5}
+                        onChange={(e) => updateThemeSchedule(bi, ti, 'intervalMinutes', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 예외 시간 설정 */}
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>
+                        🚫 예약 불가 시간대 (예외 설정)
+                      </label>
+                      <button className="mypage-btn small" onClick={() => addBlockedSlot(bi, ti)}>
+                        + 예외 추가
                       </button>
-                    );
-                  })}
+                    </div>
+                    {(theme.blockedSlots || []).map((slot, si) => (
+                      <div key={si} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <input
+                          type="time"
+                          className="admin-input"
+                          value={slot.start}
+                          onChange={(e) => updateBlockedSlot(bi, ti, si, 'start', e.target.value)}
+                        />
+                        <span style={{ color: 'var(--text-muted)' }}>~</span>
+                        <input
+                          type="time"
+                          className="admin-input"
+                          value={slot.end}
+                          onChange={(e) => updateBlockedSlot(bi, ti, si, 'end', e.target.value)}
+                        />
+                        <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>예약 불가</span>
+                        <button
+                          className="mypage-btn small danger"
+                          onClick={() => removeBlockedSlot(bi, ti, si)}
+                        >✕</button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 생성된 시간 미리보기 */}
+                  <div>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                      📋 생성된 예약 시간 ({preview.length}개)
+                    </label>
+                    {preview.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {preview.map(time => (
+                          <span key={time} style={{
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            background: 'rgba(212,168,67,0.15)',
+                            border: '1px solid var(--accent-gold)',
+                            color: 'var(--accent-gold)',
+                            fontSize: '0.85em',
+                          }}>
+                            {time}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>
+                        설정값을 입력하면 시간이 자동 생성돼요.
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>

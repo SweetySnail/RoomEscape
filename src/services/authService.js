@@ -19,6 +19,11 @@ import { auth, db } from '../firebase';
 
 // 회원가입 (일반 유저)
 export const signUp = async ({ email, password, nickname }) => {
+  // 총관리자 닉네임 예약
+  const reserved = ['👑 총관리자 👑', '총관리자', 'superadmin', 'SUPERADMIN'];
+  if (reserved.some(r => nickname.trim() === r)) {
+    throw new Error('사용할 수 없는 닉네임이에요.');
+  }
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
 

@@ -367,6 +367,18 @@ function StoresTab({ stores, reservations, onUpdate }) {
 // =============================================
 // 사업자 등록 탭
 // =============================================
+function emptyTheme(minPeople = 2, maxPeople = 6) {
+  return {
+    name: '', genre: '공포', difficulty: 'normal',
+    minPeople, maxPeople, duration: 60,
+    description: '', imageFile: null, imagePreview: '',
+    pricing: Array.from(
+      { length: maxPeople - minPeople + 1 },
+      (_, i) => ({ people: minPeople + i, price: '' })
+    ),
+  };
+}
+
 function RegisterTab({ onComplete }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -390,23 +402,33 @@ function RegisterTab({ onComplete }) {
     { branchName: '', address: '', themes: [emptyTheme()] }
   ]);
 
-  function emptyTheme() {
-    return {
-      name: '', genre: '공포', difficulty: 'normal',
-      minPeople: 2, maxPeople: 6, duration: 60,
-      description: '', imageFile: null, imagePreview: '',
-      pricing: [{ people: 2, price: '' }],
-    };
-  }
-
   const addBranch = () => setBranches([...branches, { branchName: '', address: '', themes: [emptyTheme()] }]);
   const removeBranch = (bi) => setBranches(branches.filter((_, i) => i !== bi));
   const addTheme = (bi) => { const u = [...branches]; u[bi].themes.push(emptyTheme()); setBranches(u); };
   const removeTheme = (bi, ti) => { const u = [...branches]; u[bi].themes = u[bi].themes.filter((_, i) => i !== ti); setBranches(u); };
   const updateBranch = (bi, field, value) => { const u = [...branches]; u[bi][field] = value; setBranches(u); };
-  const updateTheme = (bi, ti, field, value) => { const u = [...branches]; u[bi].themes[ti][field] = value; setBranches(u); };
 
-  // 이미지 미리보기 (업로드 기능은 추후 활성화)
+  const updateTheme = (bi, ti, field, value) => {
+    const u = [...branches];
+    u[bi].themes[ti][field] = value;
+
+    if (field === 'minPeople' || field === 'maxPeople') {
+      const theme = u[bi].themes[ti];
+      const min = Number(field === 'minPeople' ? value : theme.minPeople);
+      const max = Number(field === 'maxPeople' ? value : theme.maxPeople);
+      if (min > 0 && max >= min) {
+        u[bi].themes[ti].pricing = Array.from(
+          { length: max - min + 1 },
+          (_, i) => {
+            const existing = theme.pricing?.find(p => p.people === min + i);
+            return { people: min + i, price: existing?.price || '' };
+          }
+        );
+      }
+    }
+    setBranches(u);
+  };
+
   const handleImageChange = (bi, ti, file) => {
     if (!file) return;
     const u = [...branches];
@@ -415,19 +437,8 @@ function RegisterTab({ onComplete }) {
     setBranches(u);
   };
 
-  const addPricing = (bi, ti) => {
-    const u = [...branches];
-    const last = u[bi].themes[ti].pricing.slice(-1)[0]?.people || 1;
-    u[bi].themes[ti].pricing.push({ people: last + 1, price: '' });
-    setBranches(u);
-  };
   const updatePricing = (bi, ti, pi, field, value) => {
     const u = [...branches]; u[bi].themes[ti].pricing[pi][field] = value; setBranches(u);
-  };
-  const removePricing = (bi, ti, pi) => {
-    const u = [...branches];
-    u[bi].themes[ti].pricing = u[bi].themes[ti].pricing.filter((_, i) => i !== pi);
-    setBranches(u);
   };
 
   const handleRegisterStore = async () => {
@@ -436,7 +447,6 @@ function RegisterTab({ onComplete }) {
     }
     setLoading(true);
     try {
-      // 이미지는 추후 구현 예정 - imageFile, imagePreview 제거 후 저장
       const branchesClean = branches.map(branch => ({
         ...branch,
         themes: branch.themes.map(theme => {
@@ -501,8 +511,6 @@ function RegisterTab({ onComplete }) {
             { label: '사장 이름 *', field: 'ownerName', type: 'text' },
             { label: '사업자 이메일 * (로그인 계정)', field: 'email', type: 'email' },
             { label: '연락처 *', field: 'contact', type: 'text' },
-            { label: '계좌번호', field: 'bankAccount', type: 'text' },
-            { label: '예금주', field: 'bankHolder', type: 'text' },
           ].map(({ label, field, type }) => (
             <div key={field} className="input-row">
               <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>{label}</label>
@@ -511,13 +519,23 @@ function RegisterTab({ onComplete }) {
             </div>
           ))}
 
-          {/* 은행명 선택 */}
+          {/* 은행명 → 예금주 → 계좌번호 순서 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>은행명</label>
             <select className="admin-input admin-select" value={storeForm.bankName}
               onChange={(e) => setStoreForm({ ...storeForm, bankName: e.target.value })}>
               {BANK_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
+          </div>
+          <div className="input-row">
+            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>예금주</label>
+            <input type="text" className="mypage-input" value={storeForm.bankHolder}
+              onChange={(e) => setStoreForm({ ...storeForm, bankHolder: e.target.value })} />
+          </div>
+          <div className="input-row">
+            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계좌번호</label>
+            <input type="text" className="mypage-input" value={storeForm.bankAccount}
+              onChange={(e) => setStoreForm({ ...storeForm, bankAccount: e.target.value })} />
           </div>
 
           {/* 수수료 방식 */}
@@ -648,7 +666,7 @@ function RegisterTab({ onComplete }) {
                       onChange={(e) => updateTheme(bi, ti, 'maxPeople', e.target.value)} />
                   </div>
 
-                  {/* 이미지 업로드 UI (기능은 추후 활성화) */}
+                  {/* 이미지 업로드 UI (기능 추후 활성화) */}
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block' }}>
                       테마 이미지 <span style={{ color: '#ff6b7a', fontSize: '0.85em' }}>(업로드 기능 준비 중)</span>
@@ -668,25 +686,23 @@ function RegisterTab({ onComplete }) {
                       onChange={(e) => updateTheme(bi, ti, 'description', e.target.value)} />
                   </div>
 
-                  {/* 인원별 가격 */}
+                  {/* 인원별 가격 — 최소/최대 인원 기반 자동 생성 */}
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <label style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>인원별 가격</label>
-                      <button className="mypage-btn small" onClick={() => addPricing(bi, ti)}>+ 인원 추가</button>
-                    </div>
+                    <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                      인원별 가격
+                    </label>
                     {theme.pricing.map((p, pi) => (
                       <div key={pi} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                        <input type="number" className="mypage-input" style={{ width: '70px' }}
-                          placeholder="인원" value={p.people}
-                          onChange={(e) => updatePricing(bi, ti, pi, 'people', Number(e.target.value))} />
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>명</span>
-                        <input type="number" className="mypage-input" style={{ width: '120px' }}
+                        <span style={{
+                          minWidth: '40px', textAlign: 'center',
+                          color: 'var(--accent-gold)', fontWeight: 'bold', fontSize: '0.9em'
+                        }}>
+                          {p.people}명
+                        </span>
+                        <input type="number" className="mypage-input" style={{ width: '130px' }}
                           placeholder="가격 (원)" value={p.price}
                           onChange={(e) => updatePricing(bi, ti, pi, 'price', Number(e.target.value))} />
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>원</span>
-                        {theme.pricing.length > 1 && (
-                          <button className="mypage-btn small danger" onClick={() => removePricing(bi, ti, pi)}>✕</button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -854,7 +870,6 @@ function StoreDetailModal({ store, reservations, onClose }) {
                 <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>{branch.address}</span>
               </div>
 
-              {/* 지점 매출 요약 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', padding: '10px 16px', background: 'var(--bg-secondary)', margin: '8px 0', borderRadius: '6px' }}>
                 <div>
                   <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>전달 매출</div>
@@ -870,7 +885,6 @@ function StoreDetailModal({ store, reservations, onClose }) {
                 </div>
               </div>
 
-              {/* 테마 목록 */}
               <div style={{ padding: '8px 16px' }}>
                 <strong style={{ fontSize: '0.9em', color: 'var(--text-muted)' }}>테마 목록</strong>
                 <div className="theme-stats-table" style={{ marginTop: '8px' }}>
