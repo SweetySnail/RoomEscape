@@ -41,7 +41,7 @@ function BoxSlider({ title, sortBy, handleBoxClick, interval = 3000 }) {
 
   useEffect(() => {
     if (sortedProducts.length === 0) return;
-    const interval = setInterval(() => {
+    const timer = setInterval(() => {
       setCurrentIndex((prevIndex) => {
         const nextIndex = prevIndex + 1;
         if (nextIndex >= clonedProducts.length - itemsPerPage) {
@@ -59,8 +59,8 @@ function BoxSlider({ title, sortBy, handleBoxClick, interval = 3000 }) {
         return nextIndex;
       });
     }, interval);
-    return () => clearInterval(interval);
-  }, [clonedProducts.length, sortedProducts.length, itemWidth, itemsPerPage]);
+    return () => clearInterval(timer);
+  }, [clonedProducts.length, sortedProducts.length, itemWidth, itemsPerPage, interval]);
 
   const goToNextSlide = () => {
     setCurrentIndex((prevIndex) => {
