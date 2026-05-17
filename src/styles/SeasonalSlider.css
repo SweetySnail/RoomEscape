@@ -1,0 +1,182 @@
+/* ===== 시즌 이벤트 섹션 ===== */
+.seasonal-section {
+  width: 100%;
+  padding: 8px 0;
+}
+
+.seasonal-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.seasonal-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.seasonal-icon { font-size: 1.8em; }
+
+.seasonal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8em;
+  color: #ff6b35;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.seasonal-badge {
+  background: linear-gradient(135deg, #ff6b35, #ff3366);
+  color: white;
+  font-size: 0.7em;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.1em;
+}
+
+.seasonal-subtitle {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ===== 캐러셀 ===== */
+.seasonal-carousel-container {
+  width: calc(180px * 4 + 10px * 4 * 2);
+  max-width: 920px;
+  overflow: hidden;
+  margin: 10px auto;
+  position: relative;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  background: linear-gradient(135deg,
+    rgba(255, 107, 53, 0.03) 0%,
+    rgba(255, 51, 102, 0.03) 100%);
+}
+
+/* ===== 카드 ===== */
+.seasonal-card {
+  flex-shrink: 0;
+  width: 180px;
+  margin: 10px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.seasonal-card:hover {
+  transform: translateY(-6px);
+  border-color: #ff6b35;
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.25);
+}
+
+/* 카드 이미지 */
+.seasonal-card-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+}
+.seasonal-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.seasonal-card-img-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a0a0a, #2a1010);
+  font-size: 3em;
+}
+
+/* D-Day 배지 */
+.seasonal-dday-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 107, 53, 0.9);
+  color: white;
+  font-size: 0.72em;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+.seasonal-dday-badge.urgent {
+  background: rgba(220, 30, 30, 0.95);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* 기간 한정 배지 */
+.seasonal-limited-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, #ff6b35, #ff3366);
+  color: white;
+  font-size: 0.65em;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+/* 카드 본문 */
+.seasonal-card-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.seasonal-card-title {
+  font-size: 0.88em;
+  color: var(--text-primary);
+  line-height: 1.3;
+  display: block;
+}
+.seasonal-card-venue {
+  font-size: 0.76em;
+  color: #ff6b35;
+}
+.seasonal-card-period {
+  font-size: 0.72em;
+  color: var(--text-muted);
+}
+.seasonal-card-genre {
+  font-size: 0.74em;
+  color: var(--text-secondary);
+}
+
+/* ===== 모바일 ===== */
+@media (max-width: 768px) {
+  .seasonal-carousel-container {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .seasonal-title { font-size: 1.3em; }
+  .seasonal-icon  { font-size: 1.4em; }
+
+  .seasonal-card {
+    width: 140px;
+    margin: 6px;
+  }
+  .seasonal-card-img-wrap { height: 90px; }
+  .seasonal-card-title    { font-size: 0.8em; }
+  .seasonal-card-venue,
+  .seasonal-card-period,
+  .seasonal-card-genre    { font-size: 0.7em; }
+}

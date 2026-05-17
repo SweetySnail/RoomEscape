@@ -769,6 +769,10 @@ function RegisterTab({ onComplete }) {
     bankName: BANK_OPTIONS[0], bankAccount: '', bankHolder: '',
     feeType: 'rate', discountRate: 10, fixedFee: '',
     contractStart: '', contractEnd: '',
+    isTemporary: false,
+    operationStart: '',
+    operationEnd: '',
+    venue: '',
   });
 
   const [branches, setBranches] = useState([
@@ -999,6 +1003,45 @@ function RegisterTab({ onComplete }) {
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계약 종료일</label>
             <input type="date" className="mypage-input" value={storeForm.contractEnd}
               onChange={(e) => setStoreForm({ ...storeForm, contractEnd: e.target.value })} />
+          </div>
+          {/* 기간 한정 운영 토글 */}
+          <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ color: 'var(--text-muted)' }}>운영 방식</label>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {[
+                { value: false, label: '🏪 상시 운영' },
+                { value: true,  label: '🎃 기간 한정 운영' },
+              ].map(opt => (
+                <label key={String(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <input type="radio" name="isTemporary"
+                    checked={storeForm.isTemporary === opt.value}
+                    onChange={() => setStoreForm({ ...storeForm, isTemporary: opt.value })} />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+
+            {storeForm.isTemporary && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '4px' }}>
+                <div className="input-row">
+                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>장소명 (venue)</label>
+                  <input type="text" className="mypage-input"
+                    placeholder="예) 한국민속촌, 서울대공원"
+                    value={storeForm.venue}
+                    onChange={(e) => setStoreForm({ ...storeForm, venue: e.target.value })} />
+                </div>
+                <div className="input-row">
+                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 시작일</label>
+                  <input type="date" className="mypage-input" value={storeForm.operationStart}
+                    onChange={(e) => setStoreForm({ ...storeForm, operationStart: e.target.value })} />
+                </div>
+                <div className="input-row">
+                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 종료일</label>
+                  <input type="date" className="mypage-input" value={storeForm.operationEnd}
+                    onChange={(e) => setStoreForm({ ...storeForm, operationEnd: e.target.value })} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

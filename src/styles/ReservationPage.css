@@ -534,6 +534,17 @@
   color: white;
 }
 
+.chip.seasonal-chip {
+  border-color: rgba(255, 107, 53, 0.4);
+  color: #ff6b35;
+}
+.chip.seasonal-chip:hover,
+.chip.seasonal-chip.active {
+  background: rgba(255, 107, 53, 0.15);
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+
 /* ===== 모바일 반응형 ===== */
 @media (max-width: 768px) {
   .reservation-page-content {

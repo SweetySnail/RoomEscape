@@ -13,6 +13,7 @@ import { toggleFavorite } from '../utils/FavoriteUtils';
 import { checkIsFavorite } from '../services/favoriteService';
 
 const GENRE_OPTIONS = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
+const [onlyTemporary, setOnlyTemporary] = useState(false);
 
 // ===== 카드 컴포넌트 =====
 function ProductCard({ product, onClick }) {
@@ -158,7 +159,8 @@ function ReservationPage() {
       p.address?.toLowerCase().includes(keyword);
     const matchCity = selectedCity === '전체' || p.address?.includes(selectedCity);
     const matchGenre = selectedGenre === '전체' || p.genre === selectedGenre;
-    return matchKeyword && matchCity && matchGenre;
+    const matchTemporary = !onlyTemporary || p.isTemporary === true;
+    return matchKeyword && matchCity && matchGenre && matchTemporary;
   });
 
   const suggestions = inputValue.trim()
@@ -187,7 +189,7 @@ function ReservationPage() {
     setShowSuggestions(false);
   };
 
-  const activeFilterCount = [selectedCity, selectedGenre].filter(v => v !== '전체').length;
+  const activeFilterCount = [selectedCity, selectedGenre].filter(v => v !== '전체').length + (onlyTemporary ? 1 : 0);
 
   return (
     <div className="page-container">
@@ -280,6 +282,24 @@ function ReservationPage() {
                   초기화
                 </button>
               </div>
+              {/* 기간 한정 토글 */}
+              <div className="chip-group">
+                <span className="chip-group-label">🎃 특별 운영</span>
+                <div className="chip-list">
+                  <button
+                    className={`chip ${!onlyTemporary ? 'active' : ''}`}
+                    onClick={() => setOnlyTemporary(false)}
+                  >
+                    전체
+                  </button>
+                  <button
+                    className={`chip seasonal-chip ${onlyTemporary ? 'active' : ''}`}
+                    onClick={() => setOnlyTemporary(true)}
+                  >
+                    🎃 기간 한정만
+                  </button>
+                </div>
+              </div>
 
               <ChipGroup
                 label="지역"
@@ -311,6 +331,13 @@ function ReservationPage() {
                 <span className="active-chip">
                   🎭 {selectedGenre}
                   <button onClick={() => setSelectedGenre('전체')}>✕</button>
+                </span>
+              )}
+              {onlyTemporary && (
+                <span className="active-chip"
+                  style={{ borderColor: '#ff6b35', color: '#ff6b35', background: 'rgba(255,107,53,0.15)' }}>
+                  🎃 기간 한정
+                  <button onClick={() => setOnlyTemporary(false)}>✕</button>
                 </span>
               )}
             </div>

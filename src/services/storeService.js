@@ -109,6 +109,10 @@ export const createStore = async (storeData) => {
             address: branch.address,
             ownerName: rest.ownerName,
             availableTimes: [],   // 추후 매장관리자가 설정
+            isTemporary: rest.isTemporary || false,
+            operationStart: rest.operationStart || null,
+            operationEnd: rest.operationEnd || null,
+            venue: rest.venue || '',
             rating: 0,
             reviewCount: 0,
             active: true,
