@@ -13,7 +13,6 @@ import { toggleFavorite } from '../utils/FavoriteUtils';
 import { checkIsFavorite } from '../services/favoriteService';
 
 const GENRE_OPTIONS = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
-const [onlyTemporary, setOnlyTemporary] = useState(false);
 
 // ===== 카드 컴포넌트 =====
 function ProductCard({ product, onClick }) {
@@ -106,6 +105,7 @@ function ReservationPage() {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [onlyTemporary, setOnlyTemporary] = useState(false);
 
   const [searchKeyword, setSearchKeyword] = useState('');
   const [inputValue, setInputValue] = useState('');
