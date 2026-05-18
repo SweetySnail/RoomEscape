@@ -1,5 +1,5 @@
 // src/pages/SuperAdminPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
@@ -763,6 +763,7 @@ function RegisterTab({ onComplete }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState('');
+  const isSubmitting = useRef(false);
 
   const [storeForm, setStoreForm] = useState({
     ownerName: '', email: '', contact: '',
@@ -860,14 +861,42 @@ function RegisterTab({ onComplete }) {
   };
 
   const handleRegisterStore = async () => {
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
+
     if (!storeForm.ownerName || !storeForm.email || !storeForm.contact) {
-      alert('필수 항목을 입력해주세요.'); return;
+      alert('필수 항목을 입력해주세요.');
+      isSubmitting.current = false;
+      return;
     }
-    for (const branch of branches) {
-      if (!branch.city || !branch.district) {
-        alert('모든 지점의 시/도와 구/군을 선택해주세요.'); return;
+
+    if (storeForm.isTemporary) {
+      if (!storeForm.operationStart || !storeForm.operationEnd) {
+        alert('기간 한정 운영의 시작일과 종료일을 입력해주세요.');
+        isSubmitting.current = false;
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      if (storeForm.operationEnd < today) {
+        alert('운영 종료일이 오늘보다 이전이에요. 날짜를 다시 확인해주세요.');
+        isSubmitting.current = false;
+        return;
+      }
+      if (storeForm.operationEnd < storeForm.operationStart) {
+        alert('운영 종료일이 시작일보다 이전이에요.');
+        isSubmitting.current = false;
+        return;
       }
     }
+
+    for (const branch of branches) {
+      if (!branch.city || !branch.district) {
+        alert('모든 지점의 시/도와 구/군을 선택해주세요.');
+        isSubmitting.current = false;
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const branchesClean = branches.map(branch => ({
@@ -891,6 +920,7 @@ function RegisterTab({ onComplete }) {
       alert('등록 실패: ' + error.message);
     } finally {
       setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
@@ -994,6 +1024,7 @@ function RegisterTab({ onComplete }) {
             )}
           </div>
 
+          {/* 계약 기간 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계약 시작일</label>
             <input type="date" className="mypage-input" value={storeForm.contractStart}
@@ -1004,7 +1035,8 @@ function RegisterTab({ onComplete }) {
             <input type="date" className="mypage-input" value={storeForm.contractEnd}
               onChange={(e) => setStoreForm({ ...storeForm, contractEnd: e.target.value })} />
           </div>
-          {/* 기간 한정 운영 토글 */}
+
+          {/* 운영 방식 */}
           <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
             <label style={{ color: 'var(--text-muted)' }}>운영 방식</label>
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -1022,21 +1054,23 @@ function RegisterTab({ onComplete }) {
             </div>
 
             {storeForm.isTemporary && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '4px',
+                background: 'rgba(255,107,53,0.05)', border: '1px solid rgba(255,107,53,0.2)',
+                borderRadius: '8px', padding: '12px' }}>
                 <div className="input-row">
-                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>장소명 (venue)</label>
+                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>장소명 *</label>
                   <input type="text" className="mypage-input"
                     placeholder="예) 한국민속촌, 서울대공원"
                     value={storeForm.venue}
                     onChange={(e) => setStoreForm({ ...storeForm, venue: e.target.value })} />
                 </div>
                 <div className="input-row">
-                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 시작일</label>
+                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 시작일 *</label>
                   <input type="date" className="mypage-input" value={storeForm.operationStart}
                     onChange={(e) => setStoreForm({ ...storeForm, operationStart: e.target.value })} />
                 </div>
                 <div className="input-row">
-                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 종료일</label>
+                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 종료일 *</label>
                   <input type="date" className="mypage-input" value={storeForm.operationEnd}
                     onChange={(e) => setStoreForm({ ...storeForm, operationEnd: e.target.value })} />
                 </div>
@@ -1063,14 +1097,11 @@ function RegisterTab({ onComplete }) {
             </div>
 
             <div className="input-group-vertical" style={{ marginBottom: '16px' }}>
-              {/* 지점명 */}
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>지점명 *</label>
                 <input type="text" className="mypage-input" value={branch.branchName}
                   onChange={(e) => updateBranchLocal(bi, 'branchName', e.target.value)} />
               </div>
-
-              {/* 시/도 선택 */}
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>시/도 *</label>
                 <select className="admin-input admin-select"
@@ -1084,8 +1115,6 @@ function RegisterTab({ onComplete }) {
                   {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-
-              {/* 구/군 선택 */}
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>구/군 *</label>
                 <select className="admin-input admin-select"
@@ -1099,8 +1128,6 @@ function RegisterTab({ onComplete }) {
                   {(DISTRICTS[branch.city] || []).map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
-
-              {/* 상세 주소 */}
               <div className="input-row">
                 <label style={{ minWidth: '100px', color: 'var(--text-muted)' }}>상세 주소</label>
                 <input type="text" className="mypage-input"
