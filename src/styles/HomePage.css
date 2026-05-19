@@ -17,7 +17,7 @@
 /* ===== 히어로 배너 ===== */
 .hero-banner {
   width: 100%;
-  min-height: 380px;
+  min-height: 400px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@
     radial-gradient(ellipse at 80% 20%, rgba(212, 168, 67, 0.06) 0%, transparent 50%),
     linear-gradient(135deg, #0d0d18 0%, #12121f 50%, #0a0a14 100%);
   border: 1px solid var(--border-subtle);
-  padding: 48px 56px;
+  padding: 52px 60px;
   box-shadow: var(--shadow-card), 0 0 60px rgba(212, 168, 67, 0.05);
 }
 
@@ -43,61 +43,64 @@
 .hero-content { position: relative; z-index: 1; }
 
 .hero-eyebrow {
-  font-size: 0.85em;
+  font-size: 0.82em;
   color: var(--accent-gold);
   font-weight: 600;
-  letter-spacing: 0.1em;
-  margin-bottom: 12px;
-  opacity: 0.9;
+  letter-spacing: 0.15em;
+  margin-bottom: 16px;
+  opacity: 0.85;
+  text-transform: uppercase;
 }
 
 .hero-title {
   font-family: 'Cinzel', serif;
-  font-size: 2.8em;
+  font-size: 3em;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.25;
-  margin-bottom: 14px;
+  line-height: 1.2;
+  margin-bottom: 16px;
   letter-spacing: 0.02em;
 }
 
 .hero-title-highlight {
   color: var(--accent-gold);
-  text-shadow: 0 0 30px var(--accent-glow);
+  text-shadow: 0 0 40px var(--accent-glow);
 }
 
 .hero-subtitle {
-  font-size: 1em;
+  font-size: 1.05em;
   color: var(--text-secondary);
-  margin-bottom: 28px;
-  line-height: 1.6;
+  margin-bottom: 32px;
+  line-height: 1.7;
+  max-width: 480px;
 }
 
 .hero-buttons {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .hero-btn {
-  padding: 13px 28px;
+  padding: 14px 32px;
   border-radius: var(--radius-md);
   font-size: 0.95em;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.25s ease;
   font-family: 'Noto Sans KR', sans-serif;
+  letter-spacing: 0.03em;
 }
 .hero-btn.primary {
   background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
   color: #0a0a0f;
   border: none;
-  box-shadow: 0 4px 16px rgba(212, 168, 67, 0.3);
+  box-shadow: 0 4px 20px rgba(212, 168, 67, 0.35);
 }
 .hero-btn.primary:hover {
   background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold));
-  box-shadow: 0 6px 24px rgba(212, 168, 67, 0.4);
+  box-shadow: 0 6px 28px rgba(212, 168, 67, 0.5);
   transform: translateY(-2px);
 }
 .hero-btn.secondary {
@@ -115,15 +118,16 @@
   font-size: 0.88em;
   color: var(--text-muted);
   margin: 0;
+  font-style: italic;
 }
 
 /* 히어로 통계 */
 .hero-stats {
   display: flex;
   align-items: center;
-  gap: 24px;
-  margin-top: 32px;
-  padding-top: 24px;
+  gap: 32px;
+  margin-top: 36px;
+  padding-top: 28px;
   border-top: 1px solid var(--border-subtle);
   position: relative;
   z-index: 1;
@@ -132,53 +136,56 @@
 .hero-stat {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .hero-stat strong {
-  font-size: 1.5em;
+  font-size: 1.8em;
   font-weight: 700;
   color: var(--accent-gold);
   font-family: 'Cinzel', serif;
+  line-height: 1;
 }
 .hero-stat span {
-  font-size: 0.78em;
+  font-size: 0.75em;
   color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .hero-stat-divider {
   width: 1px;
-  height: 36px;
+  height: 40px;
   background: var(--border-subtle);
 }
 
-/* ===== 가로 스크롤 섹션 ===== */
+/* ===== 섹션 공통 ===== */
 .h-section {
   width: 100%;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .h-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
-  padding: 0 4px;
+  margin-bottom: 16px;
+  padding: 0 2px;
 }
 
 .h-section-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.h-section-icon { font-size: 1.4em; }
+.h-section-icon { font-size: 1.3em; }
 
 .h-section-title {
   font-family: 'Cinzel', serif;
-  font-size: 1.4em;
+  font-size: 1.35em;
   font-weight: 700;
   margin: 0;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .h-section-btns {
@@ -187,13 +194,13 @@
 }
 
 .h-scroll-btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--accent-gold);
-  font-size: 1.2em;
+  font-size: 1.3em;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -204,13 +211,14 @@
 .h-scroll-btn:hover {
   background: rgba(212, 168, 67, 0.15);
   border-color: var(--accent-gold);
+  transform: scale(1.05);
 }
 
 .h-scroll-track {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   overflow-x: auto;
-  padding: 8px 4px 16px;
+  padding: 8px 2px 20px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -220,26 +228,28 @@
 /* ===== 홈 카드 ===== */
 .home-card {
   flex-shrink: 0;
-  width: 200px;
+  width: 210px;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   scroll-snap-align: start;
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  position: relative;
 }
 .home-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-8px);
   border-color: var(--accent-gold);
-  box-shadow: var(--shadow-card), var(--shadow-glow);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 0 20px rgba(212,168,67,0.15);
 }
 
+/* 카드 이미지 */
 .home-card-img-wrap {
   position: relative;
   width: 100%;
-  height: 130px;
+  height: 145px;
   overflow: hidden;
 }
 .home-card-img {
@@ -247,97 +257,159 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.3s ease;
+  transition: transform 0.4s ease;
 }
-.home-card:hover .home-card-img { transform: scale(1.05); }
+.home-card:hover .home-card-img {
+  transform: scale(1.08);
+}
 
+/* 이미지 없을 때 그라데이션 배경 */
 .home-card-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
-  font-size: 2.5em;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-size: 3em;
+  width: 100%;
+  height: 100%;
 }
 
+/* 이미지 위 그라데이션 오버레이 */
+.home-card-img-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(10,10,15,0.85) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* D-Day 배지 */
 .home-card-dday {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(255, 107, 53, 0.9);
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 107, 53, 0.92);
   color: white;
-  font-size: 0.7em;
+  font-size: 0.68em;
   font-weight: 700;
-  padding: 3px 7px;
+  padding: 3px 8px;
   border-radius: 4px;
+  z-index: 2;
+  letter-spacing: 0.05em;
 }
 .home-card-dday.urgent {
+  background: rgba(220, 38, 38, 0.95);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.8; transform: scale(1.05); }
+  50%       { opacity: 0.85; transform: scale(1.06); }
 }
 
+/* 장르 배지 */
 .home-card-genre-badge {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: rgba(10, 10, 15, 0.8);
+  bottom: 10px;
+  left: 10px;
+  background: rgba(212, 168, 67, 0.2);
   color: var(--accent-gold);
-  font-size: 0.68em;
-  padding: 2px 7px;
-  border-radius: 3px;
-  backdrop-filter: blur(4px);
-  border: 1px solid var(--border-subtle);
+  font-size: 0.66em;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(212, 168, 67, 0.3);
+  backdrop-filter: blur(6px);
+  z-index: 2;
+  letter-spacing: 0.05em;
 }
 
+/* 카드 본문 */
 .home-card-body {
-  padding: 12px;
+  padding: 14px 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
+
 .home-card-title {
-  font-size: 0.92em;
+  font-size: 0.95em;
+  font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.3;
+  line-height: 1.35;
   display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: 0.01em;
 }
+
 .home-card-branch {
-  font-size: 0.76em;
+  font-size: 0.74em;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .home-card-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 2px;
 }
+
 .home-card-rating {
   font-size: 0.78em;
   color: var(--accent-gold);
-  font-weight: 600;
+  font-weight: 700;
 }
+
 .home-card-difficulty {
-  font-size: 0.72em;
+  font-size: 0.7em;
   color: var(--text-muted);
 }
+
+/* 가격 — 카드 하단 강조 */
 .home-card-price {
-  font-size: 0.82em;
+  font-size: 0.92em;
   color: var(--accent-gold);
   font-weight: 700;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  letter-spacing: 0.02em;
+}
+
+/* 호버 시 예약 오버레이 */
+.home-card::before {
+  content: '예약하기 →';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark));
+  color: #0a0a0f;
+  font-size: 0.82em;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  z-index: 3;
+  letter-spacing: 0.05em;
+}
+.home-card:hover::before {
+  transform: translateY(0);
 }
 
 /* ===== 장르별 섹션 ===== */
 .genre-section {
   width: 100%;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .genre-chips {
@@ -345,37 +417,42 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 20px;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 .genre-chip {
-  padding: 6px 16px;
-  border-radius: 20px;
+  padding: 7px 18px;
+  border-radius: 24px;
   border: 1.5px solid var(--border-subtle);
   background: transparent;
-  color: var(--text-secondary);
-  font-size: 0.88em;
+  color: var(--text-muted);
+  font-size: 0.85em;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.18s;
+  transition: all 0.18s ease;
   font-family: 'Noto Sans KR', sans-serif;
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 .genre-chip:hover {
   border-color: var(--accent-gold);
   color: var(--accent-gold);
+  background: rgba(212, 168, 67, 0.05);
 }
 .genre-chip.active {
   background: rgba(212, 168, 67, 0.15);
   border-color: var(--accent-gold);
   color: var(--accent-gold);
   font-weight: 700;
+  box-shadow: 0 0 12px rgba(212, 168, 67, 0.15);
 }
 
+/* 장르 그리드 */
 .genre-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 /* ===== 공통 버튼 ===== */
@@ -391,41 +468,41 @@
 
   /* 히어로 */
   .hero-banner {
-    min-height: 280px;
+    min-height: 260px;
     padding: 28px 20px;
     border-radius: var(--radius-md);
   }
-  .hero-title {
-    font-size: 1.8em;
-  }
-  .hero-subtitle { font-size: 0.88em; }
-  .hero-btn {
-    padding: 10px 18px;
-    font-size: 0.88em;
-  }
-  .hero-stats { gap: 14px; margin-top: 20px; padding-top: 16px; }
-  .hero-stat strong { font-size: 1.2em; }
+  .hero-title { font-size: 1.75em; }
+  .hero-subtitle { font-size: 0.88em; margin-bottom: 20px; }
+  .hero-btn { padding: 11px 20px; font-size: 0.88em; }
+  .hero-stats { gap: 20px; margin-top: 20px; padding-top: 18px; }
+  .hero-stat strong { font-size: 1.4em; }
+  .hero-stat span { font-size: 0.7em; }
 
-  /* 가로 스크롤 */
-  .home-card { width: 155px; }
-  .home-card-img-wrap { height: 100px; }
+  /* 카드 */
+  .home-card { width: 160px; }
+  .home-card-img-wrap { height: 110px; }
+  .home-card-body { padding: 10px 10px 12px; gap: 4px; }
   .home-card-title { font-size: 0.85em; }
-  .h-section-title { font-size: 1.15em; }
-  .h-scroll-btn { width: 28px; height: 28px; font-size: 1em; }
+  .home-card-price { font-size: 0.82em; }
+  .home-card::before { font-size: 0.75em; padding: 8px; }
+
+  /* 섹션 헤더 */
+  .h-section-title { font-size: 1.1em; }
+  .h-scroll-btn { width: 28px; height: 28px; font-size: 1.1em; }
+  .h-scroll-track { gap: 10px; }
 
   /* 장르 그리드 → 2열 */
   .genre-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
-  .genre-chip {
-    padding: 5px 12px;
-    font-size: 0.82em;
-  }
+  .genre-chip { padding: 6px 14px; font-size: 0.8em; }
 }
 
 @media (max-width: 480px) {
-  .hero-title { font-size: 1.5em; }
+  .hero-title { font-size: 1.45em; }
   .hero-buttons { flex-direction: column; }
   .hero-btn { width: 100%; text-align: center; }
+  .hero-stats { gap: 14px; }
 }
