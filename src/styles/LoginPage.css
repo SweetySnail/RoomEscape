@@ -163,3 +163,59 @@
   .auth-box { padding: 32px 24px; }
   .auth-box h2 { font-size: 1.6em; }
 }
+
+/* ===== 소셜 로그인 섹션 ===== */
+.social-login-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.social-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Noto Sans KR', sans-serif;
+  border: 1.5px solid var(--border-subtle);
+}
+
+/* 구글 */
+.social-btn.google {
+  background: #fff;
+  color: #3c4043;
+  border-color: #dadce0;
+}
+.social-btn.google:hover {
+  background: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.social-btn.google:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 구분선 */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--text-muted);
+  font-size: 0.82em;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
