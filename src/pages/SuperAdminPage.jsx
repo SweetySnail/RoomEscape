@@ -768,6 +768,9 @@ function RegisterTab({ onComplete }) {
     operationStart: '',
     operationEnd: '',
     venue: '',
+    paymentType: 'external',   // 'external' | 'internal'
+    reservationUrl: '',         // 외부 결제 URL
+    paymentAgreed: false,       // 외부 결제 유의사항 동의
   });
 
   const [branches, setBranches] = useState([
@@ -864,6 +867,18 @@ function RegisterTab({ onComplete }) {
       return;
     }
 
+    if (storeForm.paymentType === 'external' && !storeForm.reservationUrl) {
+      alert('외부 예약 URL을 입력해주세요.');
+      isSubmitting.current = false;
+      return;
+    }
+
+    if (storeForm.paymentType === 'external' && !storeForm.paymentAgreed) {
+      alert('외부 결제 유의사항에 동의해주세요.');
+      isSubmitting.current = false;
+      return;
+    }
+
     if (storeForm.isTemporary) {
       if (!storeForm.operationStart || !storeForm.operationEnd) {
         alert('기간 한정 운영의 시작일과 종료일을 입력해주세요.');
@@ -950,23 +965,114 @@ function RegisterTab({ onComplete }) {
 
   return (
     <div className="tab-section">
-      {/* 기본 정보 */}
       <div className="admin-card">
         <h3>📋 사업자 기본 정보</h3>
         <div className="input-group-vertical">
-          {[
-            { label: '사장 이름 *', field: 'ownerName', type: 'text' },
-            { label: '사업자 이메일 * (로그인 계정)', field: 'email', type: 'email' },
-            { label: '연락처 *', field: 'contact', type: 'text' },
-          ].map(({ label, field, type }) => (
-            <div key={field} className="input-row">
-              <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>{label}</label>
-              <input type={type} className="mypage-input" value={storeForm[field]}
-                onChange={(e) => setStoreForm({ ...storeForm, [field]: e.target.value })} />
-            </div>
-          ))}
 
-          {/* 은행명 → 예금주 → 계좌번호 */}
+          {/* ① 운영 방식 */}
+          <div className="register-field-group">
+            <label className="register-label">운영 방식 *</label>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {[
+                { value: false, label: '🏪 상시 운영' },
+                { value: true,  label: '🎃 기간 한정 운영' },
+              ].map(opt => (
+                <label key={String(opt.value)} className="register-radio-label">
+                  <input type="radio" name="isTemporary"
+                    checked={storeForm.isTemporary === opt.value}
+                    onChange={() => setStoreForm({ ...storeForm, isTemporary: opt.value })} />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+            {storeForm.isTemporary && (
+              <div className="register-sub-box" style={{ borderColor: 'rgba(255,107,53,0.3)', background: 'rgba(255,107,53,0.04)' }}>
+                <div className="input-row">
+                  <label style={{ minWidth: '160px', color: 'var(--text-muted)' }}>장소명 *</label>
+                  <input type="text" className="mypage-input" placeholder="예) 한국민속촌, 서울대공원"
+                    value={storeForm.venue}
+                    onChange={(e) => setStoreForm({ ...storeForm, venue: e.target.value })} />
+                </div>
+                <div className="input-row">
+                  <label style={{ minWidth: '160px', color: 'var(--text-muted)' }}>운영 시작일 *</label>
+                  <input type="date" className="mypage-input" value={storeForm.operationStart}
+                    onChange={(e) => setStoreForm({ ...storeForm, operationStart: e.target.value })} />
+                </div>
+                <div className="input-row">
+                  <label style={{ minWidth: '160px', color: 'var(--text-muted)' }}>운영 종료일 *</label>
+                  <input type="date" className="mypage-input" value={storeForm.operationEnd}
+                    onChange={(e) => setStoreForm({ ...storeForm, operationEnd: e.target.value })} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ② 결제 방식 */}
+          <div className="register-field-group">
+            <label className="register-label">결제 방식 *</label>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {[
+                { value: 'external', label: '🔗 외부 결제 (무료)' },
+                { value: 'internal', label: '💳 플랫폼 내 결제 (수수료 발생)' },
+              ].map(opt => (
+                <label key={opt.value} className="register-radio-label">
+                  <input type="radio" name="paymentType" value={opt.value}
+                    checked={storeForm.paymentType === opt.value}
+                    onChange={() => setStoreForm({ ...storeForm, paymentType: opt.value, paymentAgreed: false })} />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+            {storeForm.paymentType === 'external' && (
+              <div className="register-sub-box register-warning-box">
+                <div className="input-row" style={{ marginBottom: '12px' }}>
+                  <label style={{ minWidth: '160px', color: 'var(--text-muted)' }}>외부 예약 URL *</label>
+                  <input type="url" className="mypage-input"
+                    placeholder="https://your-store.com/reservation"
+                    value={storeForm.reservationUrl}
+                    onChange={(e) => setStoreForm({ ...storeForm, reservationUrl: e.target.value })} />
+                </div>
+                <div className="register-notice">
+                  <p className="register-notice-title">⚠️ 외부 결제 이용 시 유의사항</p>
+                  <ul className="register-notice-list">
+                    <li>실제 결제 및 환불은 매장 자체적으로 처리됩니다.</li>
+                    <li>플랫폼을 통해 예약 신청은 가능하지만, 매장관리자가 <strong>방문 완료를 직접 처리</strong>하지 않으면 매출 통계에 반영되지 않습니다.</li>
+                    <li>서비스 오픈 후 1년간 무상 지원되며, 현재는 외부 결제만 지원됩니다.</li>
+                    <li>내부 결제 전환을 원하시면 운영팀에 별도 문의해주세요.</li>
+                  </ul>
+                  <label className="register-agree-label">
+                    <input type="checkbox"
+                      checked={storeForm.paymentAgreed}
+                      onChange={(e) => setStoreForm({ ...storeForm, paymentAgreed: e.target.checked })} />
+                    <span>위 유의사항을 모두 읽고 이해했으며, 이에 동의합니다. <strong style={{ color: '#ff6b7a' }}>*</strong></span>
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ③ 사업자명 */}
+          <div className="input-row">
+            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>사업자명 (사장 이름) *</label>
+            <input type="text" className="mypage-input" value={storeForm.ownerName}
+              onChange={(e) => setStoreForm({ ...storeForm, ownerName: e.target.value })} />
+          </div>
+
+          {/* ④ 사업자 이메일 */}
+          <div className="input-row">
+            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>사업자 이메일 * (로그인 계정)</label>
+            <input type="email" className="mypage-input" value={storeForm.email}
+              onChange={(e) => setStoreForm({ ...storeForm, email: e.target.value })} />
+          </div>
+
+          {/* ⑤ 연락처 */}
+          <div className="input-row">
+            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>연락처 *</label>
+            <input type="text" className="mypage-input" value={storeForm.contact}
+              onChange={(e) => setStoreForm({ ...storeForm, contact: e.target.value })} />
+          </div>
+
+          {/* ⑥ 은행명 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>은행명</label>
             <select className="admin-input admin-select" value={storeForm.bankName}
@@ -974,26 +1080,35 @@ function RegisterTab({ onComplete }) {
               {BANK_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
           </div>
+
+          {/* ⑦ 예금주 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>예금주</label>
             <input type="text" className="mypage-input" value={storeForm.bankHolder}
               onChange={(e) => setStoreForm({ ...storeForm, bankHolder: e.target.value })} />
           </div>
+
+          {/* ⑧ 계좌번호 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계좌번호</label>
             <input type="text" className="mypage-input" value={storeForm.bankAccount}
               onChange={(e) => setStoreForm({ ...storeForm, bankAccount: e.target.value })} />
           </div>
 
-          {/* 수수료 방식 */}
-          <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ color: 'var(--text-muted)' }}>수수료 방식</label>
-            <div style={{ display: 'flex', gap: '16px' }}>
+          {/* ⑨ 수수료 방식 — 결제 방식 무관하게 항상 표시 */}
+          <div className="register-field-group">
+            <label className="register-label">수수료 방식</label>
+            <p style={{ fontSize: '0.82em', color: 'var(--text-muted)', margin: 0 }}>
+              {storeForm.paymentType === 'external'
+                ? '외부 결제 매장도 플랫폼 노출 수수료가 적용됩니다.'
+                : '플랫폼 내 결제 매출에 대한 수수료입니다.'}
+            </p>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
               {[
-                { value: 'rate', label: '요율 (%) — 전체 매출의 N%' },
+                { value: 'rate',  label: '요율 (%) — 전체 매출의 N%' },
                 { value: 'fixed', label: '지정금액 — 방 개수 × N원' },
               ].map(opt => (
-                <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                <label key={opt.value} className="register-radio-label">
                   <input type="radio" name="feeType" value={opt.value}
                     checked={storeForm.feeType === opt.value}
                     onChange={() => setStoreForm({ ...storeForm, feeType: opt.value })} />
@@ -1002,14 +1117,14 @@ function RegisterTab({ onComplete }) {
               ))}
             </div>
             {storeForm.feeType === 'rate' ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
                 <input type="number" className="mypage-input" style={{ width: '80px' }}
                   value={storeForm.discountRate}
                   onChange={(e) => setStoreForm({ ...storeForm, discountRate: Number(e.target.value) })} />
                 <span style={{ color: 'var(--text-muted)' }}>%</span>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
                 <input type="number" className="mypage-input" style={{ width: '140px' }}
                   placeholder="방 1개당 금액" value={storeForm.fixedFee}
                   onChange={(e) => setStoreForm({ ...storeForm, fixedFee: Number(e.target.value) })} />
@@ -1018,59 +1133,20 @@ function RegisterTab({ onComplete }) {
             )}
           </div>
 
-          {/* 계약 기간 */}
+          {/* ⑩ 계약 시작일 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계약 시작일</label>
             <input type="date" className="mypage-input" value={storeForm.contractStart}
               onChange={(e) => setStoreForm({ ...storeForm, contractStart: e.target.value })} />
           </div>
+
+          {/* ⑪ 계약 종료일 */}
           <div className="input-row">
             <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>계약 종료일</label>
             <input type="date" className="mypage-input" value={storeForm.contractEnd}
               onChange={(e) => setStoreForm({ ...storeForm, contractEnd: e.target.value })} />
           </div>
 
-          {/* 운영 방식 */}
-          <div className="input-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ color: 'var(--text-muted)' }}>운영 방식</label>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              {[
-                { value: false, label: '🏪 상시 운영' },
-                { value: true,  label: '🎃 기간 한정 운영' },
-              ].map(opt => (
-                <label key={String(opt.value)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                  <input type="radio" name="isTemporary"
-                    checked={storeForm.isTemporary === opt.value}
-                    onChange={() => setStoreForm({ ...storeForm, isTemporary: opt.value })} />
-                  {opt.label}
-                </label>
-              ))}
-            </div>
-
-            {storeForm.isTemporary && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '4px',
-                background: 'rgba(255,107,53,0.05)', border: '1px solid rgba(255,107,53,0.2)',
-                borderRadius: '8px', padding: '12px' }}>
-                <div className="input-row">
-                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>장소명 *</label>
-                  <input type="text" className="mypage-input"
-                    placeholder="예) 한국민속촌, 서울대공원"
-                    value={storeForm.venue}
-                    onChange={(e) => setStoreForm({ ...storeForm, venue: e.target.value })} />
-                </div>
-                <div className="input-row">
-                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 시작일 *</label>
-                  <input type="date" className="mypage-input" value={storeForm.operationStart}
-                    onChange={(e) => setStoreForm({ ...storeForm, operationStart: e.target.value })} />
-                </div>
-                <div className="input-row">
-                  <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>운영 종료일 *</label>
-                  <input type="date" className="mypage-input" value={storeForm.operationEnd}
-                    onChange={(e) => setStoreForm({ ...storeForm, operationEnd: e.target.value })} />
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 

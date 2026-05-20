@@ -311,9 +311,70 @@ function BoxModal({ productData, onClose }) {
               <p>📅 {selectedDate} · {selectedTime}</p>
               <p>👥 {selectedPeople} · {selectedPrice?.toLocaleString()}원</p>
             </div>
-            <button className="reserve-button" onClick={() => setStep('payment')}>
-              결제하기
-            </button>
+            {productData.paymentType === 'external' ? (
+              <button
+                className="reserve-button"
+                onClick={async () => {
+                  // 외부 결제: 예약 신청 저장 후 외부 URL 오픈
+                  const user = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+                  try {
+                    await addReservation({
+                      uid: user?.uid || 'guest',
+                      productId: productData.id,
+                      productName: productData.title,
+                      branch: productData.branch || '',
+                      theme: getGenre(productData),
+                      date: selectedDate,
+                      time: selectedTime,
+                      people: selectedPeople,
+                      price: selectedPrice,
+                      originalPrice: selectedPrice,
+                      usedPoints: 0,
+                      success: null,
+                      reviewed: false,
+                      cancelled: false,
+                      autoSuccess: false,
+                      escapeMinutes: null,
+                      paymentType: 'external',
+                    });
+                    if (productData.reservationUrl) {
+                      window.open(productData.reservationUrl, '_blank', 'noopener,noreferrer');
+                    }
+                    setStep('success');
+                    showToast('🎉 예약 신청이 완료됐어요!', 'success');
+                  } catch (e) {
+                    console.error('예약 저장 실패:', e);
+                    alert('예약 저장 중 오류가 발생했어요.');
+                  }
+                }}
+              >
+                예약 신청 → 외부 결제
+              </button>
+            ) : (
+              (() => {
+                const user = JSON.parse(sessionStorage.getItem('loggedInUser') || 'null');
+                if (!user?.uid) {
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                      <p style={{ fontSize: '0.82em', color: '#ff6b7a', margin: 0 }}>
+                        ⚠️ 플랫폼 내 결제는 로그인이 필요합니다.
+                      </p>
+                      <button
+                        className="reserve-button"
+                        onClick={() => window.location.href = '/login'}
+                      >
+                        로그인하러 가기
+                      </button>
+                    </div>
+                  );
+                }
+                return (
+                  <button className="reserve-button" onClick={() => setStep('payment')}>
+                    결제하기
+                  </button>
+                );
+              })()
+            )}
           </div>
         )}
       </div>
