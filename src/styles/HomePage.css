@@ -188,31 +188,10 @@
   letter-spacing: 0.05em;
 }
 
-.h-section-btns {
-  display: flex;
-  gap: 6px;
-}
+.h-section-btns { display: none; }
 
-.h-scroll-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-card);
-  color: var(--accent-gold);
-  font-size: 1.3em;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  line-height: 1;
-}
-.h-scroll-btn:hover {
-  background: rgba(212, 168, 67, 0.15);
-  border-color: var(--accent-gold);
-  transform: scale(1.05);
-}
+/* (버튼 제거됨 — 마우스 휠/터치로 스크롤) */
+.h-scroll-btn { display: none; }
 
 .h-scroll-track {
   display: flex;
@@ -412,13 +391,18 @@
   padding: 4px 0;
 }
 
+/* 칩 줄바꿈 없이 가로 스크롤 — 데스크탑도 깔끔하게 */
 .genre-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   margin-bottom: 20px;
-  padding: 0 2px;
+  padding: 0 2px 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.genre-chips::-webkit-scrollbar { display: none; }
 
 .genre-chip {
   padding: 7px 18px;
@@ -433,6 +417,7 @@
   font-family: 'Noto Sans KR', sans-serif;
   white-space: nowrap;
   letter-spacing: 0.02em;
+  flex-shrink: 0;
 }
 .genre-chip:hover {
   border-color: var(--accent-gold);

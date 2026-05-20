@@ -18,9 +18,14 @@ const getDDay = (endDate) => {
   return `D-${diff}`;
 };
 
-// 난이도 변환
+// 난이도 변환 (별표 대신 자물쇠 아이콘으로 별점과 구분)
 const difficultyLabel = (d) => {
-  const map = { easy: '⭐ 쉬움', normal: '⭐⭐ 보통', hard: '⭐⭐⭐ 어려움', expert: '⭐⭐⭐⭐ 전문가' };
+  const map = {
+    easy:   '🔓 쉬움',
+    normal: '🔒 보통',
+    hard:   '🔐 어려움',
+    expert: '⛓️ 전문가',
+  };
   return map[d] || d;
 };
 
@@ -61,15 +66,63 @@ function HomeCard({ product, onClick, showDday }) {
   );
 }
 
-// ===== 가로 스크롤 섹션 =====
-function HorizontalSection({ title, icon, products, onCardClick, showDday, accentColor }) {
-  const scrollRef = React.useRef(null);
+// ===== 드래그 스크롤 훅 (마우스 + 터치 공통) =====
+function useDragScroll() {
+  const ref = React.useRef(null);
+  const isDragging = React.useRef(false);
+  const startX = React.useRef(0);
+  const scrollLeft = React.useRef(0);
+  const moved = React.useRef(false);
 
-  const scroll = (dir) => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: dir * 220, behavior: 'smooth' });
-    }
-  };
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const onMouseDown = (e) => {
+      isDragging.current = true;
+      moved.current = false;
+      startX.current = e.pageX - el.offsetLeft;
+      scrollLeft.current = el.scrollLeft;
+      el.style.cursor = 'grabbing';
+      el.style.userSelect = 'none';
+    };
+    const onMouseMove = (e) => {
+      if (!isDragging.current) return;
+      const x = e.pageX - el.offsetLeft;
+      const dist = x - startX.current;
+      if (Math.abs(dist) > 4) moved.current = true;
+      el.scrollLeft = scrollLeft.current - dist;
+    };
+    const onMouseUp = () => {
+      isDragging.current = false;
+      el.style.cursor = 'grab';
+      el.style.userSelect = '';
+    };
+    // 카드 클릭이 드래그 후 발동되지 않도록 — capture 단계에서 막음
+    const onClickCapture = (e) => {
+      if (moved.current) e.stopPropagation();
+    };
+
+    el.style.cursor = 'grab';
+    el.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    el.addEventListener('click', onClickCapture, true);
+
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      el.removeEventListener('click', onClickCapture, true);
+    };
+  }, []);
+
+  return ref;
+}
+
+// ===== 가로 스크롤 섹션 (드래그 + 터치 스크롤) =====
+function HorizontalSection({ title, icon, products, onCardClick, showDday, accentColor }) {
+  const scrollRef = useDragScroll();
 
   if (products.length === 0) return null;
 
@@ -79,10 +132,6 @@ function HorizontalSection({ title, icon, products, onCardClick, showDday, accen
         <div className="h-section-title-row">
           <span className="h-section-icon" style={{ color: accentColor }}>{icon}</span>
           <h2 className="h-section-title" style={{ color: accentColor }}>{title}</h2>
-        </div>
-        <div className="h-section-btns">
-          <button className="h-scroll-btn" onClick={() => scroll(-1)}>‹</button>
-          <button className="h-scroll-btn" onClick={() => scroll(1)}>›</button>
         </div>
       </div>
       <div className="h-scroll-track" ref={scrollRef}>
