@@ -755,11 +755,15 @@ function RegisterTab({ onComplete }) {
   const [generatedPassword, setGeneratedPassword] = useState('');
   const isSubmitting = useRef(false);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const oneYearLater = new Date(new Date().setFullYear(new Date().getFullYear() + 1) - 86400000).toISOString().slice(0, 10);
+
   const [storeForm, setStoreForm] = useState({
     ownerName: '', email: '', contact: '',
     bankName: BANK_OPTIONS[0], bankAccount: '', bankHolder: '',
     feeType: 'rate', discountRate: 10, fixedFee: '',
-    contractStart: '', contractEnd: '',
+    contractStart: today,
+    contractEnd: oneYearLater,
     isTemporary: false,
     operationStart: '',
     operationEnd: '',

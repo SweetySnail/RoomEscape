@@ -546,10 +546,11 @@ function generatePDF({ store, loggedInUser, records, targetMonth }) {
 function StoreDashboard({ records, store, loggedInUser }) {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
-  const thisMonth = now.toISOString().slice(0, 7);
-  // 전달: 이번달 1일 기준으로 -1달
-  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonth = prevMonthDate.toISOString().slice(0, 7);
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  // 전달: 로컬 기준 안전하게 계산
+  const prevYear  = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const prevMonthNum = now.getMonth() === 0 ? 12 : now.getMonth();
+  const prevMonth = `${prevYear}-${String(prevMonthNum).padStart(2, '0')}`;
   const [selectedMonth, setSelectedMonth] = useState(thisMonth);
 
   const activeRecords = records.filter(r => !r.cancelled);

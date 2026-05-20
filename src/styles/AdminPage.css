@@ -975,3 +975,59 @@
   font-size: 0.8em;
   color: var(--text-muted);
 }
+
+/* ===== 비교표 컬럼 정렬 완전 고정 ===== */
+.compare-header,
+.compare-row {
+  grid-template-columns: 2fr 1.4fr 1.4fr 0.9fr !important;
+  align-items: center;
+}
+.compare-header span,
+.compare-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== 테마별 누적매출 — 모바일 포함 3열 강제 ===== */
+.theme-stats-table .theme-stats-header,
+.theme-stats-table .theme-stats-row {
+  grid-template-columns: 2fr 1fr 1.2fr !important;
+}
+/* 혹시 숨겨진 열 복원 */
+.theme-stats-table .theme-stats-header span,
+.theme-stats-table .theme-stats-row span { display: block !important; }
+
+/* ===== 예약관리 필터 버튼 한 줄 스크롤 ===== */
+.admin-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.admin-filters::-webkit-scrollbar { display: none; }
+.admin-filter-btn { flex-shrink: 0; white-space: nowrap; }
+
+/* ===== 운영시간 예약불가 행 — 한 줄 고정 ===== */
+.blocked-slot-row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  overflow: visible;
+}
+.blocked-slot-row input[type="time"] {
+  width: 120px !important;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+.blocked-slot-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+@media (max-width: 480px) {
+  .blocked-slot-row input[type="time"] { width: 100px !important; }
+}

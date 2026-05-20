@@ -144,9 +144,15 @@ function ReservationPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 도시 목록 동적 생성
-  const cities = [...new Set(
-    allProducts.map(p => p.address?.split(' ')[0]).filter(Boolean)
+  // 지역 필터: 실제 등록된 구/군 단위 추출 (예: "서울 강남구 ..." → "강남구")
+  const districts = [...new Set(
+    allProducts
+      .map(p => {
+        const parts = (p.address || '').trim().split(/\s+/);
+        // "서울 강남구 ..." → parts[1] 이 구/군
+        return parts[1] || parts[0] || null;
+      })
+      .filter(Boolean)
   )].sort();
 
   // 필터링
@@ -304,7 +310,7 @@ function ReservationPage() {
               <ChipGroup
                 label="지역"
                 emoji="📍"
-                options={cities}
+                options={districts}
                 selected={selectedCity}
                 onSelect={setSelectedCity}
               />

@@ -43,6 +43,7 @@ body, html, #root {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  overflow-x: hidden; /* 좌우 흔들림 방지 */
 }
 
 /* 스크롤바 스타일 */
