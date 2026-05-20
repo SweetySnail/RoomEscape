@@ -392,25 +392,26 @@ function ScheduleTab({ store, setStore }) {
                       </button>
                     </div>
                     {(theme.blockedSlots || []).map((slot, si) => (
-                      <div key={si} className="blocked-slot-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                      <div key={si} className="blocked-slot-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'nowrap' }}>
                         <input
                           type="time"
                           className="admin-input"
-                          style={{ width: '130px', flexShrink: 0 }}
+                          style={{ width: '150px', minWidth: '150px', flexShrink: 0 }}
                           value={slot.start}
                           onChange={(e) => updateBlockedSlot(bi, ti, si, 'start', e.target.value)}
                         />
-                        <span style={{ color: 'var(--text-muted)' }}>~</span>
+                        <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>~</span>
                         <input
                           type="time"
                           className="admin-input"
-                          style={{ width: '130px', flexShrink: 0 }}
+                          style={{ width: '150px', minWidth: '150px', flexShrink: 0 }}
                           value={slot.end}
                           onChange={(e) => updateBlockedSlot(bi, ti, si, 'end', e.target.value)}
                         />
-                        <span className="blocked-slot-label">예약불가</span>
+                        <span className="blocked-slot-label" style={{ flexShrink: 0 }}>예약불가</span>
                         <button
                           className="mypage-btn small danger"
+                          style={{ flexShrink: 0 }}
                           onClick={() => removeBlockedSlot(bi, ti, si)}
                         >✕</button>
                       </div>

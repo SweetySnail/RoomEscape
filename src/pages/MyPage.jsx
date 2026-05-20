@@ -413,7 +413,34 @@ function FavoriteTab() {
         ) : (
           <div className="favorite-grid">
             {themes.map(theme => (
-              <div key={theme.id} className="favorite-card">
+              <div key={theme.id} className="favorite-card" style={{ position: 'relative' }}>
+                <button
+                  className="favorite-remove-btn"
+                  onClick={() => removeTheme(theme.productId)}
+                  title="즐겨찾기 제거"
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    zIndex: 2,
+                    background: 'rgba(10,10,15,0.65)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '50%',
+                    width: '26px',
+                    height: '26px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.8em',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(4px)',
+                    padding: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  ✕
+                </button>
                 {theme.imageUrl ? (
                   <img src={theme.imageUrl} alt={theme.title} className="favorite-img" />
                 ) : (
@@ -430,13 +457,6 @@ function FavoriteTab() {
                   <span>{theme.address || theme.branch}</span>
                   {theme.branch && <span>🏪 {theme.branch}</span>}
                 </div>
-                <button
-                  className="favorite-remove-btn"
-                  onClick={() => removeTheme(theme.productId)}
-                  title="즐겨찾기 제거"
-                >
-                  ✕
-                </button>
               </div>
             ))}
           </div>
