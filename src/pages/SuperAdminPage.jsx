@@ -113,14 +113,6 @@ function SuperAdminPage() {
     </div>
   );
 
-  const tabs = [
-    { id: 'dashboard', label: '📊 대시보드' },
-    { id: 'stores',    label: '🏪 매장 관리' },
-    { id: 'register',  label: '➕ 사업자 등록' },
-    { id: 'fee',       label: '💳 수수료 정산' },
-    { id: 'expired',   label: '📁 계약 종료' },
-  ];
-
   return (
     <div className="page-container">
       <BoxTop />

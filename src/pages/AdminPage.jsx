@@ -54,12 +54,6 @@ function AdminPage() {
     load();
   }, [loggedInUser]);
 
-  const tabs = [
-    { id: 'dashboard',    label: '📊 대시보드' },
-    { id: 'reservations', label: '📋 예약 관리' },
-    { id: 'schedule',     label: '🕐 운영 시간 설정' },
-  ];
-
   // BoxRight에서 탭 전환 이벤트 수신
   useEffect(() => {
     const handler = (e) => {
