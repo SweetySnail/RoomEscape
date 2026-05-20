@@ -711,7 +711,7 @@ function StoreEditModal({ store, onClose, onSave, onExpire }) {
                           onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'minPeople', Number(e.target.value), bi, ti)} />
                         <span style={{ color: 'var(--text-muted)' }}>~</span>
                         <input type="number" className="admin-input" style={{ width: '55px' }}
-                          value={theme.maxPeople || 6}
+                          value={theme.maxPeople || 2}
                           onChange={e => handleUpdateThemeContract(branch.id, theme.id, 'maxPeople', Number(e.target.value), bi, ti)} />
                         <span style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>명</span>
                       </div>
@@ -940,7 +940,7 @@ function RegisterTab({ onComplete }) {
           <div style={{ fontSize: '3em', marginBottom: '16px' }}>🎉</div>
           <h3>사업자 등록 완료!</h3>
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-            매장관리자 계정이 생성되었어요. 아래 임시 비밀번호를 사장님께 전달해주세요.
+            매장관리자 계정이 생성되었어요. 아래 임시 비밀번호를 신규 사업자님께 전달해주세요.
           </p>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: '8px', padding: '20px', marginBottom: '24px' }}>
             <div style={{ marginBottom: '8px' }}>
@@ -1053,7 +1053,7 @@ function RegisterTab({ onComplete }) {
 
           {/* ③ 사업자명 */}
           <div className="input-row">
-            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>사업자명 (사장 이름) *</label>
+            <label style={{ minWidth: '200px', color: 'var(--text-muted)' }}>사업자명 *</label>
             <input type="text" className="mypage-input" value={storeForm.ownerName}
               onChange={(e) => setStoreForm({ ...storeForm, ownerName: e.target.value })} />
           </div>
