@@ -921,3 +921,57 @@
 .month-compare-banner strong {
   font-size: 1.2em;
 }
+/* ===== 추가/수정 스타일 ===== */
+
+/* 일별 바 차트 — 금액 레이블 */
+.daily-bar-amount {
+  position: absolute;
+  top: -16px;
+  font-size: 0.55em;
+  color: var(--accent-gold);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.daily-bar-wrap:hover .daily-bar-amount { opacity: 1; }
+
+/* 테마별 누적 매출 — 모바일 포함 3열 고정 */
+.theme-stats-header,
+.theme-stats-row {
+  grid-template-columns: 2fr 1fr 1.2fr !important;
+}
+
+/* 비교표 — 셀 말줄임 + 정렬 */
+.compare-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compare-cell {
+  white-space: nowrap;
+}
+
+/* 운영 시간 설정 — 모바일에서 세로 스택 */
+@media (max-width: 600px) {
+  /* 시작/종료/간격 설정 — 각각 full width */
+  .schedule-time-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  /* 예약 불가 행 — 좌우 공간 확보 */
+  .blocked-slot-row {
+    flex-wrap: wrap;
+    gap: 6px !important;
+  }
+  .blocked-slot-row input[type="time"] {
+    width: 100% !important;
+    max-width: 140px;
+  }
+}
+
+/* 예약불가 행 레이블 줄바꿈 방지 */
+.blocked-slot-label {
+  white-space: nowrap;
+  font-size: 0.8em;
+  color: var(--text-muted);
+}

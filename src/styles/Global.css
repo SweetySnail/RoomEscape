@@ -156,6 +156,23 @@ body, html, #root {
   border-color: rgba(220, 53, 69, 0.5);
 }
 
+/* 로그아웃 버튼 소형 — 헤더 우측에 딱 맞게 */
+.logout-button-sm {
+  padding: 6px 14px;
+  font-size: 0.8em;
+  height: 32px;
+  min-width: unset;
+  white-space: nowrap;
+}
+
+/* nav 우측 정렬 확실히 */
+.nav-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
 /* ===== 메인 콘텐츠 래퍼 ===== */
 .main-page-wrapper {
   margin-top: 100px;

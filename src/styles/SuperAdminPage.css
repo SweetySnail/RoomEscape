@@ -161,10 +161,13 @@
 @media (max-width: 768px) {
   .stores-table-header,
   .stores-table-row {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 0.6fr 0.8fr;
+    font-size: 0.8em;
+    padding: 8px 10px;
   }
   .stores-table-header span:nth-child(n+5),
-  .stores-table-row span:nth-child(n+5) { display: none; }
+  .stores-table-row span:nth-child(n+5),
+  .stores-table-row div:nth-child(n+5) { display: none; }
   .store-detail-info { grid-template-columns: 1fr; }
 }
 

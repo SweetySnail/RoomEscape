@@ -64,7 +64,7 @@ function BoxTop() {
               <span className="welcome-message">
                 {`[${loggedInUser.nickname}]님, 안녕하세요!`}
               </span>
-              <button className="page-button logout-button" onClick={handleLogout}>로그아웃</button>
+              <button className="page-button logout-button logout-button-sm" onClick={handleLogout}>로그아웃</button>
             </>
           ) : ( // ⭐⭐ 로그아웃된 상태 ⭐⭐
             <button className="page-button" onClick={() => handleNavigate('/login')}>로그인 / 회원가입</button>

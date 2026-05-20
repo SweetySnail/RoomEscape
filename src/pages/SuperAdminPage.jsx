@@ -92,6 +92,16 @@ function SuperAdminPage() {
     if (loggedInUser) loadData();
   }, [loggedInUser, loadData]);
 
+  // BoxRight에서 탭 전환 이벤트 수신
+  useEffect(() => {
+    const handler = (e) => {
+      setActiveTab(e.detail);
+      window.__adminActiveTab = e.detail;
+    };
+    window.addEventListener('adminTabChange', handler);
+    return () => window.removeEventListener('adminTabChange', handler);
+  }, []);
+
   if (!loggedInUser || loading) return (
     <div className="page-container">
       <BoxTop /><BoxRight />
@@ -127,18 +137,6 @@ function SuperAdminPage() {
               <span>{loggedInUser.nickname}</span>
               <span>{new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
-          </div>
-
-          <div className="admin-tabs">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                className={`admin-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
           </div>
 
           <div className="admin-tab-content">

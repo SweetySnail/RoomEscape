@@ -71,6 +71,16 @@ function AdminPage() {
     { id: 'schedule',     label: '🕐 운영 시간 설정' },
   ];
 
+  // BoxRight에서 탭 전환 이벤트 수신
+  useEffect(() => {
+    const handler = (e) => {
+      setActiveTab(e.detail);
+      window.__adminActiveTab = e.detail;
+    };
+    window.addEventListener('adminTabChange', handler);
+    return () => window.removeEventListener('adminTabChange', handler);
+  }, []);
+
   return (
     <div className="page-container">
       <BoxTop />
@@ -92,18 +102,6 @@ function AdminPage() {
                 year: 'numeric', month: 'long', day: 'numeric'
               })}</span>
             </div>
-          </div>
-
-          <div className="admin-tabs">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                className={`admin-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
           </div>
 
           <div className="admin-tab-content">
@@ -351,7 +349,7 @@ function ScheduleTab({ store, setStore }) {
                   </strong>
 
                   {/* 시작/종료/간격 설정 */}
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  <div className="schedule-time-row" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '12px' }}>
                     <div>
                       <label style={{ fontSize: '0.8em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
                         시작 시간
@@ -400,10 +398,11 @@ function ScheduleTab({ store, setStore }) {
                       </button>
                     </div>
                     {(theme.blockedSlots || []).map((slot, si) => (
-                      <div key={si} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <div key={si} className="blocked-slot-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <input
                           type="time"
                           className="admin-input"
+                          style={{ width: '130px', flexShrink: 0 }}
                           value={slot.start}
                           onChange={(e) => updateBlockedSlot(bi, ti, si, 'start', e.target.value)}
                         />
@@ -411,10 +410,11 @@ function ScheduleTab({ store, setStore }) {
                         <input
                           type="time"
                           className="admin-input"
+                          style={{ width: '130px', flexShrink: 0 }}
                           value={slot.end}
                           onChange={(e) => updateBlockedSlot(bi, ti, si, 'end', e.target.value)}
                         />
-                        <span style={{ fontSize: '0.8em', color: 'var(--text-muted)' }}>예약 불가</span>
+                        <span className="blocked-slot-label">예약불가</span>
                         <button
                           className="mypage-btn small danger"
                           onClick={() => removeBlockedSlot(bi, ti, si)}
@@ -553,7 +553,9 @@ function StoreDashboard({ records, store, loggedInUser }) {
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const thisMonth = now.toISOString().slice(0, 7);
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 7);
+  // 전달: 이번달 1일 기준으로 -1달
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = prevMonthDate.toISOString().slice(0, 7);
   const [selectedMonth, setSelectedMonth] = useState(thisMonth);
 
   const activeRecords = records.filter(r => !r.cancelled);
@@ -603,27 +605,14 @@ function StoreDashboard({ records, store, loggedInUser }) {
     return d.toISOString().slice(0, 7);
   });
 
+  // 월 표시 레이블 (예: "2026-04" → "4월")
+  const monthLabel = (ym) => {
+    const m = parseInt(ym.split('-')[1], 10);
+    return `${m}월`;
+  };
+
   return (
     <div className="tab-section">
-      {/* PDF 추출 */}
-      <div className="admin-card" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0 }}>📄 월별 리포트 PDF 추출</h3>
-        <select
-          className="admin-input admin-select"
-          style={{ width: 'auto' }}
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-        >
-          {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-        <button
-          className="mypage-btn primary"
-          onClick={() => generatePDF({ store, loggedInUser, records, targetMonth: selectedMonth })}
-        >
-          PDF 다운로드
-        </button>
-      </div>
-
       {/* 핵심 지표 */}
       <div className="admin-card">
         <h3>핵심 지표</h3>
@@ -652,13 +641,16 @@ function StoreDashboard({ records, store, loggedInUser }) {
         </div>
       </div>
 
-      {/* 일별 매출 차트 */}
+      {/* 일별 매출 차트 — 금액 툴팁 + 호버 시 레이블 */}
       <div className="admin-card">
         <h3>일별 매출 (최근 30일)</h3>
         <div className="daily-chart">
           {Object.entries(dailyRevenue).map(([date, revenue]) => {
             const heightPct = Math.round((revenue / maxDaily) * 100);
             const isToday = date === today;
+            const label = revenue >= 10000
+              ? `${Math.round(revenue / 10000)}만`
+              : revenue > 0 ? `${revenue.toLocaleString()}` : '';
             return (
               <div key={date} className="daily-bar-wrap" title={`${date}\n${revenue.toLocaleString()}원`}>
                 <div
@@ -668,6 +660,9 @@ function StoreDashboard({ records, store, loggedInUser }) {
                     background: isToday ? 'var(--accent-gold)' : 'rgba(212,168,67,0.4)',
                   }}
                 />
+                {revenue > 0 && (
+                  <span className="daily-bar-amount">{label}</span>
+                )}
                 {isToday && <span className="daily-bar-today">오늘</span>}
               </div>
             );
@@ -682,13 +677,13 @@ function StoreDashboard({ records, store, loggedInUser }) {
           <p className="admin-empty">데이터가 없어요.</p>
         ) : (
           <div className="theme-stats-table">
-            <div className="theme-stats-header" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
+            <div className="theme-stats-header">
               <span>테마명</span><span>예약 수</span><span>매출</span>
             </div>
             {Object.entries(productRevenue)
               .sort((a, b) => b[1].revenue - a[1].revenue)
               .map(([name, data]) => (
-                <div key={name} className="theme-stats-row" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
+                <div key={name} className="theme-stats-row">
                   <span>{name}</span>
                   <span>{data.count}건</span>
                   <span>{data.revenue.toLocaleString()}원</span>
@@ -698,26 +693,47 @@ function StoreDashboard({ records, store, loggedInUser }) {
         )}
       </div>
 
-      {/* 이번달 vs 전달 비교 */}
+      {/* 전달 vs 이번달 테마별 비교 */}
       <div className="admin-card">
-        <h3>이번달 vs 전달 테마별 비교</h3>
+        <h3>{monthLabel(prevMonth)} vs {monthLabel(thisMonth)} 테마별 비교</h3>
         <div className="compare-table">
           <div className="compare-header">
             <span>테마명</span>
-            <span>{prevMonth}</span>
-            <span>{thisMonth}</span>
+            <span>{monthLabel(prevMonth)} (전달)</span>
+            <span>{monthLabel(thisMonth)} (이번달)</span>
             <span>증감</span>
           </div>
           {compareData.map(({ name, curr, prev, pct }) => (
             <div key={name} className="compare-row">
-              <span>{name}</span>
-              <span>{prev.toLocaleString()}원</span>
-              <span>{curr.toLocaleString()}원</span>
+              <span className="compare-name">{name}</span>
+              <span className="compare-cell">{prev.toLocaleString()}원</span>
+              <span className="compare-cell">{curr.toLocaleString()}원</span>
               <span className={`diff-badge ${pct === null ? 'same' : pct >= 0 ? 'up' : 'down'}`}>
                 {pct === null ? '신규' : pct >= 0 ? `▲ ${pct}%` : `▼ ${Math.abs(pct)}%`}
               </span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* PDF 추출 — 대시보드 가장 하단 */}
+      <div className="admin-card">
+        <h3>📄 월별 리포트 PDF 추출</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
+          <select
+            className="admin-input admin-select"
+            style={{ width: 'auto' }}
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          >
+            {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <button
+            className="mypage-btn primary"
+            onClick={() => generatePDF({ store, loggedInUser, records, targetMonth: selectedMonth })}
+          >
+            PDF 다운로드
+          </button>
         </div>
       </div>
     </div>
