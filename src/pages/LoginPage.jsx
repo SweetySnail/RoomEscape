@@ -6,7 +6,7 @@ import '../styles/LoginPage.css';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
-import { signIn, signUp, signInWithGoogle } from '../services/authService';
+import { signIn, signUp, signInWithGoogle, getGoogleLoginResult } from '../services/authService';
 
 // 랜덤 닉네임 생성
 const generateRandomNickname = () => {
@@ -29,6 +29,25 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
+
+  // 구글 리디렉션 후 돌아왔을 때 결과 처리
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      setSocialLoading(true);
+      try {
+        const userData = await getGoogleLoginResult();
+        if (userData) onLoginSuccess(userData);
+      } catch (error) {
+        if (error.code !== 'auth/no-current-user') {
+          setMessage('구글 로그인 중 오류가 발생했어요. 다시 시도해주세요.');
+        }
+      } finally {
+        setSocialLoading(false);
+      }
+    };
+    checkRedirectResult();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 로그인 성공 공통 처리
   const onLoginSuccess = (userData) => {
@@ -98,22 +117,15 @@ function LoginPage() {
     }
   };
 
-  // 구글 로그인
+  // 구글 로그인 (리디렉션 방식 — 페이지가 구글로 이동 후 돌아옴)
   const handleGoogleLogin = async () => {
     setSocialLoading(true);
     setMessage('');
     try {
-      const userData = await signInWithGoogle();
-      onLoginSuccess(userData);
+      await signInWithGoogle();
+      // 리디렉션되므로 이 아래 코드는 실행 안 됨
     } catch (error) {
-      if (error.code === 'auth/popup-closed-by-user') {
-        setMessage('로그인 창이 닫혔어요. 다시 시도해주세요.');
-      } else if (error.code === 'auth/popup-blocked') {
-        setMessage('팝업이 차단됐어요. 브라우저 팝업 허용 후 다시 시도해주세요.');
-      } else {
-        setMessage('구글 로그인 중 오류가 발생했어요. 다시 시도해주세요.');
-      }
-    } finally {
+      setMessage('구글 로그인 중 오류가 발생했어요. 다시 시도해주세요.');
       setSocialLoading(false);
     }
   };
