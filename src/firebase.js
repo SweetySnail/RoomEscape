@@ -20,7 +20,7 @@ if (typeof window !== 'undefined') {
   // 로컬 개발 환경: debug token 사용
   if (process.env.NODE_ENV === 'development') {
     // Firebase 콘솔 App Check → debug token에 등록한 값과 일치해야 함
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = process.env.REACT_APP_APPCHECK_DEBUG_TOKEN || true;
+    window.FIREBASE_APPCHECK_DEBUG_TOKEN = process.env.REACT_APP_APPCHECK_DEBUG_TOKEN || true;
   }
 }
 
