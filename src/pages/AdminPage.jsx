@@ -54,17 +54,6 @@ function AdminPage() {
     load();
   }, [loggedInUser]);
 
-  if (!loggedInUser || loading) return (
-    <div className="page-container">
-      <BoxTop /><BoxRight />
-      <BoxMain>
-        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-          데이터를 불러오는 중이에요...
-        </div>
-      </BoxMain>
-    </div>
-  );
-
   const tabs = [
     { id: 'dashboard',    label: '📊 대시보드' },
     { id: 'reservations', label: '📋 예약 관리' },
@@ -80,6 +69,17 @@ function AdminPage() {
     window.addEventListener('adminTabChange', handler);
     return () => window.removeEventListener('adminTabChange', handler);
   }, []);
+
+  if (!loggedInUser || loading) return (
+    <div className="page-container">
+      <BoxTop /><BoxRight />
+      <BoxMain>
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+          데이터를 불러오는 중이에요...
+        </div>
+      </BoxMain>
+    </div>
+  );
 
   return (
     <div className="page-container">
