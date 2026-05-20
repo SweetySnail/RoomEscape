@@ -232,13 +232,13 @@
   flex-wrap: wrap;
 }
 .admin-filter-btn {
-  padding: 6px 14px;
+  padding: 5px 10px;
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
   background: var(--bg-secondary);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.82em;
+  font-size: 0.78em;
   font-family: 'Noto Sans KR', sans-serif;
   transition: all 0.2s;
 }
@@ -769,6 +769,10 @@
   font-weight: 700;
   letter-spacing: 0.04em;
 }
+/* 증감 헤더/셀 중앙 정렬 */
+.compare-header span:last-child,
+.compare-row > span:last-child,
+.compare-row > .diff-badge { text-align: center; justify-self: center; }
 .compare-row {
   display: grid;
   grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
@@ -802,10 +806,14 @@
   padding: 2px 8px;
   border-radius: 4px;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
 }
-.diff-badge.up { color: #6fcf97; background: rgba(40, 167, 69, 0.12); }
+.diff-badge.up   { color: #6fcf97; background: rgba(40, 167, 69, 0.12); }
 .diff-badge.down { color: #ff6b7a; background: rgba(220, 53, 69, 0.12); }
-.diff-badge.same { color: var(--text-muted); }
+.diff-badge.same { color: var(--text-muted); background: rgba(100,100,100,0.1); }
 
 /* ===== 그룹별 테마 현황 ===== */
 .grouped-stats-table {
