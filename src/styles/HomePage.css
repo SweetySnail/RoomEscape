@@ -439,6 +439,11 @@
   gap: 16px;
   padding: 0 2px;
 }
+/* 그리드 안 카드는 width 고정 해제 */
+.genre-grid .home-card {
+  width: 100%;
+  flex-shrink: unset;
+}
 
 /* ===== 공통 버튼 ===== */
 .page-button.home-button {
@@ -464,6 +469,18 @@
   .hero-stat strong { font-size: 1.4em; }
   .hero-stat span { font-size: 0.7em; }
 
+  /* 히어로 통계 — 모바일 가독성 개선 */
+  .hero-stats {
+    gap: 0;
+    margin-top: 20px;
+    padding-top: 18px;
+    justify-content: space-around;
+  }
+  .hero-stat { align-items: center; }
+  .hero-stat strong { font-size: 1.6em; }
+  .hero-stat span { font-size: 0.68em; }
+  .hero-stat-divider { height: 32px; }
+
   /* 카드 */
   .home-card { width: 160px; }
   .home-card-img-wrap { height: 110px; }
@@ -477,11 +494,12 @@
   .h-scroll-btn { width: 28px; height: 28px; font-size: 1.1em; }
   .h-scroll-track { gap: 10px; }
 
-  /* 장르 그리드 → 2열 */
+  /* 장르 그리드 → 2열, 카드 width 100% */
   .genre-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
+  .genre-grid .home-card { width: 100%; }
   .genre-chip { padding: 6px 14px; font-size: 0.8em; }
 }
 
@@ -490,4 +508,46 @@
   .hero-buttons { flex-direction: column; }
   .hero-btn { width: 100%; text-align: center; }
   .hero-stats { gap: 14px; }
+}
+/* ===== 스켈레톤 UI ===== */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-card {
+  flex-shrink: 0;
+  width: 210px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+}
+.skeleton-img {
+  width: 100%;
+  height: 145px;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
+.skeleton-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite;
+}
+.skeleton-line.w80 { width: 80%; }
+.skeleton-line.w60 { width: 60%; }
+.skeleton-line.w50 { width: 50%; }
+.skeleton-line.w30 { width: 30%; }
+
+@media (max-width: 768px) {
+  .skeleton-card { width: 160px; }
+  .skeleton-img  { height: 110px; }
 }

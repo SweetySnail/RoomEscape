@@ -402,10 +402,14 @@ function FavoriteTab() {
       <div className="tab-card">
         <h3>⭐ 즐겨찾기 테마 ({themes.length}개)</h3>
         {themes.length === 0 ? (
-          <p className="empty-msg">
-            즐겨찾기한 테마가 없어요.<br />
-            테마 카드나 상세 팝업에서 ☆를 눌러 추가해보세요!
-          </p>
+          <div className="empty-state">
+            <span className="empty-state-icon">⭐</span>
+            <p className="empty-state-title">아직 즐겨찾기한 테마가 없어요</p>
+            <p className="empty-state-desc">테마 카드나 상세 팝업에서<br />☆ 버튼을 눌러 추가해보세요!</p>
+            <button className="empty-state-btn" onClick={() => window.location.href = '/reserve'}>
+              테마 둘러보기 →
+            </button>
+          </div>
         ) : (
           <div className="favorite-grid">
             {themes.map(theme => (
@@ -571,7 +575,14 @@ function HistoryTab({ loggedInUser }) {
         </div>
 
         {filteredRecords.length === 0 ? (
-          <p className="empty-msg">해당하는 기록이 없어요.</p>
+          <div className="empty-state">
+            <span className="empty-state-icon">📋</span>
+            <p className="empty-state-title">예약 기록이 없어요</p>
+            <p className="empty-state-desc">아직 예약한 테마가 없거나<br />선택한 필터에 해당하는 기록이 없어요.</p>
+            <button className="empty-state-btn" onClick={() => window.location.href = '/reserve'}>
+              첫 예약 하러 가기 →
+            </button>
+          </div>
         ) : (
           <div className="history-list">
             {[...filteredRecords].reverse().map(record => {

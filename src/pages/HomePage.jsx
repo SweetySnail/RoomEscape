@@ -66,7 +66,30 @@ function HomeCard({ product, onClick, showDday }) {
   );
 }
 
-// ===== 드래그 스크롤 훅 (마우스 + 터치 공통) =====
+// ===== 스켈레톤 카드 =====
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton-img" />
+      <div className="skeleton-body">
+        <div className="skeleton-line w80" />
+        <div className="skeleton-line w50" />
+        <div className="skeleton-line w60" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonSection() {
+  return (
+    <div className="h-section">
+      <div className="skeleton-line w30" style={{ height: '22px', marginBottom: '16px' }} />
+      <div style={{ display: 'flex', gap: '16px', overflow: 'hidden' }}>
+        {[1,2,3,4].map(i => <SkeletonCard key={i} />)}
+      </div>
+    </div>
+  );
+}
 function useDragScroll() {
   const ref = React.useRef(null);
   const isDragging = React.useRef(false);
@@ -274,9 +297,11 @@ function HomePage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-            불러오는 중...
-          </div>
+          <>
+            <SkeletonSection />
+            <SkeletonSection />
+            <SkeletonSection />
+          </>
         ) : (
           <>
             {/* 시즌 한정 */}

@@ -48,6 +48,12 @@ function BoxModal({ productData, onClose }) {
   const [currentPoints, setCurrentPoints] = useState(0);
   const [bookedTimes, setBookedTimes] = useState([]);
   const [guestEmail, setGuestEmail] = useState('');
+  const [toast, setToast] = useState(null); // { msg, type }
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const priceMap = getPriceMap(productData);
   const selectedPrice = selectedPeople ? priceMap[selectedPeople] : null;
@@ -107,6 +113,7 @@ function BoxModal({ productData, onClose }) {
     setSelectedDate(dateValue);
     setSelectedTime('');
     setSelectedPeople('');
+    showToast('날짜가 선택됐어요 ✓', 'info');
     try {
       const booked = await getBookedTimes(productData.id, dateValue);
       setBookedTimes(booked);
@@ -152,6 +159,7 @@ function BoxModal({ productData, onClose }) {
         guestEmail: user?.uid ? null : guestEmail,
       });
       setStep('success');
+      showToast('🎉 예약이 완료됐어요!', 'success');
     } catch (e) {
       console.error('예약 저장 실패:', e);
       alert('예약 저장 중 오류가 발생했어요. 다시 시도해주세요.');
@@ -261,7 +269,7 @@ function BoxModal({ productData, onClose }) {
                     <button
                       key={time}
                       className={`time-btn ${selectedTime === time ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
-                      onClick={() => { if (!isBooked) { setSelectedTime(time); setSelectedPeople(''); } }}
+                      onClick={() => { if (!isBooked) { setSelectedTime(time); setSelectedPeople(''); showToast(`${time} 선택됨 ✓`, 'info'); } }}
                       disabled={isBooked}
                     >
                       {time}
@@ -286,7 +294,7 @@ function BoxModal({ productData, onClose }) {
                 <button
                   key={people}
                   className={`people-btn ${selectedPeople === people ? 'selected' : ''}`}
-                  onClick={() => setSelectedPeople(people)}
+                  onClick={() => { setSelectedPeople(people); showToast(`${people} 선택됨 ✓`, 'info'); }}
                 >
                   <span className="people-label">{people}</span>
                   <span className="people-price">{Number(price).toLocaleString()}원</span>
@@ -495,6 +503,12 @@ function BoxModal({ productData, onClose }) {
     <div className="modal-overlay" onClick={step === 'reservation' ? onClose : undefined}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close-button" onClick={onClose}>×</button>
+        {/* 토스트 메시지 */}
+        {toast && (
+          <div className={`modal-toast modal-toast-${toast.type}`}>
+            {toast.msg}
+          </div>
+        )}
         {step === 'reservation' && renderReservation()}
         {step === 'payment'     && renderPayment()}
         {step === 'success'     && renderSuccess()}
