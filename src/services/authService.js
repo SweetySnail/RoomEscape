@@ -7,8 +7,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
 } from 'firebase/auth';
 import {
   doc,
@@ -57,19 +56,11 @@ const handleSocialLogin = async (user, nickname) => {
   return { uid: user.uid, ...userSnap.data() };
 };
 
-// ===== 구글 로그인 (리디렉션 방식) =====
+// ===== 구글 로그인 (팝업 방식) =====
 export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  await signInWithRedirect(auth, provider);
-  // 리디렉션 후 페이지가 새로고침되므로 여기서 결과를 받지 않음
-  // 결과는 getGoogleLoginResult()로 처리
-};
-
-// 리디렉션 후 돌아왔을 때 결과 처리
-export const getGoogleLoginResult = async () => {
-  const result = await getRedirectResult(auth);
-  if (!result) return null;
+  const result = await signInWithPopup(auth, provider);
   return handleSocialLogin(result.user);
 };
 
