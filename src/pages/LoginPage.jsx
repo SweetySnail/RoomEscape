@@ -235,6 +235,13 @@ function LoginPage() {
                 <p>이미 계정이 있으신가요? <span onClick={toggleMode} className="toggle-link">로그인</span></p>
               )}
             </div>
+
+            {/* 하단 약관 링크 */}
+            <div className="auth-legal-links">
+              <a href="/privacy" target="_blank" rel="noreferrer">이용약관</a>
+              <span>·</span>
+              <a href="/privacy" target="_blank" rel="noreferrer">개인정보처리방침</a>
+            </div>
           </div>
         </div>
       </BoxMain>

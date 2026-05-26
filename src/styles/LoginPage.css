@@ -219,3 +219,19 @@
   height: 1px;
   background: var(--border-subtle);
 }
+/* ===== 하단 약관 링크 ===== */
+.auth-legal-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 0.78em;
+  color: var(--text-muted);
+}
+.auth-legal-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.auth-legal-links a:hover { color: var(--accent-gold); }
+.auth-legal-links span { opacity: 0.4; }
