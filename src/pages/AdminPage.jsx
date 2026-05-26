@@ -960,7 +960,7 @@ function StoreEventsTab({ storeId }) {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!storeId) return;
     setLoading(true);
     try {
@@ -971,9 +971,9 @@ function StoreEventsTab({ storeId }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeId]);
 
-  useEffect(() => { load(); }, [storeId]);
+  useEffect(() => { load(); }, [load]);
 
   const today = new Date().toISOString().slice(0, 10);
   const isActive = (e) => e.startDate <= today && e.endDate >= today;

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
-import { getActiveEvents, getAllEvents } from '../services/eventService';
+import { getAllEvents } from '../services/eventService';
 import '../styles/Global.css';
 import '../styles/EventPage.css';
 
