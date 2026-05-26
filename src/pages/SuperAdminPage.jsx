@@ -152,6 +152,7 @@ function SuperAdminPage() {
 function DashboardTab({ stores, reservations }) {
   const thisMonth = new Date().toISOString().slice(0, 7);
   const [drilldown, setDrilldown] = useState(null); // 'owners' | 'branches'
+  const [feeVisible, setFeeVisible] = useState(false);
 
   const activeReservations = reservations.filter(r => !r.cancelled);
   const thisReservations = activeReservations.filter(r => r.date?.startsWith(thisMonth));
@@ -185,7 +186,13 @@ function DashboardTab({ stores, reservations }) {
     { icon: '🏪', label: '계약 지점 수',      value: `${totalBranches}개`,              key: 'branches' },
     { icon: '💰', label: '전체 누적 매출',    value: `${totalRevenue.toLocaleString()}원`, key: null },
     { icon: '📅', label: '이번달 예약 수',    value: `${thisReservations.length}건`,    key: null },
-    { icon: '💎', label: '이번달 플랫폼 수익', value: `${totalFee.toLocaleString()}원`,  key: null },
+    {
+      icon: '💎',
+      label: '이번달 플랫폼 수익',
+      value: feeVisible ? `${totalFee.toLocaleString()}원` : '●●●●●원',
+      key: null,
+      locked: true,
+    },
   ];
 
   return (
@@ -203,11 +210,35 @@ function DashboardTab({ stores, reservations }) {
                 border: drilldown === s.key ? '2px solid var(--accent-gold)' : '2px solid transparent',
                 borderRadius: '8px',
                 transition: 'border 0.2s',
+                position: 'relative',
               }}
             >
               <span className="dashboard-stat-icon">{s.icon}</span>
-              <span className="dashboard-stat-value">{s.value}</span>
+              <span className="dashboard-stat-value" style={{
+                filter: s.locked && !feeVisible ? 'blur(6px)' : 'none',
+                userSelect: s.locked && !feeVisible ? 'none' : 'auto',
+                transition: 'filter 0.3s',
+              }}>
+                {s.value}
+              </span>
               <span className="dashboard-stat-label">{s.label}</span>
+              {s.locked && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setFeeVisible(v => !v); }}
+                  style={{
+                    marginTop: '6px',
+                    padding: '3px 10px',
+                    fontSize: '0.75em',
+                    background: feeVisible ? 'rgba(255,107,122,0.15)' : 'rgba(212,168,67,0.15)',
+                    border: `1px solid ${feeVisible ? '#ff6b7a' : 'var(--accent-gold)'}`,
+                    borderRadius: '20px',
+                    color: feeVisible ? '#ff6b7a' : 'var(--accent-gold)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {feeVisible ? '🔓 숨기기' : '🔒 확인하기'}
+                </button>
+              )}
               {s.key && <span style={{ fontSize: '0.7em', color: 'var(--accent-gold)' }}>클릭해서 상세보기</span>}
             </div>
           ))}
