@@ -167,14 +167,22 @@ function HorizontalSection({ title, icon, products, onCardClick, showDday, accen
 }
 
 // ===== 장르별 탐색 섹션 =====
-const GENRES = ['전체', '공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
+const GENRES = ['공포', '추리', 'SF', '판타지', '스릴러', '어드벤처', '로맨스', '코미디', '기타'];
 
 function GenreSection({ products, onCardClick }) {
-  const [selectedGenre, setSelectedGenre] = useState('전체');
+  const [selectedGenres, setSelectedGenres] = useState([]);
 
-  const filtered = selectedGenre === '전체'
+  const toggleGenre = (genre) => {
+    setSelectedGenres(prev =>
+      prev.includes(genre)
+        ? prev.filter(g => g !== genre)
+        : [...prev, genre]
+    );
+  };
+
+  const filtered = selectedGenres.length === 0
     ? products
-    : products.filter(p => p.genre === selectedGenre);
+    : products.filter(p => selectedGenres.includes(p.genre));
 
   return (
     <div className="genre-section">
@@ -183,20 +191,34 @@ function GenreSection({ products, onCardClick }) {
           <span className="h-section-icon" style={{ color: 'var(--accent-gold)' }}>🎭</span>
           <h2 className="h-section-title" style={{ color: 'var(--accent-gold)' }}>장르별 탐색</h2>
         </div>
+        {selectedGenres.length > 0 && (
+          <button
+            style={{ fontSize: '0.8em', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={() => setSelectedGenres([])}
+          >
+            전체 보기
+          </button>
+        )}
       </div>
 
-      {/* 장르 칩 */}
+      {/* 장르 칩 — 다중 선택 */}
       <div className="genre-chips">
         {GENRES.map(g => (
           <button
             key={g}
-            className={`genre-chip ${selectedGenre === g ? 'active' : ''}`}
-            onClick={() => setSelectedGenre(g)}
+            className={`genre-chip ${selectedGenres.includes(g) ? 'active' : ''}`}
+            onClick={() => toggleGenre(g)}
           >
             {g}
           </button>
         ))}
       </div>
+
+      {selectedGenres.length > 0 && (
+        <div style={{ fontSize: '0.82em', color: 'var(--text-muted)', marginBottom: '12px' }}>
+          {selectedGenres.join(' · ')} · {filtered.length}개 테마
+        </div>
+      )}
 
       {/* 카드 그리드 */}
       {filtered.length > 0 ? (

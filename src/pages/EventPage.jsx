@@ -1,44 +1,57 @@
-import React, { useState } from 'react';
+// src/pages/EventPage.jsx
+import React, { useState, useEffect } from 'react';
 import BoxTop from '../components/BoxTop';
 import BoxRight from '../components/BoxRight';
 import BoxMain from '../components/BoxMain';
+import { getActiveEvents, getAllEvents } from '../services/eventService';
 import '../styles/Global.css';
 import '../styles/EventPage.css';
-import eventsData from '../data/eventsData';
+
+const TYPE_LABEL = {
+  banner:         '📢 공지',
+  coupon:         '🎟 할인쿠폰',
+  theme_highlight:'✨ 기간한정',
+  bingo:          '🎯 빙고퀘스트',
+};
 
 function EventPage() {
+  const [allEvents, setAllEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  // 오늘 날짜
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date().toISOString().slice(0, 10);
 
-  // 이벤트 진행 여부 판단
-  const isActive = (event) => {
-    const start = new Date(event.startDate);
-    const end = new Date(event.endDate);
-    return today >= start && today <= end;
-  };
+  useEffect(() => {
+    const load = async () => {
+      try {
+        // isActive=true인 것만 가져와서 날짜로 진행/종료 구분
+        const data = await getAllEvents();
+        setAllEvents(data.filter(e => e.isActive));
+      } catch (e) {
+        console.error('이벤트 불러오기 실패:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
-  // D-day 계산
+  const isActive = (e) => e.startDate <= today && e.endDate >= today;
+
   const getDday = (endDate) => {
-    const end = new Date(endDate);
-    const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+    const diff = Math.ceil((new Date(endDate) - new Date(today)) / (1000 * 60 * 60 * 24));
     if (diff === 0) return 'D-day';
     if (diff > 0) return `D-${diff}`;
     return '종료';
   };
 
-  // 이벤트 종료 후 3개월(90일) 지난 것 필터링
+  // 종료 후 90일 이내만 표시
   const THREE_MONTHS_AGO = new Date();
   THREE_MONTHS_AGO.setDate(THREE_MONTHS_AGO.getDate() - 90);
+  const threeMonthsAgoStr = THREE_MONTHS_AGO.toISOString().slice(0, 10);
 
-  const activeEvents = eventsData.filter(e => isActive(e));
-  const endedEvents = eventsData.filter(e => {
-    if (isActive(e)) return false;
-    const end = new Date(e.endDate);
-    return end >= THREE_MONTHS_AGO; // 종료된 지 90일 이내만 표시
-  });
+  const activeEvents = allEvents.filter(e => isActive(e));
+  const endedEvents  = allEvents.filter(e => !isActive(e) && e.endDate >= threeMonthsAgoStr);
 
   return (
     <div className="page-container">
@@ -51,15 +64,15 @@ function EventPage() {
           {activeEvents.length > 0 && (
             <div
               className="event-hero"
-              style={{ backgroundImage: `url(${activeEvents[0].thumbnail})` }}
+              style={activeEvents[0].imageUrl ? { backgroundImage: `url(${activeEvents[0].imageUrl})` } : {}}
               onClick={() => setSelectedEvent(activeEvents[0])}
             >
               <div className="event-hero-overlay">
-                <span className="event-hero-badge" style={{ backgroundColor: activeEvents[0].badgeColor }}>
-                  {activeEvents[0].badgeText}
+                <span className="event-hero-badge" style={{ backgroundColor: activeEvents[0].badgeColor || '#d4a843' }}>
+                  {TYPE_LABEL[activeEvents[0].type] || activeEvents[0].type}
                 </span>
                 <h1 className="event-hero-title">{activeEvents[0].title}</h1>
-                <p className="event-hero-subtitle">{activeEvents[0].subtitle}</p>
+                <p className="event-hero-subtitle">{activeEvents[0].description}</p>
                 <div className="event-hero-dday">{getDday(activeEvents[0].endDate)} 마감</div>
               </div>
             </div>
@@ -69,29 +82,31 @@ function EventPage() {
           <section className="event-section">
             <h2 className="event-section-title">
               🔥 진행 중인 이벤트
-              <span className="event-count">{activeEvents.length}개</span>
+              <span className="event-count">{loading ? '...' : activeEvents.length}개</span>
             </h2>
-            {activeEvents.length > 0 ? (
+            {loading ? (
+              <p style={{ color: 'var(--text-muted)', padding: '20px 0' }}>불러오는 중...</p>
+            ) : activeEvents.length > 0 ? (
               <div className="event-grid">
                 {activeEvents.map(event => (
-                  <div
-                    key={event.id}
-                    className="event-card"
-                    onClick={() => setSelectedEvent(event)}
-                  >
+                  <div key={event.id} className="event-card" onClick={() => setSelectedEvent(event)}>
                     <div className="event-card-img-wrapper">
-                      <img src={event.thumbnail} alt={event.title} className="event-card-img" />
-                      <span className="event-card-badge" style={{ backgroundColor: event.badgeColor }}>
-                        {event.badgeText}
+                      {event.imageUrl ? (
+                        <img src={event.imageUrl} alt={event.title} className="event-card-img" />
+                      ) : (
+                        <div className="event-card-img" style={{ background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>
+                          {TYPE_LABEL[event.type]?.split(' ')[0] || '🎉'}
+                        </div>
+                      )}
+                      <span className="event-card-badge" style={{ backgroundColor: event.badgeColor || '#d4a843' }}>
+                        {TYPE_LABEL[event.type] || event.type}
                       </span>
                       <span className="event-card-dday">{getDday(event.endDate)}</span>
                     </div>
                     <div className="event-card-body">
                       <h3>{event.title}</h3>
-                      <p className="event-card-subtitle">{event.subtitle}</p>
-                      <div className="event-card-date">
-                        📅 {event.startDate} ~ {event.endDate}
-                      </div>
+                      <p className="event-card-subtitle">{event.description}</p>
+                      <div className="event-card-date">📅 {event.startDate} ~ {event.endDate}</div>
                     </div>
                   </div>
                 ))}
@@ -102,35 +117,32 @@ function EventPage() {
           </section>
 
           {/* 종료된 이벤트 */}
-          {endedEvents.length > 0 && (
+          {!loading && endedEvents.length > 0 && (
             <section className="event-section">
-              <h2 className="event-section-title">
-                📁 종료된 이벤트
-              </h2>
+              <h2 className="event-section-title">📁 종료된 이벤트</h2>
               <div className="event-grid">
                 {endedEvents.map(event => (
-                  <div
-                    key={event.id}
-                    className="event-card ended"
-                    onClick={() => setSelectedEvent(event)}
-                  >
+                  <div key={event.id} className="event-card ended" onClick={() => setSelectedEvent(event)}>
                     <div className="event-card-img-wrapper">
-                      <img src={event.thumbnail} alt={event.title} className="event-card-img" />
+                      {event.imageUrl ? (
+                        <img src={event.imageUrl} alt={event.title} className="event-card-img" />
+                      ) : (
+                        <div className="event-card-img" style={{ background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>
+                          {TYPE_LABEL[event.type]?.split(' ')[0] || '🎉'}
+                        </div>
+                      )}
                       <div className="event-card-ended-overlay">종료</div>
                     </div>
                     <div className="event-card-body">
                       <h3>{event.title}</h3>
-                      <p className="event-card-subtitle">{event.subtitle}</p>
-                      <div className="event-card-date">
-                        📅 {event.startDate} ~ {event.endDate}
-                      </div>
+                      <p className="event-card-subtitle">{event.description}</p>
+                      <div className="event-card-date">📅 {event.startDate} ~ {event.endDate}</div>
                     </div>
                   </div>
                 ))}
               </div>
             </section>
           )}
-
         </div>
       </BoxMain>
 
@@ -139,82 +151,45 @@ function EventPage() {
         <div className="event-modal-overlay" onClick={() => setSelectedEvent(null)}>
           <div className="event-modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="event-modal-close" onClick={() => setSelectedEvent(null)}>×</button>
-
-            <img src={selectedEvent.thumbnail} alt={selectedEvent.title} className="event-modal-img" />
-
+            {selectedEvent.imageUrl && (
+              <img src={selectedEvent.imageUrl} alt={selectedEvent.title} className="event-modal-img" />
+            )}
             <div className="event-modal-body">
               <div className="event-modal-badge-row">
-                <span className="event-card-badge" style={{ backgroundColor: selectedEvent.badgeColor }}>
-                  {selectedEvent.badgeText}
+                <span className="event-card-badge" style={{ backgroundColor: selectedEvent.badgeColor || '#d4a843' }}>
+                  {TYPE_LABEL[selectedEvent.type] || selectedEvent.type}
                 </span>
                 {isActive(selectedEvent) && (
                   <span className="event-modal-dday">{getDday(selectedEvent.endDate)} 마감</span>
                 )}
               </div>
-
               <h2>{selectedEvent.title}</h2>
               <p className="event-modal-desc">{selectedEvent.description}</p>
-              <p className="event-modal-date">
-                📅 {selectedEvent.startDate} ~ {selectedEvent.endDate}
-              </p>
-
+              <p className="event-modal-date">📅 {selectedEvent.startDate} ~ {selectedEvent.endDate}</p>
               <hr className="event-modal-divider" />
 
-              {/* 할인 이벤트 상세 */}
-              {(selectedEvent.type === 'discount' || selectedEvent.type === 'special') &&
-                selectedEvent.detail.discountRate > 0 && (
+              {/* 할인/쿠폰 정보 */}
+              {(selectedEvent.discountRate > 0 || selectedEvent.couponCode) && (
                 <div className="event-detail-box">
                   <h3>🎟 할인 정보</h3>
-                  <div className="event-detail-row">
-                    <span>할인율</span>
-                    <strong className="highlight">{selectedEvent.detail.discountRate}% 할인</strong>
-                  </div>
-                  {selectedEvent.detail.targetThemes && (
+                  {selectedEvent.discountRate > 0 && (
                     <div className="event-detail-row">
-                      <span>적용 테마</span>
-                      <strong>{selectedEvent.detail.targetThemes.join(', ')}</strong>
+                      <span>할인율</span>
+                      <strong className="highlight">{selectedEvent.discountRate}% 할인</strong>
                     </div>
                   )}
-                  <div className="event-detail-row">
-                    <span>적용 조건</span>
-                    <strong>{selectedEvent.detail.condition}</strong>
-                  </div>
-                  <div className="coupon-box">
-                    <span>쿠폰 코드</span>
-                    <code className="coupon-code">{selectedEvent.detail.couponCode}</code>
-                  </div>
-                </div>
-              )}
-
-              {/* 쿠폰만 있는 경우 */}
-              {selectedEvent.type === 'special' &&
-                selectedEvent.detail.discountRate === 0 && (
-                <div className="event-detail-box">
-                  <h3>🎁 혜택 정보</h3>
-                  <div className="event-detail-row">
-                    <span>적용 조건</span>
-                    <strong>{selectedEvent.detail.condition}</strong>
-                  </div>
-                  <div className="coupon-box">
-                    <span>쿠폰 코드</span>
-                    <code className="coupon-code">{selectedEvent.detail.couponCode}</code>
-                  </div>
-                </div>
-              )}
-
-              {/* 빙고 퀘스트 상세 */}
-              {selectedEvent.type === 'bingo' && (
-                <div className="event-detail-box">
-                  <h3>🎯 빙고 퀘스트</h3>
-                  <p className="bingo-reward">🏆 보상: {selectedEvent.detail.reward}</p>
-                  <div className="bingo-grid">
-                    {selectedEvent.detail.bingoItems.map(item => (
-                      <div key={item.id} className="bingo-item">
-                        <span className="bingo-icon">{item.icon}</span>
-                        <span className="bingo-text">{item.text}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {selectedEvent.targetThemeIds?.length > 0 && (
+                    <div className="event-detail-row">
+                      <span>적용 테마 수</span>
+                      <strong>{selectedEvent.targetThemeIds.length}개 테마</strong>
+                    </div>
+                  )}
+                  {selectedEvent.couponCode && (
+                    <div className="coupon-box">
+                      <span>쿠폰 코드</span>
+                      <code className="coupon-code">{selectedEvent.couponCode}</code>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

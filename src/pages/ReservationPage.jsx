@@ -74,7 +74,7 @@ function ProductCard({ product, onClick }) {
   );
 }
 
-// ===== 태그 칩 컴포넌트 =====
+// ===== 태그 칩 컴포넌트 (단일 선택 — 지역용) =====
 function ChipGroup({ label, options, selected, onSelect, emoji }) {
   return (
     <div className="chip-group">
@@ -100,6 +100,36 @@ function ChipGroup({ label, options, selected, onSelect, emoji }) {
   );
 }
 
+// ===== 다중 선택 칩 컴포넌트 (장르용) =====
+function MultiChipGroup({ label, options, selected, onToggle, onReset, emoji }) {
+  return (
+    <div className="chip-group">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="chip-group-label">{emoji} {label}</span>
+        {selected.length > 0 && (
+          <button
+            style={{ fontSize: '0.78em', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={onReset}
+          >
+            전체 보기
+          </button>
+        )}
+      </div>
+      <div className="chip-list">
+        {options.map(opt => (
+          <button
+            key={opt}
+            className={`chip ${selected.includes(opt) ? 'active' : ''}`}
+            onClick={() => onToggle(opt)}
+          >
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ===== 메인 페이지 =====
 function ReservationPage() {
   const [allProducts, setAllProducts] = useState([]);
@@ -115,7 +145,13 @@ function ReservationPage() {
   );
 
   const [selectedCity, setSelectedCity] = useState('전체');
-  const [selectedGenre, setSelectedGenre] = useState('전체');
+  const [selectedGenres, setSelectedGenres] = useState([]);
+
+  const toggleGenre = (genre) => {
+    setSelectedGenres(prev =>
+      prev.includes(genre) ? prev.filter(g => g !== genre) : [...prev, genre]
+    );
+  };
   const [showFilters, setShowFilters] = useState(false);
 
   const searchRef = React.useRef(null);
@@ -164,7 +200,7 @@ function ReservationPage() {
       p.branch?.toLowerCase().includes(keyword) ||
       p.address?.toLowerCase().includes(keyword);
     const matchCity = selectedCity === '전체' || p.address?.includes(selectedCity);
-    const matchGenre = selectedGenre === '전체' || p.genre === selectedGenre;
+    const matchGenre = selectedGenres.length === 0 || selectedGenres.includes(p.genre);
     const matchTemporary = !onlyTemporary || p.isTemporary === true;
     return matchKeyword && matchCity && matchGenre && matchTemporary;
   });
@@ -195,7 +231,7 @@ function ReservationPage() {
     setShowSuggestions(false);
   };
 
-  const activeFilterCount = [selectedCity, selectedGenre].filter(v => v !== '전체').length + (onlyTemporary ? 1 : 0);
+  const activeFilterCount = [selectedCity].filter(v => v !== '전체').length + selectedGenres.length + (onlyTemporary ? 1 : 0);
 
   return (
     <div className="page-container">
@@ -284,7 +320,7 @@ function ReservationPage() {
               <div className="chip-filter-header">
                 <span>필터</span>
                 <button className="chip-reset-btn"
-                  onClick={() => { setSelectedCity('전체'); setSelectedGenre('전체'); }}>
+                  onClick={() => { setSelectedCity('전체'); setSelectedGenres([]); }}>
                   초기화
                 </button>
               </div>
@@ -314,12 +350,13 @@ function ReservationPage() {
                 selected={selectedCity}
                 onSelect={setSelectedCity}
               />
-              <ChipGroup
+              <MultiChipGroup
                 label="장르"
                 emoji="🎭"
                 options={GENRE_OPTIONS}
-                selected={selectedGenre}
-                onSelect={setSelectedGenre}
+                selected={selectedGenres}
+                onToggle={toggleGenre}
+                onReset={() => setSelectedGenres([])}
               />
             </section>
           )}
@@ -333,12 +370,12 @@ function ReservationPage() {
                   <button onClick={() => setSelectedCity('전체')}>✕</button>
                 </span>
               )}
-              {selectedGenre !== '전체' && (
-                <span className="active-chip">
-                  🎭 {selectedGenre}
-                  <button onClick={() => setSelectedGenre('전체')}>✕</button>
+              {selectedGenres.map(g => (
+                <span key={g} className="active-chip">
+                  🎭 {g}
+                  <button onClick={() => toggleGenre(g)}>✕</button>
                 </span>
-              )}
+              ))}
               {onlyTemporary && (
                 <span className="active-chip"
                   style={{ borderColor: '#ff6b35', color: '#ff6b35', background: 'rgba(255,107,53,0.15)' }}>

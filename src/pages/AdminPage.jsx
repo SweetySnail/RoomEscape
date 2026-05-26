@@ -9,6 +9,7 @@ import BoxMain from '../components/BoxMain';
 import { getAllReservations, updateReservationResult } from '../services/reservationService';
 import { getStore, updateTheme } from '../services/storeService';
 import { updateProduct } from '../services/productService';
+import { getEventsByStore, createEvent, updateEvent, deleteEvent } from '../services/eventService';
 import { getDocs, collection, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import '../styles/Global.css';
@@ -107,6 +108,9 @@ function AdminPage() {
             )}
             {activeTab === 'schedule' && (
               <ScheduleTab store={store} setStore={setStore} loggedInUser={loggedInUser} />
+            )}
+            {activeTab === 'events' && (
+              <StoreEventsTab storeId={loggedInUser.storeId} />
             )}
           </div>
         </div>
@@ -930,3 +934,231 @@ function AutoTimer({ createdAt, onExpire }) {
 }
 
 export default AdminPage;
+
+// =============================================
+// 이벤트 관리 탭 (매장관리자용)
+// =============================================
+const STORE_EVENT_TYPES = [
+  { value: 'banner',         label: '📢 배너/공지' },
+  { value: 'coupon',         label: '🎟 할인쿠폰' },
+  { value: 'theme_highlight',label: '✨ 기간한정 테마 노출' },
+];
+
+const STORE_EMPTY_FORM = {
+  title: '', description: '', type: 'banner',
+  imageUrl: '', badgeColor: '#d4a843',
+  startDate: '', endDate: '',
+  couponCode: '', discountRate: 0,
+};
+
+function StoreEventsTab({ storeId }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(STORE_EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const load = async () => {
+    if (!storeId) return;
+    setLoading(true);
+    try {
+      const data = await getEventsByStore(storeId);
+      setEvents(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, [storeId]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const isActive = (e) => e.startDate <= today && e.endDate >= today;
+
+  const handleEdit = (event) => {
+    setForm({ ...STORE_EMPTY_FORM, ...event });
+    setEditingId(event.id);
+    setShowForm(true);
+  };
+
+  const handleNew = () => {
+    setForm(STORE_EMPTY_FORM);
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.title || !form.startDate || !form.endDate) {
+      setMsg('❌ 제목, 시작일, 종료일은 필수예요.');
+      return;
+    }
+    setSaving(true);
+    setMsg('');
+    try {
+      if (editingId) {
+        await updateEvent(editingId, form);
+      } else {
+        await createEvent({ ...form, storeId });
+      }
+      setMsg('✅ 저장되었어요!');
+      setShowForm(false);
+      load();
+    } catch (e) {
+      setMsg('❌ 저장 실패: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('이벤트를 삭제할까요?')) return;
+    try {
+      await deleteEvent(id);
+      load();
+    } catch (e) {
+      alert('삭제 실패: ' + e.message);
+    }
+  };
+
+  const inputStyle = {
+    background: 'var(--bg-primary)',
+    border: '1px solid var(--border)',
+    borderRadius: '6px',
+    padding: '8px 12px',
+    color: 'var(--text-primary)',
+    fontSize: '0.9em',
+    width: '100%',
+    boxSizing: 'border-box',
+  };
+
+  if (!storeId) return (
+    <div className="tab-section">
+      <div className="admin-card">
+        <p className="admin-empty">매장 정보가 없어요. 총괄 관리자에게 문의해주세요.</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="tab-section">
+      <div className="admin-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>🎉 우리 매장 이벤트</h3>
+          <button className="mypage-btn primary" onClick={handleNew}>+ 이벤트 등록</button>
+        </div>
+
+        {/* 등록/수정 폼 */}
+        {showForm && (
+          <div style={{ background: 'var(--bg-secondary)', borderRadius: '10px', padding: '20px', marginBottom: '24px', border: '1px solid var(--border)' }}>
+            <h4 style={{ marginTop: 0 }}>{editingId ? '✏️ 이벤트 수정' : '➕ 새 이벤트 등록'}</h4>
+
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>이벤트 종류</label>
+                <select style={inputStyle} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+                  {STORE_EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>제목 *</label>
+                <input style={inputStyle} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="이벤트 제목" />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>설명</label>
+                <textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="이벤트 설명" />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>이미지 URL</label>
+                <input style={inputStyle} value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="https://..." />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>시작일 *</label>
+                  <input type="date" style={inputStyle} value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>종료일 *</label>
+                  <input type="date" style={inputStyle} value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
+                </div>
+              </div>
+
+              {form.type === 'coupon' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>쿠폰 코드</label>
+                    <input style={inputStyle} value={form.couponCode} onChange={e => setForm(f => ({ ...f, couponCode: e.target.value }))} placeholder="STORE2025" />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.82em', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>할인율 (%)</label>
+                    <input type="number" style={inputStyle} value={form.discountRate} onChange={e => setForm(f => ({ ...f, discountRate: Number(e.target.value) }))} min={0} max={100} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {msg && <p style={{ color: msg.startsWith('✅') ? '#6fcf97' : '#ff6b7a', margin: '12px 0 0' }}>{msg}</p>}
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+              <button className="mypage-btn primary" onClick={handleSave} disabled={saving}>
+                {saving ? '저장 중...' : '💾 저장'}
+              </button>
+              <button className="mypage-btn" onClick={() => { setShowForm(false); setMsg(''); }}>취소</button>
+            </div>
+          </div>
+        )}
+
+        {/* 이벤트 목록 */}
+        {loading ? (
+          <p style={{ color: 'var(--text-muted)' }}>불러오는 중...</p>
+        ) : events.length === 0 ? (
+          <p className="admin-empty">등록된 이벤트가 없어요. 첫 이벤트를 만들어보세요!</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {events.map(event => {
+              const active = isActive(event);
+              return (
+                <div key={event.id} style={{
+                  background: 'var(--bg-secondary)',
+                  borderRadius: '8px',
+                  padding: '14px 16px',
+                  border: `1px solid ${active ? 'var(--accent-gold)' : 'var(--border)'}`,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <strong>{event.title}</strong>
+                        <span style={{
+                          fontSize: '0.75em', padding: '2px 8px', borderRadius: '20px',
+                          background: active ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.05)',
+                          color: active ? 'var(--accent-gold)' : 'var(--text-muted)',
+                          border: `1px solid ${active ? 'var(--accent-gold)' : 'var(--border)'}`,
+                        }}>
+                          {active ? '🟢 진행중' : '⚪ 종료'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.82em', color: 'var(--text-muted)' }}>
+                        {STORE_EVENT_TYPES.find(t => t.value === event.type)?.label || event.type} · {event.startDate} ~ {event.endDate}
+                        {event.couponCode && ` · 쿠폰: ${event.couponCode}`}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      <button className="mypage-btn small" onClick={() => handleEdit(event)}>수정</button>
+                      <button className="mypage-btn small danger" onClick={() => handleDelete(event.id)}>삭제</button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
