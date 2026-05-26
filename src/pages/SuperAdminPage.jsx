@@ -152,7 +152,6 @@ function SuperAdminPage() {
 function DashboardTab({ stores, reservations }) {
   const thisMonth = new Date().toISOString().slice(0, 7);
   const [drilldown, setDrilldown] = useState(null); // 'owners' | 'branches'
-  const [feeVisible, setFeeVisible] = useState(false);
 
   const activeReservations = reservations.filter(r => !r.cancelled);
   const thisReservations = activeReservations.filter(r => r.date?.startsWith(thisMonth));
@@ -186,13 +185,7 @@ function DashboardTab({ stores, reservations }) {
     { icon: '🏪', label: '계약 지점 수',      value: `${totalBranches}개`,              key: 'branches' },
     { icon: '💰', label: '전체 누적 매출',    value: `${totalRevenue.toLocaleString()}원`, key: null },
     { icon: '📅', label: '이번달 예약 수',    value: `${thisReservations.length}건`,    key: null },
-    {
-      icon: '💎',
-      label: '이번달 플랫폼 수익',
-      value: feeVisible ? `${totalFee.toLocaleString()}원` : '●●●●●원',
-      key: null,
-      locked: true,
-    },
+    { icon: '💎', label: '이번달 플랫폼 수익', value: `${totalFee.toLocaleString()}원`,  key: null },
   ];
 
   return (
@@ -210,35 +203,11 @@ function DashboardTab({ stores, reservations }) {
                 border: drilldown === s.key ? '2px solid var(--accent-gold)' : '2px solid transparent',
                 borderRadius: '8px',
                 transition: 'border 0.2s',
-                position: 'relative',
               }}
             >
               <span className="dashboard-stat-icon">{s.icon}</span>
-              <span className="dashboard-stat-value" style={{
-                filter: s.locked && !feeVisible ? 'blur(6px)' : 'none',
-                userSelect: s.locked && !feeVisible ? 'none' : 'auto',
-                transition: 'filter 0.3s',
-              }}>
-                {s.value}
-              </span>
+              <span className="dashboard-stat-value">{s.value}</span>
               <span className="dashboard-stat-label">{s.label}</span>
-              {s.locked && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setFeeVisible(v => !v); }}
-                  style={{
-                    marginTop: '6px',
-                    padding: '3px 10px',
-                    fontSize: '0.75em',
-                    background: feeVisible ? 'rgba(255,107,122,0.15)' : 'rgba(212,168,67,0.15)',
-                    border: `1px solid ${feeVisible ? '#ff6b7a' : 'var(--accent-gold)'}`,
-                    borderRadius: '20px',
-                    color: feeVisible ? '#ff6b7a' : 'var(--accent-gold)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {feeVisible ? '🔓 숨기기' : '🔒 확인하기'}
-                </button>
-              )}
               {s.key && <span style={{ fontSize: '0.7em', color: 'var(--accent-gold)' }}>클릭해서 상세보기</span>}
             </div>
           ))}
@@ -1475,6 +1444,7 @@ function RegisterTab({ onComplete }) {
 function FeeTab({ stores, reservations }) {
   const thisMonth = new Date().toISOString().slice(0, 7);
   const prevMonth = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().slice(0, 7);
+  const [feeVisible, setFeeVisible] = useState(false);
 
   const feeData = stores.map(store => {
     const themeNames = store.branches?.flatMap(b => b.themes?.map(t => t.name) || []) || [];
@@ -1488,11 +1458,28 @@ function FeeTab({ stores, reservations }) {
   });
 
   const totalThisFee = feeData.reduce((s, d) => s + d.thisFee, 0);
+  const masked = (v) => feeVisible ? `${v.toLocaleString()}원` : '●●●●●원';
+  const blurStyle = { filter: feeVisible ? 'none' : 'blur(5px)', transition: 'filter 0.3s', userSelect: feeVisible ? 'auto' : 'none' };
 
   return (
     <div className="tab-section">
       <div className="admin-card fee-summary-card">
-        <h3>💳 이번달 수수료 정산 ({thisMonth})</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>💳 이번달 수수료 정산 ({thisMonth})</h3>
+          <button
+            onClick={() => setFeeVisible(v => !v)}
+            style={{
+              padding: '5px 14px', fontSize: '0.8em',
+              background: feeVisible ? 'rgba(255,107,122,0.15)' : 'rgba(212,168,67,0.15)',
+              border: `1px solid ${feeVisible ? '#ff6b7a' : 'var(--accent-gold)'}`,
+              borderRadius: '20px',
+              color: feeVisible ? '#ff6b7a' : 'var(--accent-gold)',
+              cursor: 'pointer',
+            }}
+          >
+            {feeVisible ? '🔓 금액 숨기기' : '🔒 금액 확인하기'}
+          </button>
+        </div>
         <div className="fee-summary-list">
           {feeData.map(({ store, thisRevenue, thisFee, prevFee, themeCount }) => {
             const diff = thisFee - prevFee;
@@ -1507,14 +1494,14 @@ function FeeTab({ stores, reservations }) {
                   </span>
                 </div>
                 <div className="fee-summary-right">
-                  <div className="fee-calc">
+                  <div className="fee-calc" style={blurStyle}>
                     {store.feeType === 'fixed'
                       ? <span>{(store.fixedFee || 0).toLocaleString()}원 × {themeCount}방</span>
                       : <span>이번달 {thisRevenue.toLocaleString()}원 × {store.discountRate}%</span>}
                   </div>
-                  <div className="fee-total">{thisFee.toLocaleString()}원</div>
+                  <div className="fee-total" style={blurStyle}>{masked(thisFee)}</div>
                   {diff !== 0 && (
-                    <span style={{ fontSize: '0.8em', color: diff > 0 ? '#6fcf97' : '#ff6b7a' }}>
+                    <span style={{ fontSize: '0.8em', color: diff > 0 ? '#6fcf97' : '#ff6b7a', ...blurStyle }}>
                       {diff > 0 ? `▲ ${diff.toLocaleString()}원` : `▼ ${Math.abs(diff).toLocaleString()}원`}
                     </span>
                   )}
@@ -1524,7 +1511,7 @@ function FeeTab({ stores, reservations }) {
           })}
           <div className="fee-grand-total">
             <span>이번달 총 플랫폼 수익</span>
-            <strong>{totalThisFee.toLocaleString()}원</strong>
+            <strong style={blurStyle}>{masked(totalThisFee)}</strong>
           </div>
         </div>
       </div>

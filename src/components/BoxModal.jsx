@@ -396,6 +396,19 @@ function BoxModal({ productData, onClose }) {
                   <span className="review-date">{review.date}</span>
                 </div>
                 <p className="review-comment">{review.comment}</p>
+                {review.imageUrls?.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    {review.imageUrls.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`리뷰 이미지 ${i + 1}`}
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer' }}
+                        onClick={() => window.open(url, '_blank')}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           ) : (productData.recentReviews ?? []).length > 0 ? (
@@ -409,6 +422,19 @@ function BoxModal({ productData, onClose }) {
                   <span className="review-date">{review.date}</span>
                 </div>
                 <p className="review-comment">{review.comment}</p>
+                {review.imageUrls?.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    {review.imageUrls.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`리뷰 이미지 ${i + 1}`}
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer' }}
+                        onClick={() => window.open(url, '_blank')}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           ) : (

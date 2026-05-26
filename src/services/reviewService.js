@@ -5,16 +5,30 @@ import {
   query,
   where,
   orderBy,
+  doc,
+  updateDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// 리뷰 추가
+// 리뷰 추가 (imageUrls 배열 포함)
 export const addReview = async (review) => {
   const docRef = await addDoc(collection(db, 'reviews'), {
     ...review,
+    imageUrls: review.imageUrls || [],
     createdAt: new Date().toISOString(),
   });
   return docRef.id;
+};
+
+// 리뷰 삭제
+export const deleteReview = async (reviewId) => {
+  await deleteDoc(doc(db, 'reviews', reviewId));
+};
+
+// 리뷰 수정
+export const updateReview = async (reviewId, data) => {
+  await updateDoc(doc(db, 'reviews', reviewId), data);
 };
 
 // 테마별 리뷰 불러오기

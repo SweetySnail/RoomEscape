@@ -8,6 +8,7 @@ import {
   reauthenticateWithCredential,
   GoogleAuthProvider,
   signInWithPopup,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import {
   doc,
@@ -154,4 +155,9 @@ export const changeInitialPassword = async (currentPassword, newPassword) => {
   await reauthenticateWithCredential(user, credential);
   await updatePassword(user, newPassword);
   await updateDoc(doc(db, 'users', user.uid), { passwordChanged: true });
+};
+
+// ===== 비밀번호 재설정 이메일 발송 =====
+export const sendPasswordReset = async (email) => {
+  await sendPasswordResetEmail(auth, email);
 };
