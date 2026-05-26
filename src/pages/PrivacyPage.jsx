@@ -6,6 +6,47 @@ import BoxRight from '../components/BoxRight';
 import '../styles/Global.css';
 import '../styles/PrivacyPage.css';
 
+// 현재 탭 내용을 새 창에서 프린트
+function printPrivacy(title, contentId) {
+  const content = document.getElementById(contentId);
+  if (!content) return;
+
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/>
+    <title>${title}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'Noto Sans KR','맑은 고딕',sans-serif;font-size:13px;color:#111;padding:40px 60px;line-height:1.8;}
+      h1{font-size:18px;text-align:center;margin-bottom:24px;font-weight:700;border-bottom:2px solid #111;padding-bottom:12px;}
+      h2{font-size:14px;font-weight:700;margin:20px 0 8px;border-left:3px solid #333;padding-left:8px;}
+      p{font-size:12.5px;color:#222;margin-bottom:8px;}
+      ul{padding-left:20px;margin-bottom:8px;}
+      li{font-size:12.5px;color:#222;margin-bottom:4px;}
+      table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12px;}
+      th,td{border:1px solid #ccc;padding:7px 10px;text-align:left;}
+      th{background:#f5f5f5;font-weight:700;}
+      a{color:#333;text-decoration:underline;}
+      .privacy-contact-box{border:1px solid #ddd;border-radius:4px;padding:12px 16px;background:#fafafa;margin:10px 0;}
+      .privacy-contact-row{display:flex;gap:12px;margin-bottom:6px;font-size:12px;}
+      .privacy-contact-row span{color:#666;min-width:70px;}
+      .privacy-contact-row strong{color:#111;}
+      .privacy-update-date{font-size:11px;color:#888;margin-bottom:16px;text-align:right;}
+      .privacy-table{border:1px solid #ddd;border-radius:4px;overflow:hidden;margin:10px 0;}
+      .privacy-table-header,.privacy-table-row{display:grid;grid-template-columns:1fr 2fr 1.5fr;padding:8px 12px;font-size:12px;}
+      .privacy-table-header{background:#f5f5f5;font-weight:700;}
+      .privacy-table-row{border-top:1px solid #eee;}
+      @media print{body{padding:20px 40px;}@page{margin:15mm;}}
+    </style></head><body>
+    <h1>${title}</h1>
+    ${content.innerHTML}
+    </body></html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=900');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 500);
+}
+
 function PrivacyPage() {
   const [activeTab, setActiveTab] = useState('privacy');
 
@@ -21,24 +62,45 @@ function PrivacyPage() {
           </div>
 
           {/* 탭 */}
-          <div className="privacy-tabs">
+          <div className="privacy-tabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className={`privacy-tab-btn ${activeTab === 'privacy' ? 'active' : ''}`}
+                onClick={() => setActiveTab('privacy')}
+              >
+                🔒 개인정보처리방침
+              </button>
+              <button
+                className={`privacy-tab-btn ${activeTab === 'terms' ? 'active' : ''}`}
+                onClick={() => setActiveTab('terms')}
+              >
+                📋 이용약관
+              </button>
+            </div>
             <button
-              className={`privacy-tab-btn ${activeTab === 'privacy' ? 'active' : ''}`}
-              onClick={() => setActiveTab('privacy')}
+              onClick={() => printPrivacy(
+                activeTab === 'privacy' ? '개인정보처리방침' : '이용약관',
+                activeTab === 'privacy' ? 'privacy-print-content' : 'terms-print-content'
+              )}
+              style={{
+                padding: '8px 16px',
+                background: 'rgba(212,168,67,0.15)',
+                border: '1px solid var(--border-active)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--accent-gold)',
+                cursor: 'pointer',
+                fontSize: '0.85em',
+                fontFamily: 'Noto Sans KR, sans-serif',
+                whiteSpace: 'nowrap',
+              }}
             >
-              🔒 개인정보처리방침
-            </button>
-            <button
-              className={`privacy-tab-btn ${activeTab === 'terms' ? 'active' : ''}`}
-              onClick={() => setActiveTab('terms')}
-            >
-              📋 이용약관
+              🖨️ 출력 / PDF 저장
             </button>
           </div>
 
           {/* 개인정보처리방침 */}
           {activeTab === 'privacy' && (
-            <div className="privacy-content">
+            <div className="privacy-content" id="privacy-print-content">
               <div className="privacy-update-date">최종 업데이트: 2026년 5월 18일</div>
 
               <section className="privacy-section">
@@ -231,7 +293,7 @@ function PrivacyPage() {
 
           {/* 이용약관 */}
           {activeTab === 'terms' && (
-            <div className="privacy-content">
+            <div className="privacy-content" id="terms-print-content">
               <div className="privacy-update-date">최종 업데이트: 2026년 5월 18일</div>
 
               <section className="privacy-section">

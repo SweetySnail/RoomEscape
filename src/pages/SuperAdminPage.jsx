@@ -749,6 +749,114 @@ function emptyTheme(minPeople = 2, maxPeople = 6) {
   };
 }
 
+// ===== 계약서 출력 함수 =====
+function printContract(storeForm) {
+  const paymentLabel = storeForm.paymentType === 'external' ? '외부 결제' : '플랫폼 내 결제';
+  const feeLabel = storeForm.feeType === 'rate'
+    ? `요율 ${storeForm.discountRate}%`
+    : `정액 ${(storeForm.fixedFee || 0).toLocaleString()}원/방`;
+  const operationLabel = storeForm.isTemporary
+    ? `기간 한정 (${storeForm.operationStart} ~ ${storeForm.operationEnd})`
+    : '상시 운영';
+  const signDate = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"/>
+    <title>플랫폼 서비스 이용 계약서</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'Noto Sans KR','맑은 고딕',sans-serif;font-size:13px;color:#111;padding:40px 60px;line-height:1.7;}
+      h1{font-size:20px;text-align:center;margin-bottom:8px;font-weight:700;letter-spacing:0.1em;}
+      .subtitle{text-align:center;font-size:12px;color:#666;margin-bottom:32px;border-bottom:2px solid #111;padding-bottom:16px;}
+      h2{font-size:13px;font-weight:700;margin:20px 0 6px;border-left:3px solid #111;padding-left:8px;}
+      p,li{font-size:12.5px;color:#222;margin-bottom:4px;}
+      ul{padding-left:20px;margin-bottom:8px;}
+      .info-box{border:1px solid #ddd;border-radius:6px;padding:16px;margin:12px 0;background:#fafafa;}
+      .info-row{display:flex;gap:12px;margin-bottom:6px;font-size:12.5px;}
+      .info-label{color:#666;min-width:80px;}
+      .info-value{font-weight:600;color:#111;}
+      .notice{background:#fff8e1;border:1px solid #f0c040;border-radius:4px;padding:10px 14px;font-size:11.5px;color:#7a5c00;margin:8px 0;}
+      .sign-section{margin-top:48px;border-top:1px solid #ccc;padding-top:24px;}
+      .sign-row{display:flex;justify-content:space-between;margin-bottom:32px;}
+      .sign-box{border:1px solid #ccc;border-radius:6px;padding:16px 24px;width:45%;font-size:12px;}
+      .sign-box strong{display:block;margin-bottom:8px;font-size:13px;}
+      .sign-line{border-bottom:1px solid #999;margin-top:32px;margin-bottom:4px;}
+      .sign-hint{font-size:11px;color:#999;text-align:right;}
+      @media print{body{padding:20px 40px;}@page{margin:20mm;}}
+    </style></head><body>
+    <h1>플랫폼 서비스 이용 계약서</h1>
+    <div class="subtitle">본 계약서는 플랫폼 운영자(갑)와 매장 사업자(을) 간의 서비스 이용 계약입니다.</div>
+    <h2>제1조 (계약 당사자)</h2>
+    <div class="info-box">
+      <div class="info-row"><span class="info-label">갑 (플랫폼)</span><span class="info-value">RoomEscape 운영자</span></div>
+      <div class="info-row"><span class="info-label">을 (사업자)</span><span class="info-value">${storeForm.ownerName}</span></div>
+      <div class="info-row"><span class="info-label">이메일</span><span class="info-value">${storeForm.email}</span></div>
+      <div class="info-row"><span class="info-label">연락처</span><span class="info-value">${storeForm.contact}</span></div>
+    </div>
+    <h2>제2조 (계약 기간)</h2>
+    <div class="info-box">
+      <div class="info-row"><span class="info-label">시작일</span><span class="info-value">${storeForm.contractStart}</span></div>
+      <div class="info-row"><span class="info-label">종료일</span><span class="info-value">${storeForm.contractEnd}</span></div>
+      <div class="info-row"><span class="info-label">운영 방식</span><span class="info-value">${operationLabel}</span></div>
+    </div>
+    <h2>제3조 (결제 방식)</h2>
+    <div class="info-box">
+      <div class="info-row"><span class="info-label">결제 방식</span><span class="info-value">${paymentLabel}</span></div>
+      ${storeForm.paymentType === 'external' ? `
+      <div class="info-row"><span class="info-label">예약 URL</span><span class="info-value">${storeForm.reservationUrl || '-'}</span></div>
+      <div class="notice">⚠️ 외부 결제: 실제 결제 및 환불은 매장 자체적으로 처리됩니다. 방문 완료 처리 시에만 매출 통계에 반영됩니다. 서비스 오픈 후 1년간 무상 지원됩니다.</div>
+      ` : ''}
+    </div>
+    <h2>제4조 (수수료)</h2>
+    <div class="info-box">
+      <div class="info-row"><span class="info-label">수수료 방식</span><span class="info-value">${feeLabel}</span></div>
+      <div class="info-row"><span class="info-label">정산</span><span class="info-value">매월 말일 기준, 익월 10일 이내</span></div>
+      <div class="info-row"><span class="info-label">은행</span><span class="info-value">${storeForm.bankName} / ${storeForm.bankHolder} / ${storeForm.bankAccount}</span></div>
+    </div>
+    <h2>제5조 (을의 의무)</h2>
+    <ul>
+      <li>매장 정보(운영 시간, 가격, 테마 정보 등)를 정확하게 유지해야 합니다.</li>
+      <li>이용자와의 분쟁은 자체적으로 해결하며, 갑에게 책임을 전가할 수 없습니다.</li>
+      <li>관련 법령을 준수하고 적법한 영업 허가를 유지해야 합니다.</li>
+      <li>이용자의 개인정보를 개인정보보호법에 따라 적법하게 처리해야 합니다.</li>
+    </ul>
+    <h2>제6조 (계약 해지)</h2>
+    <ul>
+      <li>을의 해지: 30일 전 이메일 통보</li>
+      <li>갑의 해지: 허위 정보 등록, 법령 위반, 이용자 피해 발생 시 즉시 해지</li>
+    </ul>
+    <h2>제7조 (책임의 한계)</h2>
+    <ul>
+      <li>갑은 외부 결제 방식의 결제·환불·분쟁에 대해 책임을 지지 않습니다.</li>
+      <li>갑은 불가항력으로 인한 서비스 중단에 대해 책임을 지지 않습니다.</li>
+    </ul>
+    <div class="sign-section">
+      <p style="text-align:center;margin-bottom:24px;font-size:13px;">계약 체결일: <strong>${signDate}</strong></p>
+      <div class="sign-row">
+        <div class="sign-box">
+          <strong>갑 (플랫폼 운영자)</strong>
+          <div>상호: RoomEscape</div>
+          <div>이메일: shwogus1011@gmail.com</div>
+          <div class="sign-line"></div>
+          <div class="sign-hint">서명 또는 인</div>
+        </div>
+        <div class="sign-box">
+          <strong>을 (매장 사업자)</strong>
+          <div>사업자명: ${storeForm.ownerName}</div>
+          <div>이메일: ${storeForm.email}</div>
+          <div class="sign-line"></div>
+          <div class="sign-hint">서명 또는 인</div>
+        </div>
+      </div>
+    </div>
+    </body></html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=900');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 500);
+}
+
 function RegisterTab({ onComplete }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -957,7 +1065,14 @@ function RegisterTab({ onComplete }) {
           <p style={{ color: '#ff6b7a', fontSize: '0.9em', marginBottom: '24px' }}>
             ⚠️ 이 창을 닫으면 임시 비밀번호를 다시 볼 수 없어요. 반드시 메모해두세요!
           </p>
-          <button className="mypage-btn primary" onClick={onComplete}>매장 목록으로 이동</button>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button className="mypage-btn primary" onClick={() => printContract(storeForm)}>
+              🖨️ 계약서 출력 / PDF 저장
+            </button>
+            <button className="mypage-btn small" onClick={onComplete}>
+              매장 목록으로 이동
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1429,6 +1544,13 @@ function StoreDetailModal({ store, reservations, onClose }) {
         style={{ overflowY: 'auto', maxHeight: '85vh' }}>
         <button className="admin-modal-close" onClick={onClose}>×</button>
         <h3>{store.ownerName} 매장 상세</h3>
+        <button
+          className="mypage-btn small"
+          style={{ marginBottom: '16px' }}
+          onClick={() => printContract(store)}
+        >
+          🖨️ 계약서 출력 / PDF 저장
+        </button>
 
         <div className="store-detail-info">
           {[
